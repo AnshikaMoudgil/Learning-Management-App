@@ -1,0 +1,5 @@
+package com.tensorik.mbt_lms
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

@@ -1,0 +1,95 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+
+  ApiException(this.statusCode, this.message);
+
+  @override
+  String toString() => message;
+}
+
+class ApiClient {
+  static final ApiClient _instance = ApiClient._internal();
+  factory ApiClient() => _instance;
+  ApiClient._internal();
+
+  String get baseUrl {
+    return dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000';
+  }
+
+  Future<Map<String, String>> _headers() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    if (session?.accessToken != null) {
+      headers['Authorization'] = 'Bearer ${session!.accessToken}';
+    }
+    return headers;
+  }
+
+  Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
+    var uri = Uri.parse('$baseUrl$path');
+    if (queryParams != null && queryParams.isNotEmpty) {
+      uri = uri.replace(queryParameters: queryParams);
+    }
+    final response = await http.get(uri, headers: await _headers());
+    return _handleResponse(response);
+  }
+
+  Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final response = await http.post(
+      uri,
+      headers: await _headers(),
+      body: body != null ? jsonEncode(body) : null,
+    );
+    return _handleResponse(response);
+  }
+
+  Future<dynamic> patch(String path, {Map<String, dynamic>? body}) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final response = await http.patch(
+      uri,
+      headers: await _headers(),
+      body: body != null ? jsonEncode(body) : null,
+    );
+    return _handleResponse(response);
+  }
+
+  Future<dynamic> delete(String path) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final response = await http.delete(uri, headers: await _headers());
+    return _handleResponse(response);
+  }
+
+  Future<dynamic> uploadFile(String path, String fieldName, String filePath, String fileName) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final request = http.MultipartRequest('POST', uri);
+
+    final headers = await _headers();
+    headers.remove('Content-Type');
+    request.headers.addAll(headers);
+    request.files.add(await http.MultipartFile.fromPath(fieldName, filePath, filename: fileName));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response);
+  }
+
+  dynamic _handleResponse(http.Response response) {
+    final body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return body;
+    }
+
+    final message = body is Map ? (body['message'] ?? body['error'] ?? response.reasonPhrase) : response.reasonPhrase;
+    throw ApiException(response.statusCode, message ?? 'Request failed');
+  }
+}
