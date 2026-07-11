@@ -1,9 +1,22 @@
-import { Controller, Get, Patch, Post, Delete, Body, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Delete,
+  Body,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
+import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { IsString, IsOptional } from 'class-validator';
 
 class LoginDetailsDto {
@@ -18,28 +31,40 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
-  getProfile(@Req() req: any) {
+  getProfile(@Req() req: AuthenticatedRequest) {
     return this.usersService.getProfile(req.user.id);
   }
 
   @Patch('me')
-  updateProfile(@Req() req: any, @Body() body: UpdateProfileDto) {
+  updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpdateProfileDto,
+  ) {
     return this.usersService.updateProfile(req.user.id, body);
   }
 
   @Post('me/complete')
-  completeProfile(@Req() req: any, @Body() body: CreateProfileDto) {
+  completeProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: CreateProfileDto,
+  ) {
     return this.usersService.completeProfile(req.user.id, body);
   }
 
   @Post('me/login-details')
-  updateLoginDetails(@Req() req: any, @Body() body: LoginDetailsDto) {
+  updateLoginDetails(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: LoginDetailsDto,
+  ) {
     return this.usersService.updateLoginDetails(req.user.id, body.deviceId);
   }
 
   @Post('me/photo')
   @UseInterceptors(FileInterceptor('photo'))
-  uploadAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+  uploadAvatar(
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     if (!file) {
       throw new BadRequestException('No photo file uploaded');
     }
@@ -52,7 +77,7 @@ export class UsersController {
   }
 
   @Delete('me/photo')
-  deleteAvatar(@Req() req: any) {
+  deleteAvatar(@Req() req: AuthenticatedRequest) {
     return this.usersService.deleteAvatar(req.user.id);
   }
 }
