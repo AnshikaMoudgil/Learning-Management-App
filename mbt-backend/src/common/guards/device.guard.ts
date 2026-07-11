@@ -13,14 +13,16 @@ export class DeviceGuard implements CanActivate {
   constructor(private supabaseService: SupabaseService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user?: { id: string } }>();
     const deviceFingerprint = request.headers['x-device-fingerprint'];
 
     if (!deviceFingerprint || Array.isArray(deviceFingerprint)) {
       throw new BadRequestException('Missing X-Device-Fingerprint header');
     }
 
-    const userId = (request as any).user?.id;
+    const userId = request.user?.id;
     if (!userId) {
       return true;
     }

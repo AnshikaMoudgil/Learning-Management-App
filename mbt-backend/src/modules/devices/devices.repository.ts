@@ -82,7 +82,7 @@ export class DevicesRepository {
         user_id: userId,
         fingerprint,
         platform: platform ?? null,
-      } as Device)
+      } as never)
       .select()
       .single();
 
@@ -96,7 +96,7 @@ export class DevicesRepository {
   async updateLastSeen(deviceId: string): Promise<Device> {
     const { data, error } = await this.db
       .from('devices')
-      .update({ last_seen_at: new Date().toISOString() } as Device)
+      .update({ last_seen_at: new Date().toISOString() } as never)
       .eq('id', deviceId)
       .select()
       .single();
