@@ -8,8 +8,4 @@ export class GoogleAuthDto {
   @IsString()
   @IsOptional()
   accessToken?: string;
-
-  @IsString()
-  @IsOptional()
-  deviceId?: string;
 }

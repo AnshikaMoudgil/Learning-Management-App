@@ -23,7 +23,7 @@ export class UsersService {
     const data = await this.usersRepository.findById(userId);
 
     if (!data) {
-      throw new NotFoundException('Learner profile not found');
+      throw new NotFoundException('Profile not found');
     }
 
     const { data: userData } = await this.db.auth.admin.getUserById(userId);
@@ -48,6 +48,10 @@ export class UsersService {
     if (updateData.phone !== undefined) {
       metaUpdate.custom_phone = updateData.phone;
       metaUpdate.phone = updateData.phone;
+    }
+
+    if (updateData.about !== undefined) {
+      dbUpdate.about = updateData.about;
     }
 
     if (
@@ -113,16 +117,10 @@ export class UsersService {
     return data;
   }
 
-  async updateLoginDetails(userId: string, deviceId?: string) {
-    const existing = await this.usersRepository.findById(userId);
-
+  async updateLoginDetails(userId: string) {
     const updates: Record<string, unknown> = {
       last_login_at: new Date().toISOString(),
     };
-
-    if (deviceId && (!existing || !existing.device_id)) {
-      updates.device_id = deviceId;
-    }
 
     return this.usersRepository.update(userId, updates);
   }

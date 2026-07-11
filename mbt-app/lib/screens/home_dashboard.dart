@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
 import '../services/profile_service.dart';
-import '../models/learner_profile.dart';
+import '../models/profile.dart';
 import 'my_courses_screen.dart';
 import 'live_classes_screen.dart';
 import 'recent_recordings_screen.dart';
@@ -23,7 +23,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   int _bannerIndex = 0;
   final PageController _pageController = PageController();
   final ProfileService _profileService = ProfileService();
-  LearnerProfile? _profile;
+  Profile? _profile;
 
   @override
   void initState() {
@@ -294,95 +294,95 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpiringCoursesScreen())),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: const [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.access_time, color: Colors.deepOrange, size: 16),
-                                      SizedBox(width: 4),
-                                      Text('Expiring Courses', style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12)),
-                                    ],
-                                  ),
-                                  Icon(Icons.chevron_right, color: AppColors.textLight, size: 16),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  const Text('2', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.deepOrange)),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: const [
-                                        Text('Courses expiring soon', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark)),
-                                        Text('Renew now to continue learning', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpiringCoursesScreen())),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: const [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.access_time, color: Colors.deepOrange, size: 16),
+                                        SizedBox(width: 4),
+                                        Text('Expiring Courses', style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12)),
                                       ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    Icon(Icons.chevron_right, color: AppColors.textLight, size: 16),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    const Text('2', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.deepOrange)),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: const [
+                                          Text('Courses expiring soon', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark)),
+                                          Text('Renew now to continue learning', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Notifications
-              _buildSectionHeader('Notifications', onViewAll: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-              }),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _buildNotificationItem(Icons.calendar_today, Colors.blue, 'Live Class Reminder', 'iPhone Hardware Basics is starting in 1 hour.', 'Today, 05:30 PM'),
-                    const SizedBox(height: 12),
-                    _buildNotificationItem(Icons.warning_amber_rounded, Colors.orange, 'Course Expiring Soon', 'iPhone Software Mastery will expire in 5 days.', 'Today, 04:15 PM'),
-                  ],
+                // Notifications
+                _buildSectionHeader('Notifications', onViewAll: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                }),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      _buildNotificationItem(Icons.calendar_today, Colors.blue, 'Live Class Reminder', 'iPhone Hardware Basics is starting in 1 hour.', 'Today, 05:30 PM'),
+                      const SizedBox(height: 12),
+                      _buildNotificationItem(Icons.warning_amber_rounded, Colors.orange, 'Course Expiring Soon', 'iPhone Software Mastery will expire in 5 days.', 'Today, 04:15 PM'),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        onTap: _onNavTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.textLight,
-        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 10),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Courses'),
-          BottomNavigationBarItem(icon: Icon(Icons.videocam_outlined), label: 'Live Classes'),
-          BottomNavigationBarItem(icon: Icon(Icons.play_circle_outline), label: 'Recordings'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-      ),
-    );
-  }
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: 0,
+          onTap: _onNavTapped,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: AppColors.primaryBlue,
+          unselectedItemColor: AppColors.textLight,
+          selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontSize: 10),
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Courses'),
+            BottomNavigationBarItem(icon: Icon(Icons.videocam_outlined), label: 'Live Classes'),
+            BottomNavigationBarItem(icon: Icon(Icons.play_circle_outline), label: 'Recordings'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          ],
+        ),
+      );
+    }
 
   Widget _buildBanner({
     required Color color,
@@ -480,7 +480,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         ),
       ),
     );
-  }
+    }
 
   Widget _buildSectionHeader(String title, {VoidCallback? onViewAll}) {
     return Padding(
@@ -563,7 +563,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -622,7 +622,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ],
             ),
           ),
-        ],
+                  ],
       ),
     );
   }

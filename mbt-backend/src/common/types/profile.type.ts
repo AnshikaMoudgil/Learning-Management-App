@@ -1,8 +1,13 @@
-export interface LearnerProfile {
+export type UserRole = 'learner' | 'admin' | 'superadmin' | 'instructor';
+export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
+
+export interface Profile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
-  device_id: string | null;
+  role: UserRole;
+  status: UserStatus;
+  about: string | null;
   is_active: boolean;
   is_deleted: boolean;
   onboarding_completed: boolean;

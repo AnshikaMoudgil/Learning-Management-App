@@ -17,13 +17,6 @@ import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
-import { IsString, IsOptional } from 'class-validator';
-
-class LoginDetailsDto {
-  @IsString()
-  @IsOptional()
-  deviceId?: string;
-}
 
 @Controller('api/v1/users')
 @UseGuards(AuthGuard)
@@ -54,9 +47,8 @@ export class UsersController {
   @Post('me/login-details')
   updateLoginDetails(
     @Req() req: AuthenticatedRequest,
-    @Body() body: LoginDetailsDto,
   ) {
-    return this.usersService.updateLoginDetails(req.user.id, body.deviceId);
+    return this.usersService.updateLoginDetails(req.user.id);
   }
 
   @Post('me/photo')

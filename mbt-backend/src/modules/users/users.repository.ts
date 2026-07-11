@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-import { LearnerProfile } from '../../common/types/learner-profile.type';
+import { Profile } from '../../common/types/profile.type';
 
 @Injectable()
 export class UsersRepository {
@@ -10,9 +10,9 @@ export class UsersRepository {
     return this.supabaseService.getClient();
   }
 
-  async findById(userId: string): Promise<LearnerProfile | null> {
+  async findById(userId: string): Promise<Profile | null> {
     const { data, error } = await this.db
-      .from('learner_profiles')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
@@ -27,9 +27,9 @@ export class UsersRepository {
   async update(
     userId: string,
     updates: Record<string, unknown>,
-  ): Promise<LearnerProfile> {
+  ): Promise<Profile> {
     const { data, error } = await this.db
-      .from('learner_profiles')
+      .from('profiles')
       .update(updates as never)
       .eq('id', userId)
       .select()
@@ -45,9 +45,9 @@ export class UsersRepository {
   async create(
     userId: string,
     profile: Record<string, unknown>,
-  ): Promise<LearnerProfile> {
+  ): Promise<Profile> {
     const { data, error } = await this.db
-      .from('learner_profiles')
+      .from('profiles')
       .insert({ id: userId, ...profile } as never)
       .select()
       .single();
@@ -62,9 +62,9 @@ export class UsersRepository {
   async upsert(
     userId: string,
     profile: Record<string, unknown>,
-  ): Promise<LearnerProfile> {
+  ): Promise<Profile> {
     const { data, error } = await this.db
-      .from('learner_profiles')
+      .from('profiles')
       .upsert({ id: userId, ...profile } as never, { onConflict: 'id' })
       .select()
       .single();
@@ -76,9 +76,9 @@ export class UsersRepository {
     return data;
   }
 
-  async upsertAvatarUrl(userId: string, url: string): Promise<LearnerProfile> {
+  async upsertAvatarUrl(userId: string, url: string): Promise<Profile> {
     const { data, error } = await this.db
-      .from('learner_profiles')
+      .from('profiles')
       .update({ avatar_url: url } as never)
       .eq('id', userId)
       .select()
@@ -103,21 +103,11 @@ export class UsersRepository {
 
   async updateLastLogin(
     userId: string,
-    deviceId?: string,
-  ): Promise<LearnerProfile> {
+  ): Promise<Profile> {
     const updates: Record<string, unknown> = {
       last_login_at: new Date().toISOString(),
     };
 
-    if (deviceId) {
-      updates.device_id = deviceId;
-    }
-
     return this.update(userId, updates);
-  }
-
-  async getDeviceId(userId: string): Promise<string | null> {
-    const profile = await this.findById(userId);
-    return profile?.device_id ?? null;
   }
 }

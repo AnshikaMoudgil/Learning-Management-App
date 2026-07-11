@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
 import '../services/profile_service.dart';
-import '../models/learner_profile.dart';
+import '../models/profile.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -67,6 +67,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await _profileService.updateProfile(
         _nameController.text,
         phone: _phoneController.text.isNotEmpty ? _phoneController.text : null,
+        about: _bioController.text.isNotEmpty ? _bioController.text : null,
       );
 
       if (_avatarBytes != null && _avatarPath != null) {
@@ -116,7 +117,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 4),
             const Text('Update your personal information', style: TextStyle(fontSize: 14, color: AppColors.textLight)),
             const SizedBox(height: 32),
-            
+
             const Text('Profile Photo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
             const SizedBox(height: 16),
             Row(
@@ -190,17 +191,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ],
             ),
             const SizedBox(height: 32),
-            
+
             const Text('Personal Information', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
             const SizedBox(height: 16),
-            
+
             _buildEditableField('Full Name', _nameController, icon: Icons.person_outline),
             const SizedBox(height: 16),
             _buildEditableField('Phone Number (Optional)', _phoneController, icon: Icons.phone_outlined),
             const SizedBox(height: 16),
             _buildEditableField('Bio', _bioController, maxLines: 3),
             const SizedBox(height: 40),
-            
+
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -210,7 +211,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: _isSaving 
+                child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),

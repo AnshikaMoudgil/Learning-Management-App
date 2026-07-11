@@ -1,3 +1,5 @@
+import { UserRole, UserStatus } from '../../../common/types/profile.type';
+
 export class AuthResponseDto {
   accessToken: string;
   refreshToken: string;
@@ -12,9 +14,11 @@ export class AuthResponseDto {
     id: string;
     fullName?: string;
     avatarUrl?: string;
+    role: UserRole;
+    status: UserStatus;
+    about?: string;
     isActive: boolean;
     onboardingCompleted: boolean;
-    deviceId?: string;
     lastLoginAt?: string;
   } | null;
 }
