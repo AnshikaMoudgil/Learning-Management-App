@@ -3,8 +3,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/dashboard_layout.dart';
+import 'screens/home_dashboard.dart';
 import 'screens/create_profile_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/profile_service.dart';
@@ -42,6 +43,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    // Start listener immediately, but delay routing for initial session to show splash screen
     _setupAuthListener();
   }
 
@@ -63,6 +65,11 @@ class _MyAppState extends State<MyApp> {
       // Only perform routing on initial startup or explicit sign in.
       // We ignore userUpdated to prevent interrupting CreateProfileScreen.
       if (event == AuthChangeEvent.initialSession || event == AuthChangeEvent.signedIn) {
+        if (event == AuthChangeEvent.initialSession) {
+          // Wait for splash screen
+          await Future.delayed(const Duration(milliseconds: 2500));
+        }
+
         if (session != null) {
           try {
             // Perform backend profile validation
@@ -87,7 +94,7 @@ class _MyAppState extends State<MyApp> {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('is_signup_flow', false);
               await profileService.updateLoginDetails(session.user.id);
-              _navigateTo(DashboardLayout());
+              _navigateTo(const HomeDashboard());
             }
           } catch (e) {
             // If magic string or regular error
@@ -103,7 +110,7 @@ class _MyAppState extends State<MyApp> {
             setState(() {
               _isLoading = false;
             });
-            // Initial app load with no session goes to Onboarding Screen (Get Started)
+            // Initial app load with no session goes to Onboarding Screen after splash
             _navigateTo(const OnboardingScreen());
           }
         }
@@ -156,21 +163,7 @@ class _MyAppState extends State<MyApp> {
           iconTheme: IconThemeData(color: AppColors.textDark),
         ),
       ),
-      home: const AuthGate(),
-    );
-  }
-}
-
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: CircularProgressIndicator(color: AppColors.primaryBlue),
-      ),
+      home: const SplashScreen(),
     );
   }
 }

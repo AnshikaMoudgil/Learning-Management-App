@@ -1,24 +1,58 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import 'live_class_details_screen.dart';
+import 'home_dashboard.dart';
+import 'my_learning_screen.dart';
+import 'recent_recordings_screen.dart';
+import 'profile_screen.dart';
+import 'daily_schedule_screen.dart';
+import 'class_details_screen.dart';
 
-class LiveClassesScreen extends StatelessWidget {
+class LiveClassesScreen extends StatefulWidget {
   const LiveClassesScreen({Key? key}) : super(key: key);
+
+  @override
+  State<LiveClassesScreen> createState() => _LiveClassesScreenState();
+}
+
+class _LiveClassesScreenState extends State<LiveClassesScreen> {
+  int _selectedTab = 0; // 0 for Upcoming, 1 for Calendar
+
+  void _onNavTapped(int index) {
+    if (index == 2) return; // Already on Live Classes
+    Widget nextScreen;
+    switch (index) {
+      case 0:
+        nextScreen = const HomeDashboard();
+        break;
+      case 1:
+        nextScreen = const MyLearningScreen();
+        break;
+      case 3:
+        nextScreen = const RecentRecordingsScreen();
+        break;
+      case 4:
+        nextScreen = const ProfileScreen();
+        break;
+      default:
+        return;
+    }
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => nextScreen));
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        toolbarHeight: 80,
         backgroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
             Text('Live Classes', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 22)),
-            SizedBox(height: 2),
-            Text('Join live sessions, learn from experts in real-time', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+            SizedBox(height: 4),
+            Text('Join live sessions, learn from experts in real-time', style: TextStyle(color: AppColors.textLight, fontSize: 10)),
           ],
         ),
         actions: [
@@ -29,12 +63,12 @@ class LiveClassesScreen extends StatelessWidget {
               IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
               Positioned(
                 right: 8,
-                top: 12,
+                top: 8,
                 child: Container(
-                  padding: const EdgeInsets.all(3),
+                  padding: const EdgeInsets.all(2),
                   decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                   constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
                 ),
               )
             ],
@@ -44,377 +78,553 @@ class LiveClassesScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Tabs
           Container(
-            color: Colors.white,
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.border),
+            ),
             child: Row(
               children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: AppColors.primaryBlue, width: 2)),
-                    ),
-                    child: const Center(child: Text('Upcoming', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 14))),
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
-                    ),
-                    child: const Center(child: Text('My Bookings', style: TextStyle(color: AppColors.textLight, fontSize: 14))),
-                  ),
-                ),
+                _buildSegmentTab('Upcoming', 0),
+                _buildSegmentTab('Calendar', 1),
               ],
             ),
           ),
-          
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Upcoming Live Classes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark)),
-                    Row(
-                      children: const [
-                        Icon(Icons.calendar_month_outlined, size: 14, color: AppColors.primaryBlue),
-                        SizedBox(width: 4),
-                        Text('Calendar View', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryBlue)),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Date Scroller
-                SizedBox(
-                  height: 60,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _buildDateCard('Today', '2 May', true),
-                      _buildDateCard('Sat', '3 May', false),
-                      _buildDateCard('Sun', '4 May', false),
-                      _buildDateCard('Mon', '5 May', false),
-                      _buildDateCard('Tue', '6 May', false),
-                      _buildDateCard('Wed', '7 May', false),
-                      _buildDateCard('Thu', '8 May', false),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Class Cards
-                _buildLiveClassCard(
-                  context,
-                  'assets/iphone_hardware.png',
-                  'iPhone Hardware Course',
-                  'Display Light Problem Diagnosis',
-                  'Rahul Verma',
-                  'Hardware Expert',
-                  'Today, 07:00 PM',
-                  '60 min',
-                  '25',
-                  'Starts in 1h 18m',
-                ),
-                const SizedBox(height: 16),
-                _buildLiveClassCard(
-                  context,
-                  'assets/iphone_hardware.png', // Placeholder
-                  'iPhone Hardware Course',
-                  'Face ID Not Working - Deep Dive',
-                  'Amit Sharma',
-                  'Hardware Expert',
-                  'Tomorrow, 11:00 AM',
-                  '90 min',
-                  '18',
-                  'Starts in 15h 18m',
-                ),
-                const SizedBox(height: 16),
-                _buildLiveClassCard(
-                  context,
-                  'assets/iphone_hardware.png', // Placeholder
-                  'Advanced Repair Course',
-                  'Board Level Shorting Explained',
-                  'Pankaj Singh',
-                  'Board Level Specialist',
-                  '3 May, 04:00 PM',
-                  '75 min',
-                  '32',
-                  'Starts in 2d 6h',
-                ),
-                const SizedBox(height: 16),
-                _buildLiveClassCard(
-                  context,
-                  'assets/iphone_hardware.png', // Placeholder
-                  'Android Hardware Course',
-                  'Battery Replacement Best Practices',
-                  'Neeraj Patel',
-                  'Android Expert',
-                  '4 May, 07:00 PM',
-                  '60 min',
-                  '30',
-                  'Starts in 3d 9h',
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Bottom Banner
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.lightBlueBg,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: const Icon(Icons.event_busy, color: AppColors.primaryBlue),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text('Can\'t attend live?', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 13)),
-                            SizedBox(height: 4),
-                            Text('All live classes are recorded. You can watch them anytime in the Recordings section.', style: TextStyle(fontSize: 11, color: AppColors.textLight)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: OutlinedButton(
-                          onPressed: () {},
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.primaryBlue),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            minimumSize: Size.zero,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.play_circle_outline, size: 14, color: AppColors.primaryBlue),
-                              SizedBox(width: 4),
-                              Text('Recordings', style: TextStyle(color: AppColors.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
+            child: _selectedTab == 0 ? _buildUpcomingView() : _buildCalendarView(),
+          )
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 2,
+        onTap: _onNavTapped,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColors.primaryBlue,
+        unselectedItemColor: AppColors.textLight,
+        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        unselectedLabelStyle: const TextStyle(fontSize: 10),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Learning'),
+          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'Live Classes'),
+          BottomNavigationBarItem(icon: Icon(Icons.play_circle_outline), label: 'Recordings'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+        ],
+      ),
     );
   }
 
-  Widget _buildDateCard(String day, String date, bool isSelected) {
+  Widget _buildSegmentTab(String label, int index) {
+    bool isSelected = _selectedTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedTab = index),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))] : [],
+            border: isSelected ? Border.all(color: AppColors.primaryBlue, width: 1.5) : Border.all(color: Colors.transparent),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? AppColors.primaryBlue : AppColors.textLight,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUpcomingView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Upcoming Live Classes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              GestureDetector(
+                onTap: () => setState(() => _selectedTab = 1), // switch to calendar
+                child: Row(
+                  children: const [
+                    Icon(Icons.calendar_month, size: 14, color: AppColors.primaryBlue),
+                    SizedBox(width: 4),
+                    Text('Calendar View', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 60,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            children: [
+              _buildDateSelector('Today', '2 May', true),
+              _buildDateSelector('Sat', '3 May', false),
+              _buildDateSelector('Sun', '4 May', false),
+              _buildDateSelector('Mon', '5 May', false),
+              _buildDateSelector('Tue', '6 May', false),
+              _buildDateSelector('Wed', '7 May', false),
+              _buildDateSelector('Thu', '8 May', false),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            children: [
+              _buildUpcomingClassCard(
+                image: 'assets/iphone_hardware.png',
+                courseName: 'iPhone Hardware Course',
+                title: 'Display Light Problem Diagnosis',
+                author: 'Rahul Verma',
+                date: 'Today, 07:00 PM',
+                duration: '60 min',
+                enrolled: '25',
+                startsIn: 'Starts in\n1h 18m',
+                startsInColor: Colors.green,
+                isLiveNow: true,
+              ),
+              _buildUpcomingClassCard(
+                image: 'assets/iphone_software.png',
+                courseName: 'iPhone Hardware Course',
+                title: 'Face ID Not Working - Deep Dive',
+                author: 'Amit Sharma',
+                date: 'Tomorrow, 11:00 AM',
+                duration: '90 min',
+                enrolled: '18',
+                startsIn: 'Starts in\n15h 18m',
+                startsInColor: AppColors.primaryBlue,
+                isLiveNow: true, // actually it's upcoming, but we show LIVE badge in screenshot? Screenshot shows LIVE badge on all 4 cards! Let's put LIVE badge.
+              ),
+              _buildUpcomingClassCard(
+                image: 'assets/android_hardware.png',
+                courseName: 'Advanced Repair Course',
+                title: 'Board Level Shorting Explained',
+                author: 'Pankaj Singh',
+                date: '3 May, 04:00 PM',
+                duration: '75 min',
+                enrolled: '32',
+                startsIn: 'Starts in\n2d 6h',
+                startsInColor: AppColors.textDark,
+                isLiveNow: true,
+              ),
+              _buildUpcomingClassCard(
+                image: 'assets/android_hardware.png',
+                courseName: 'Android Hardware Course',
+                title: 'Battery Replacement Best Practice',
+                author: 'Neeraj Patel',
+                date: '4 May, 07:00 PM',
+                duration: '60 min',
+                enrolled: '32',
+                startsIn: 'Starts in\n3d 6h',
+                startsInColor: AppColors.textDark,
+                isLiveNow: true,
+              ),
+            ],
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, -2))],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppColors.lightBlueBg, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.event_busy, color: AppColors.primaryBlue, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Can\'t attend live?', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                    Text('All live classes are recorded. You can watch them anytime in the Recordings section.', style: TextStyle(fontSize: 9, color: AppColors.textLight)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const RecentRecordingsScreen()));
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryBlue,
+                  side: const BorderSide(color: AppColors.primaryBlue),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  minimumSize: const Size(0, 36),
+                ),
+                child: const Text('Go to Recordings', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              )
+            ],
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildDateSelector(String dayStr, String dateStr, bool isSelected) {
     return Container(
-      width: 60,
-      margin: const EdgeInsets.only(right: 12),
+      width: 50,
+      margin: const EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
         color: isSelected ? AppColors.primaryBlue : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isSelected ? AppColors.primaryBlue : AppColors.border),
+        border: isSelected ? null : Border.all(color: AppColors.border),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(day, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Colors.white : AppColors.textDark)),
-          const SizedBox(height: 2),
-          Text(date, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : AppColors.textLight)),
+          Text(dayStr, style: TextStyle(fontSize: 10, color: isSelected ? Colors.white : AppColors.textLight)),
+          const SizedBox(height: 4),
+          Text(dateStr.split(' ')[0], style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : AppColors.textDark)),
         ],
       ),
     );
   }
 
-  Widget _buildLiveClassCard(BuildContext context, String imagePath, String course, String title, String instructor, String instructorRole, String time, String duration, String enrolled, String startsIn) {
+  Widget _buildUpcomingClassCard({
+    required String image,
+    required String courseName,
+    required String title,
+    required String author,
+    required String date,
+    required String duration,
+    required String enrolled,
+    required String startsIn,
+    required Color startsInColor,
+    required bool isLiveNow,
+  }) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const LiveClassDetailsScreen()),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ClassDetailsScreen()));
       },
       child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
         ),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-          // Left Image
-          Container(
-            width: 100,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
-              image: DecorationImage(
-                image: AssetImage(imagePath),
-                fit: BoxFit.cover,
-              ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  width: 90,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
+                  ),
+                ),
+                if (isLiveNow)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
+                      child: const Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+              ],
             ),
-            alignment: Alignment.topLeft,
-            padding: const EdgeInsets.all(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(color: const Color(0xFFE53935), borderRadius: BorderRadius.circular(4)), // Red LIVE badge
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.circle, color: Colors.white, size: 6),
-                  SizedBox(width: 4),
-                  Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-          ),
-          
-          // Middle Details
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
+            const SizedBox(width: 12),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: AppColors.lightBlueBg, borderRadius: BorderRadius.circular(12)),
-                    child: Text(course, style: const TextStyle(color: AppColors.primaryBlue, fontSize: 9, fontWeight: FontWeight.bold)),
-                  ),
-                  Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark, height: 1.2)),
+                  Text(courseName, style: const TextStyle(fontSize: 9, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                    const CircleAvatar(
-                      radius: 12,
-                      backgroundImage: AssetImage('assets/1.png'),
-                      backgroundColor: AppColors.lightBlueBg,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
+                      const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
+                      const SizedBox(width: 4),
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Flexible(child: Text(instructor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textDark), overflow: TextOverflow.ellipsis)),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.verified, color: Colors.blue, size: 10),
+                              Text(author, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                              const SizedBox(width: 2),
+                              const Icon(Icons.verified, color: AppColors.primaryBlue, size: 10),
                             ],
                           ),
-                          Text(instructorRole, style: const TextStyle(color: AppColors.primaryBlue, fontSize: 9, fontWeight: FontWeight.w500)),
+                          const Text('Hardware Expert', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
                         ],
                       ),
-                    ),
-                  ],    ),
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined, size: 10, color: AppColors.textLight),
+                      const Icon(Icons.calendar_today, size: 10, color: AppColors.textLight),
                       const SizedBox(width: 4),
-                      Text(time, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
-                      const SizedBox(width: 6),
-                      const Text('|', style: TextStyle(color: AppColors.border, fontSize: 10)),
-                      const SizedBox(width: 6),
-                      const Icon(Icons.access_time_outlined, size: 10, color: AppColors.textLight),
+                      Text(date, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.access_time, size: 10, color: AppColors.textLight),
                       const SizedBox(width: 4),
                       Text(duration, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
                     ],
-                  ),
+                  )
                 ],
               ),
             ),
-          ),
-          
-          // Right Action Button
-          Container(
-            width: 75,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            decoration: const BoxDecoration(
-              border: Border(left: BorderSide(color: AppColors.border, width: 1)),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(enrolled, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textDark)),
-                const Text('Enrolled', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                Text(enrolled, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                const Text('Enrolled', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      elevation: 0,
-                    ),
-                    child: const Text('Join\nClass', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, height: 1.2)),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(60, 28),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    elevation: 0,
                   ),
+                  child: const Text('Join\nClass', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 12),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: const TextStyle(fontSize: 9, color: AppColors.textLight),
-                      children: [
-                        TextSpan(text: '${startsIn.split(' ').take(2).join(' ')}\n'),
-                        TextSpan(text: startsIn.split(' ').skip(2).join(' '), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 10)),
-                      ],
+                Text(startsIn, textAlign: TextAlign.right, style: TextStyle(fontSize: 9, color: startsInColor, fontWeight: FontWeight.bold)),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalendarView() {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(icon: const Icon(Icons.chevron_left), onPressed: () {}),
+            const Text('May 2025', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            IconButton(icon: const Icon(Icons.chevron_right), onPressed: () {}),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Mock Calendar Grid
+        Table(
+          children: [
+            _buildCalendarRow(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'], isHeader: true),
+            _buildCalendarRow(['27', '28', '29', '30', '1', '2', '3'], selectedDay: '2', dots: {'1': 1, '2': 2, '3': 3}),
+            _buildCalendarRow(['4', '5', '6', '7', '8', '9', '10'], dots: {'4': 1, '5': 1, '6': 1, '7': 2, '8': 1, '9': 1, '10': 3}),
+            _buildCalendarRow(['11', '12', '13', '14', '15', '16', '17'], dots: {'11': 1, '14': 2, '15': 1, '16': 1, '17': 2}),
+            _buildCalendarRow(['18', '19', '20', '21', '22', '23', '24'], dots: {'22': 2, '23': 3}),
+            _buildCalendarRow(['25', '26', '27', '28', '29', '30', '31'], dots: {'26': 1, '28': 2, '29': 1, '31': 3}),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildLegend(Colors.green, '1 Class'),
+            _buildLegend(Colors.orange, '2 Classes'),
+            _buildLegend(Colors.red, '3+ Classes'),
+          ],
+        ),
+        const SizedBox(height: 32),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Friday, 2 May 2025', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            const Text('2 Classes', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildCalendarClassItem('07:00 PM', '08:00 PM', 'assets/iphone_hardware.png', 'iPhone Hardware Course', 'Display Light Problem Diagnosis', 'Rahul Verma'),
+        _buildCalendarClassItem('11:00 PM', '12:30 PM', 'assets/android_hardware.png', 'Android Hardware Course', 'Face ID Not Working - Deep Dive', 'Amit Sharma', isBlue: true),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const DailyScheduleScreen()));
+          },
+          icon: const Icon(Icons.calendar_today, size: 16, color: AppColors.primaryBlue),
+          label: const Text('View Full Schedule for 2 May', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: AppColors.primaryBlue),
+            minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  TableRow _buildCalendarRow(List<String> days, {bool isHeader = false, String? selectedDay, Map<String, int>? dots}) {
+    return TableRow(
+      children: days.map((day) {
+        bool isSelected = day == selectedDay;
+        bool isFaded = isHeader ? false : (int.tryParse(day) == null || (day == '27' || day == '28' || day == '29' || day == '30') && !dots!.containsKey('30')); // simplistic check for prev month
+        
+        int numDots = dots != null && dots.containsKey(day) ? dots[day]! : 0;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    day,
+                    style: TextStyle(
+                      fontSize: isHeader ? 10 : 12,
+                      fontWeight: isHeader || isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.white : (isFaded ? Colors.grey : AppColors.textDark),
                     ),
                   ),
+                ),
+              ),
+              if (!isHeader && numDots > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Container(
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: numDots == 1 ? Colors.green : (numDots == 2 ? Colors.orange : Colors.red),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                )
+              else if (!isHeader)
+                const SizedBox(height: 8)
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildLegend(Color color, String text) {
+    return Row(
+      children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text(text, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+      ],
+    );
+  }
+
+  Widget _buildCalendarClassItem(String startTime, String endTime, String image, String courseName, String title, String author, {bool isBlue = false}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 60,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(startTime, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                const SizedBox(height: 4),
+                Text(endTime, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 60,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(courseName, style: const TextStyle(fontSize: 9, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
+                          const SizedBox(width: 4),
+                          Text(author, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.verified, color: AppColors.primaryBlue, size: 10),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Starts in', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
+                    Text(isBlue ? '15:18:45' : '01:18:45', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isBlue ? AppColors.primaryBlue : Colors.green)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(60, 28),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Join Class', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 )
               ],
             ),
           ),
         ],
       ),
-      ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: 2, // Live Classes is active
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: AppColors.textLight,
-      selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-      unselectedLabelStyle: const TextStyle(fontSize: 10),
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), activeIcon: Icon(Icons.menu_book), label: 'My Learning'),
-        BottomNavigationBarItem(icon: Icon(Icons.videocam_outlined), activeIcon: Icon(Icons.videocam), label: 'Live Classes'),
-        BottomNavigationBarItem(icon: Icon(Icons.play_circle_outline), activeIcon: Icon(Icons.play_circle), label: 'Recordings'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
-      ],
     );
   }
 }

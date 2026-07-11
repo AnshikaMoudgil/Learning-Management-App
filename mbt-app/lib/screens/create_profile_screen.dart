@@ -6,8 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
-import 'dashboard_layout.dart';
+import 'home_dashboard.dart';
 import '../services/api_client.dart';
+import '../services/profile_service.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   const CreateProfileScreen({Key? key}) : super(key: key);
@@ -84,7 +85,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => DashboardLayout()),
+          MaterialPageRoute(builder: (_) => const HomeDashboard()),
           (route) => false,
         );
       }

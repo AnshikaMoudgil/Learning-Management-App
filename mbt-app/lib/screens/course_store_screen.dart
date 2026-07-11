@@ -1,434 +1,411 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'home_dashboard.dart';
+import 'my_learning_screen.dart';
+import 'live_classes_screen.dart';
+import 'categories_screen.dart';
+import 'popular_courses_screen.dart';
+import 'newly_added_courses_screen.dart';
+import 'profile_screen.dart';
 
-class CourseStoreScreen extends StatelessWidget {
+class CourseStoreScreen extends StatefulWidget {
   const CourseStoreScreen({Key? key}) : super(key: key);
+
+  @override
+  State<CourseStoreScreen> createState() => _CourseStoreScreenState();
+}
+
+class _CourseStoreScreenState extends State<CourseStoreScreen> {
+  void _onNavTapped(int index) {
+    if (index == 3) return; // Already on Store
+    Widget nextScreen;
+    switch (index) {
+      case 0:
+        nextScreen = const HomeDashboard();
+        break;
+      case 1:
+        nextScreen = const MyLearningScreen();
+        break;
+      case 2:
+        nextScreen = const LiveClassesScreen();
+        break;
+      case 4:
+        nextScreen = const ProfileScreen(); // Will create this next
+        break;
+      default:
+        return;
+    }
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => nextScreen));
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: const Text('Store', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 22)),
+        actions: [
+          Stack(
+            alignment: Alignment.center,
             children: [
-              _buildAppBar(),
-              _buildSearchBar(),
-              _buildCategories(),
-              _buildPopularCourses(),
-              _buildNewlyAdded(),
+              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () {}),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  child: const Text('2', style: TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
+                ),
+              )
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('Course Store', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                SizedBox(height: 4),
-                Text('Discover the best courses to learn and grow', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
-              ],
-            ),
-          ),
-          Row(
-            children: [
-              Stack(
-                children: [
-                  const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark, size: 24),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                      child: const Text('2', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              Stack(
-                children: [
-                  const Icon(Icons.notifications_none, color: AppColors.textDark, size: 24),
-                  Positioned(
-                    right: 2,
-                    top: 2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
+          const SizedBox(width: 8),
         ],
       ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.search, color: AppColors.textLight, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search for courses, topics or teachers...',
-                        hintStyle: TextStyle(color: AppColors.textLight, fontSize: 13),
-                        border: InputBorder.none,
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: const [
-                Icon(Icons.tune, color: AppColors.textDark, size: 16),
-                SizedBox(width: 8),
-                Text('Filters', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategories() {
-    final categories = [
-      {'icon': Icons.grid_view, 'label': 'All', 'color': Colors.blue},
-      {'icon': Icons.code, 'label': 'Development', 'color': Colors.green},
-      {'icon': Icons.bar_chart, 'label': 'Data Science', 'color': Colors.purple},
-      {'icon': Icons.design_services, 'label': 'Design', 'color': Colors.pink},
-      {'icon': Icons.business_center, 'label': 'Business', 'color': Colors.orange},
-      {'icon': Icons.campaign, 'label': 'Marketing', 'color': Colors.teal},
-    ];
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Categories', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark)),
-              Text('View All', style: TextStyle(color: AppColors.primaryBlue, fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 80,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final cat = categories[index];
-              final isSelected = index == 0;
-              return Container(
-                width: 70,
-                margin: const EdgeInsets.only(right: 12),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isSelected ? Colors.blue : AppColors.border),
-                  boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))] : [],
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.border),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: (cat['color'] as Color).withOpacity(0.1), shape: BoxShape.circle),
-                      child: Icon(cat['icon'] as IconData, color: cat['color'] as Color, size: 20),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(cat['label'] as String, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
-                  ],
+                child: const TextField(
+                  decoration: InputDecoration(
+                    icon: Icon(Icons.search, color: AppColors.textLight, size: 20),
+                    hintText: 'Search for courses, topics or teachers...',
+                    hintStyle: TextStyle(fontSize: 12, color: AppColors.textLight),
+                    border: InputBorder.none,
+                  ),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Categories
+            SizedBox(
+              height: 90,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  _buildCategoryItem(Icons.grid_view, 'All', AppColors.primaryBlue.withValues(alpha: 0.1), AppColors.primaryBlue, true),
+                  _buildCategoryItem(Icons.code, 'Development', Colors.green.withValues(alpha: 0.1), Colors.green, false),
+                  _buildCategoryItem(Icons.bar_chart, 'Data Science', Colors.purple.withValues(alpha: 0.1), Colors.purple, false),
+                  _buildCategoryItem(Icons.design_services, 'Design', Colors.pink.withValues(alpha: 0.1), Colors.pink, false),
+                  _buildCategoryItem(Icons.business_center, 'Business', Colors.orange.withValues(alpha: 0.1), Colors.orange, false),
+                  _buildCategoryItem(Icons.campaign, 'Marketing', Colors.teal.withValues(alpha: 0.1), Colors.teal, false),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Popular Courses Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Popular Courses', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PopularCoursesScreen())),
+                    child: const Text('View All', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Popular Courses List
+            SizedBox(
+              height: 180,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  _buildPopularCourseCard(
+                    title: 'React - The Complete Guide',
+                    author: 'John Doe',
+                    rating: '4.8 (12.6K)',
+                    price: '₹799',
+                    originalPrice: '₹1,999',
+                    color: const Color(0xFF0D1B2A),
+                    icon: Icons.science,
+                    isBestseller: true,
+                  ),
+                  const SizedBox(width: 16),
+                  _buildPopularCourseCard(
+                    title: 'Python for Data Science',
+                    author: 'Priya Sharma',
+                    rating: '4.7 (9.8K)',
+                    price: '₹699',
+                    originalPrice: '₹1,499',
+                    color: const Color(0xFF1B4332),
+                    icon: Icons.code,
+                    isBestseller: false,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Newly Added Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Newly Added', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewlyAddedCoursesScreen())),
+                    child: const Text('View All', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Newly Added List
+            SizedBox(
+              height: 190,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  _buildNewlyAddedCard(
+                    title: 'Node.js\nComplete Guide',
+                    author: 'Aditya Singh',
+                    rating: '4.5 (1.2K)',
+                    price: '₹499',
+                    originalPrice: '₹1,499',
+                    color: Colors.green,
+                    icon: Icons.javascript,
+                  ),
+                  const SizedBox(width: 16),
+                  _buildNewlyAddedCard(
+                    title: 'AWS Certified\nSolutions Architect',
+                    author: 'Neha Kumari',
+                    rating: '4.7 (932)',
+                    price: '₹999',
+                    originalPrice: '₹2,499',
+                    color: Colors.orange,
+                    icon: Icons.cloud,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
         ),
-      ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 3,
+        onTap: _onNavTapped,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColors.primaryBlue,
+        unselectedItemColor: AppColors.textLight,
+        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        unselectedLabelStyle: const TextStyle(fontSize: 10),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Learning'),
+          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'Live Classes'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: 'Store'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+        ],
+      ),
     );
   }
 
-  Widget _buildPopularCourses() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Popular Courses', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark)),
-              Text('View All', style: TextStyle(color: AppColors.primaryBlue, fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
-          ),
+  Widget _buildCategoryItem(IconData icon, String label, Color bgColor, Color iconColor, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        if (label == 'All') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesScreen()));
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 16),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(16),
+                border: isSelected ? Border.all(color: AppColors.primaryBlue, width: 2) : null,
+              ),
+              child: Icon(icon, color: iconColor, size: 28),
+            ),
+            const SizedBox(height: 8),
+            Text(label, style: TextStyle(fontSize: 10, color: isSelected ? AppColors.primaryBlue : AppColors.textDark, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
+          ],
         ),
-        const SizedBox(height: 16),
-        _buildPopularCourseCard('assets/iphone_software.png', 'React - The Complete Guide', 'Build modern web apps using React, Hooks, Context API and more.', 'John Doe', 'Senior Frontend Developer', '4.8 (12.6K)', '32 hours', 'Beginner to Advanced', '₹799', '₹1,999', true),
-        _buildPopularCourseCard('assets/iphone_software.png', 'Python for Data Science', 'Learn Python, NumPy, Pandas, Matplotlib and build real-world projects.', 'Priya Sharma', 'Data Scientist', '4.7 (8.9K)', '28 hours', 'Beginner', '₹699', '₹1,799', false),
-        _buildPopularCourseCard('assets/iphone_software.png', 'UI/UX Design Masterclass', 'Design beautiful and user-friendly interfaces like a pro.', 'Rohan Verma', 'Product Designer', '4.6 (6.4K)', '18 hours', 'All Levels', '₹599', '₹1,499', false),
-      ],
+      ),
     );
   }
 
-  Widget _buildPopularCourseCard(String imagePath, String title, String desc, String instructor, String instructorRole, String rating, String duration, String level, String price, String oldPrice, bool isBestseller) {
+  Widget _buildPopularCourseCard({
+    required String title,
+    required String author,
+    required String rating,
+    required String price,
+    required String originalPrice,
+    required Color color,
+    required IconData icon,
+    required bool isBestseller,
+  }) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      width: 280,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 100,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+            ),
+            child: Stack(
+              children: [
+                Center(child: Icon(icon, color: Colors.white, size: 48)),
+                if (isBestseller)
+                  Positioned(
+                    top: 8,
+                    left: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: const BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.only(topRight: Radius.circular(4), bottomRight: Radius.circular(4)),
+                      ),
+                      child: const Text('Bestseller', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2)),
+                      const Icon(Icons.favorite_border, size: 16, color: AppColors.textLight),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
+                      const SizedBox(width: 4),
+                      Expanded(child: Text(author, style: const TextStyle(fontSize: 10, color: AppColors.textLight), overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.orange, size: 12),
+                      const SizedBox(width: 4),
+                      Text(rating, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(price, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      const SizedBox(width: 8),
+                      Text(originalPrice, style: const TextStyle(fontSize: 10, color: AppColors.textLight, decoration: TextDecoration.lineThrough)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewlyAddedCard({
+    required String title,
+    required String author,
+    required String rating,
+    required String price,
+    required String originalPrice,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 120,
-                height: 130, // Adjusted height to accommodate text
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16)),
-                  color: Color(0xFF0F172A),
-                ),
-                child: Stack(
-                  children: [
-                    Center(child: Icon(Icons.code, color: Colors.blue.withOpacity(0.5), size: 48)), // Placeholder
-                    if (isBestseller)
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(4)),
-                          child: const Text('Bestseller', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    Positioned(
-                      bottom: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-                        child: const Icon(Icons.play_circle_outline, color: Colors.white, size: 16),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark))),
-                          const Icon(Icons.favorite_border, color: AppColors.textLight, size: 16),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(desc, style: const TextStyle(fontSize: 10, color: AppColors.textLight, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const CircleAvatar(radius: 10, backgroundImage: AssetImage('assets/1.png')),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(instructor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textDark)),
-                                Text(instructorRole, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(price, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
-                              Text(oldPrice, style: const TextStyle(fontSize: 9, color: AppColors.textLight, decoration: TextDecoration.lineThrough)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Bottom Stats
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: const BoxDecoration(
-              color: AppColors.lightBlueBg,
-              borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
-              border: Border(top: BorderSide(color: AppColors.border)),
-            ),
-            child: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                const Icon(Icons.star, color: Colors.amber, size: 12),
-                const SizedBox(width: 4),
-                Text(rating, style: const TextStyle(fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 8),
-                const Text('•', style: TextStyle(color: AppColors.textLight)),
-                const SizedBox(width: 8),
-                Text(duration, style: const TextStyle(fontSize: 10, color: AppColors.textDark)),
-                const SizedBox(width: 8),
-                const Text('•', style: TextStyle(color: AppColors.textLight)),
-                const SizedBox(width: 8),
-                Text(level, style: const TextStyle(fontSize: 10, color: AppColors.textDark)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNewlyAdded() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Newly Added', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark)),
-              Text('View All', style: TextStyle(color: AppColors.primaryBlue, fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 120,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _buildSmallCourseCard('Node.js', 'Complete Guide', 'Aditya Singh', '₹499', '₹1,299', '4.5 (1.2K)', '16 hours', Colors.green),
-              _buildSmallCourseCard('AWS', 'AWS Certified\nSolutions Architect', 'Neha Kumari', '₹999', '₹2,499', '4.7 (932)', '20 hours', Colors.orange),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  Widget _buildSmallCourseCard(String iconText, String title, String instructor, String price, String oldPrice, String rating, String duration, Color color) {
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: Center(child: Text(iconText, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14))),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const Icon(Icons.favorite_border, size: 16, color: AppColors.textLight),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark), maxLines: 2)),
-                    const Icon(Icons.favorite_border, color: AppColors.textLight, size: 14),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
-                    const SizedBox(width: 4),
-                    Expanded(child: Text(instructor, style: const TextStyle(fontSize: 10, color: AppColors.textDark))),
-                  ],
-                ),
-                const Spacer(),
-                Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 10),
-                    const SizedBox(width: 2),
-                    Text(rating, style: const TextStyle(fontSize: 9, color: AppColors.textDark, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 4),
-                    const Text('•', style: TextStyle(color: AppColors.textLight, fontSize: 8)),
-                    const SizedBox(width: 4),
-                    Text(duration, style: const TextStyle(fontSize: 9, color: AppColors.textDark)),
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(price, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark)),
-                        Text(oldPrice, style: const TextStyle(fontSize: 8, color: AppColors.textLight, decoration: TextDecoration.lineThrough)),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          const SizedBox(height: 12),
+          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const CircleAvatar(radius: 6, backgroundImage: AssetImage('assets/1.png')),
+              const SizedBox(width: 4),
+              Expanded(child: Text(author, style: const TextStyle(fontSize: 9, color: AppColors.textLight), overflow: TextOverflow.ellipsis)),
+            ],
+          ),
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(price, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.orange, size: 10),
+                  const SizedBox(width: 2),
+                  Text(rating, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                ],
+              ),
+            ],
           ),
         ],
       ),

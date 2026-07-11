@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
 import 'edit_profile_screen.dart';
 import 'notification_center_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 import 'course_validity_screen.dart';
 
 class MoreScreen extends StatelessWidget {
@@ -227,8 +229,12 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 8),
               _buildMenuItem(context, Icons.help_outline, 'Help Center', subtitle: 'Find answers to common questions'),
               _buildMenuItem(context, Icons.headset_mic_outlined, 'Support', subtitle: 'Get help from our support team'),
-              _buildMenuItem(context, Icons.shield_outlined, 'Privacy Policy', subtitle: 'Learn how we protect your data'),
-              _buildMenuItem(context, Icons.description_outlined, 'Terms of Service', subtitle: 'Read our terms and conditions'),
+              _buildMenuItem(context, Icons.shield_outlined, 'Privacy Policy', subtitle: 'Learn how we protect your data', onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+              }),
+              _buildMenuItem(context, Icons.description_outlined, 'Terms of Service', subtitle: 'Read our terms and conditions', onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()));
+              }),
               _buildMenuItem(context, Icons.info_outline, 'About Us', subtitle: 'More about our platform'),
               const SizedBox(height: 16),
 
