@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
+import '../services/profile_service.dart';
+import '../models/learner_profile.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -16,18 +18,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   Uint8List? _avatarBytes;
+  String? _avatarPath;
   final ImagePicker _picker = ImagePicker();
-  bool _isLoading = false;
+  final ProfileService _profileService = ProfileService();
+  bool _isLoading = true;
+  bool _isSaving = false;
   String? _existingAvatarUrl;
 
   @override
   void initState() {
     super.initState();
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      _nameController.text = user.userMetadata?['custom_full_name'] ?? user.userMetadata?['full_name'] ?? '';
-      _phoneController.text = user.userMetadata?['custom_phone'] ?? user.phone ?? user.userMetadata?['phone'] ?? '';
-      _existingAvatarUrl = user.userMetadata?['custom_avatar_url'] ?? user.userMetadata?['avatar_url'];
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await _profileService.getProfile();
+      if (mounted) {
+        setState(() {
+          _nameController.text = profile.fullName ?? '';
+          _phoneController.text = profile.phone ?? Supabase.instance.client.auth.currentUser?.phone ?? '';
+          _existingAvatarUrl = profile.avatarUrl;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load profile: $e')));
+      }
     }
   }
 
@@ -35,44 +54,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       final bytes = await image.readAsBytes();
-      setState(() => _avatarBytes = bytes);
+      setState(() {
+        _avatarBytes = bytes;
+        _avatarPath = image.path;
+      });
     }
   }
 
   Future<void> _saveProfile() async {
-    setState(() => _isLoading = true);
+    setState(() => _isSaving = true);
     try {
-      String? avatarUrl = _existingAvatarUrl;
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (_avatarBytes != null && userId != null) {
-        final imagePath = '$userId/avatar.png';
-        await Supabase.instance.client.storage.from('avatars').uploadBinary(
-          imagePath,
-          _avatarBytes!,
-          fileOptions: const FileOptions(upsert: true, contentType: 'image/png'),
-        );
-        avatarUrl = Supabase.instance.client.storage.from('avatars').getPublicUrl(imagePath);
-      }
-      
-      final Map<String, dynamic> data = {
-        'full_name': _nameController.text,
-        'custom_full_name': _nameController.text,
-        'phone': _phoneController.text,
-        'custom_phone': _phoneController.text,
-      };
-      if (avatarUrl != null) {
-        data['avatar_url'] = avatarUrl;
-        data['custom_avatar_url'] = avatarUrl;
-      }
-      if (_avatarBytes == null && _existingAvatarUrl == null) {
-        data['avatar_url'] = null;
-        data['custom_avatar_url'] = null;
+      await _profileService.updateProfile(
+        _nameController.text,
+        phone: _phoneController.text.isNotEmpty ? _phoneController.text : null,
+      );
+
+      if (_avatarBytes != null && _avatarPath != null) {
+        await _profileService.uploadAvatar(_avatarBytes!, _avatarPath!.split('/').last);
+      } else if (_avatarBytes == null && _avatarPath == null && _existingAvatarUrl == null) {
+        await _profileService.deleteAvatar();
       }
 
-      await Supabase.instance.client.auth.updateUser(UserAttributes(
-        data: data,
-      ));
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated successfully')));
         Navigator.pop(context);
@@ -80,12 +82,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => Navigator.pop(context)),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -161,6 +175,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               onPressed: () {
                                 setState(() {
                                   _avatarBytes = null;
+                                  _avatarPath = null;
                                   _existingAvatarUrl = null;
                                 });
                               },
@@ -190,12 +205,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveProfile,
+                onPressed: _isSaving ? null : _saveProfile,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: _isLoading 
+                child: _isSaving 
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),

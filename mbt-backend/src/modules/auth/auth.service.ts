@@ -51,6 +51,16 @@ export class AuthService {
   async getSession(userId: string, deviceId?: string): Promise<AuthResponseDto> {
     const profile = await this.checkSession(userId, deviceId);
 
+    // Bind device on session check if deviceId provided and not yet bound (covers web Google OAuth)
+    if (deviceId && profile && !profile.deviceId) {
+      await this.client
+        .from('learner_profiles')
+        .update({ device_id: deviceId })
+        .eq('id', userId);
+
+      profile.deviceId = deviceId;
+    }
+
     const { data: userData, error: userError } = await this.client.auth.admin.getUserById(userId);
 
     if (userError || !userData?.user) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Body, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Body, UseGuards, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { UsersService } from './users.service';
@@ -49,5 +49,10 @@ export class UsersController {
       file.originalname,
       file.mimetype,
     );
+  }
+
+  @Delete('me/photo')
+  deleteAvatar(@Req() req: any) {
+    return this.usersService.deleteAvatar(req.user.id);
   }
 }

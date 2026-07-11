@@ -6,9 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
-import 'home_dashboard.dart';
-import '../services/api_client.dart';
 import '../services/profile_service.dart';
+import 'home_dashboard.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   const CreateProfileScreen({Key? key}) : super(key: key);
@@ -24,7 +23,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   Uint8List? _avatarBytes;
   String? _avatarPath;
   final ImagePicker _picker = ImagePicker();
-  final ApiClient _api = ApiClient();
+  final ProfileService _profileService = ProfileService();
   String _countryCode = '+91';
   final List<String> _countryCodes = ['+20', '+91'];
 
@@ -62,20 +61,18 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await _api.post('/api/v1/users/me/complete', body: {
-        'fullName': name,
-      });
+      await _profileService.createProfile(name);
 
       if (_avatarBytes != null && _avatarPath != null) {
         try {
-          await _api.uploadFile(
-            '/api/v1/users/me/photo',
-            'photo',
-            _avatarPath!,
-            _avatarPath!.split('/').last,
-          );
+          await _profileService.uploadAvatar(_avatarBytes!, _avatarPath!.split('/').last);
         } catch (e) {
-          debugPrint('Avatar upload failed (non-fatal): $e');
+          debugPrint('Avatar upload failed: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Avatar upload failed: $e')),
+            );
+          }
         }
       }
 
