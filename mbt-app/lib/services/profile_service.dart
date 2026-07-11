@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,11 @@ import 'api_client.dart';
 
 class ProfileService {
   final ApiClient _api = ApiClient();
+
+  Future<LearnerProfile> getProfile() async {
+    final result = await _api.get('/api/v1/users/me');
+    return LearnerProfile.fromJson(result);
+  }
 
   Future<LearnerProfile?> validateSession(Session session) async {
     final deviceId = await _getDeviceId();
@@ -54,12 +60,32 @@ class ProfileService {
     }
   }
 
-  Future<LearnerProfile> createProfile(User user, String fullName) async {
+  Future<LearnerProfile> createProfile(String fullName) async {
     final result = await _api.post('/api/v1/users/me/complete', body: {
       'fullName': fullName,
     });
-
     return LearnerProfile.fromJson(result);
+  }
+
+  Future<LearnerProfile> updateProfile(String fullName, {String? phone}) async {
+    final result = await _api.patch('/api/v1/users/me', body: {
+      'fullName': fullName,
+      if (phone != null) 'phone': phone,
+    });
+    return LearnerProfile.fromJson(result);
+  }
+
+  Future<void> uploadAvatar(Uint8List bytes, String fileName) async {
+    await _api.uploadFile(
+      '/api/v1/users/me/photo',
+      'photo',
+      bytes,
+      fileName,
+    );
+  }
+
+  Future<void> deleteAvatar() async {
+    await _api.delete('/api/v1/users/me/photo');
   }
 
   Future<String> _getDeviceId() async {

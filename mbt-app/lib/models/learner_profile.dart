@@ -6,6 +6,9 @@ class LearnerProfile {
   final bool onboardingCompleted;
   final DateTime? lastLoginAt;
   final String? fullName;
+  final String? avatarUrl;
+  final String? email;
+  final String? phone;
 
   LearnerProfile({
     required this.id,
@@ -15,6 +18,9 @@ class LearnerProfile {
     this.onboardingCompleted = false,
     this.lastLoginAt,
     this.fullName,
+    this.avatarUrl,
+    this.email,
+    this.phone,
   });
 
   factory LearnerProfile.fromJson(Map<String, dynamic> json) {
@@ -26,6 +32,9 @@ class LearnerProfile {
       onboardingCompleted: (json['onboarding_completed'] ?? json['onboardingCompleted']) as bool? ?? false,
       lastLoginAt: _parseDate(json['last_login_at'] ?? json['lastLoginAt']),
       fullName: (json['full_name'] ?? json['fullName']) as String?,
+      avatarUrl: (json['avatar_url'] ?? json['avatarUrl']) as String?,
+      email: json['email'] as String?,
+      phone: json['phone'] as String?,
     );
   }
 
@@ -43,6 +52,9 @@ class LearnerProfile {
       'onboarding_completed': onboardingCompleted,
       'last_login_at': lastLoginAt?.toIso8601String(),
       'full_name': fullName,
+      'avatar_url': avatarUrl,
+      'email': email,
+      'phone': phone,
     };
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -68,14 +69,14 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  Future<dynamic> uploadFile(String path, String fieldName, String filePath, String fileName) async {
+  Future<dynamic> uploadFile(String path, String fieldName, Uint8List bytes, String fileName) async {
     final uri = Uri.parse('$baseUrl$path');
     final request = http.MultipartRequest('POST', uri);
 
     final headers = await _headers();
     headers.remove('Content-Type');
     request.headers.addAll(headers);
-    request.files.add(await http.MultipartFile.fromPath(fieldName, filePath, filename: fileName));
+    request.files.add(http.MultipartFile.fromBytes(fieldName, bytes, filename: fileName));
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);

@@ -22,7 +22,13 @@ export class UsersService {
       throw new NotFoundException('Learner profile not found');
     }
 
-    return data;
+    const { data: userData } = await this.db.auth.admin.getUserById(userId);
+
+    return {
+      ...data,
+      email: userData?.user?.email ?? null,
+      phone: userData?.user?.phone ?? null,
+    };
   }
 
   async updateProfile(userId: string, updateData: UpdateProfileDto) {
@@ -35,17 +41,26 @@ export class UsersService {
       metaUpdate.full_name = updateData.fullName;
     }
 
-    if (Object.keys(dbUpdate).length === 0) {
+    if (updateData.phone !== undefined) {
+      metaUpdate.custom_phone = updateData.phone;
+      metaUpdate.phone = updateData.phone;
+    }
+
+    if (Object.keys(dbUpdate).length === 0 && Object.keys(metaUpdate).length === 0) {
       return this.getProfile(userId);
     }
 
-    const data = await this.usersRepository.update(userId, dbUpdate);
+    if (Object.keys(dbUpdate).length > 0) {
+      await this.usersRepository.update(userId, dbUpdate);
+    }
 
-    await this.db.auth.admin.updateUserById(userId, {
-      user_metadata: metaUpdate,
-    });
+    if (Object.keys(metaUpdate).length > 0) {
+      await this.db.auth.admin.updateUserById(userId, {
+        user_metadata: metaUpdate,
+      });
+    }
 
-    return data;
+    return this.getProfile(userId);
   }
 
   async completeProfile(userId: string, createData: CreateProfileDto) {
@@ -55,6 +70,7 @@ export class UsersService {
       const dbUpdate: Record<string, any> = {
         full_name: createData.fullName,
         onboarding_completed: true,
+        last_login_at: new Date().toISOString(),
       };
 
       const metaUpdate: Record<string, any> = {
@@ -92,8 +108,6 @@ export class UsersService {
 
   async updateLoginDetails(userId: string, deviceId?: string) {
     const existing = await this.usersRepository.findById(userId);
-    console.log("existing:",existing);
-    console.log("device id :",deviceId);
 
     const updates: Record<string, any> = {
       last_login_at: new Date().toISOString(),
@@ -102,12 +116,13 @@ export class UsersService {
     if (deviceId && (!existing || !existing.device_id)) {
       updates.device_id = deviceId;
     }
-    console.log("updates:",updates);
 
     return this.usersRepository.update(userId, updates);
   }
 
   async uploadAvatar(userId: string, fileBuffer: Buffer, originalName: string, mimeType: string) {
+    await this.removeExistingAvatar(userId);
+
     const fileExt = originalName.split('.').pop() || 'png';
     const filePath = `${userId}/avatar-${Date.now()}.${fileExt}`;
 
@@ -136,5 +151,37 @@ export class UsersService {
     });
 
     return data;
+  }
+
+  async deleteAvatar(userId: string) {
+    await this.removeExistingAvatar(userId);
+
+    await this.usersRepository.clearAvatarUrl(userId);
+
+    await this.db.auth.admin.updateUserById(userId, {
+      user_metadata: {
+        custom_avatar_url: null,
+        avatar_url: null,
+      },
+    });
+
+    return { message: 'Avatar removed successfully' };
+  }
+
+  private async removeExistingAvatar(userId: string) {
+    const profile = await this.usersRepository.findById(userId);
+    if (!profile?.avatar_url) return;
+
+    const marker = '/avatars/';
+    const idx = profile.avatar_url.indexOf(marker);
+    if (idx === -1) return;
+
+    const filePath = profile.avatar_url.substring(idx + marker.length);
+    if (!filePath) return;
+
+    const { error } = await this.db.storage.from('avatars').remove([filePath]);
+    if (error) {
+      console.warn(`Failed to remove old avatar: ${error.message}`);
+    }
   }
 }

@@ -81,6 +81,14 @@ export class UsersRepository {
     return data;
   }
 
+  async clearAvatarUrl(userId: string) {
+    const { error } = await this.db.rpc('clear_avatar_url', { p_user_id: userId });
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
   async updateLastLogin(userId: string, deviceId?: string) {
     const updates: Record<string, any> = {
       last_login_at: new Date().toISOString(),

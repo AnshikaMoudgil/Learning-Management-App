@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
+import '../services/profile_service.dart';
+import '../models/learner_profile.dart';
 import 'my_courses_screen.dart';
 import 'live_classes_screen.dart';
 import 'recent_recordings_screen.dart';
@@ -19,6 +22,21 @@ class HomeDashboard extends StatefulWidget {
 class _HomeDashboardState extends State<HomeDashboard> {
   int _bannerIndex = 0;
   final PageController _pageController = PageController();
+  final ProfileService _profileService = ProfileService();
+  LearnerProfile? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await _profileService.getProfile();
+      if (mounted) setState(() => _profile = profile);
+    } catch (_) {}
+  }
 
   void _onNavTapped(int index) {
     if (index == 0) return;
@@ -54,11 +72,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
               // Header
               Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: Row(
+                child:                 Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 24,
-                      backgroundImage: AssetImage('assets/1.png'),
+                      backgroundImage: _profile?.avatarUrl != null ? NetworkImage(_profile!.avatarUrl!) as ImageProvider : const AssetImage('assets/1.png'),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -67,14 +85,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         children: [
                           Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
-                            children: const [
-                              Text('Hi, Abhishek!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                              SizedBox(width: 4),
-                              Text('👋', style: TextStyle(fontSize: 18)),
+                            children: [
+                              Text('Hi, ${_profile?.fullName ?? 'Learner'}!', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                              const SizedBox(width: 4),
+                              const Text('👋', style: TextStyle(fontSize: 18)),
                             ],
                           ),
                           const SizedBox(height: 2),
-                          const Text('Keep learning, keep growing.', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                          Text(_profile?.email ?? 'Keep learning, keep growing.', style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
                         ],
                       ),
                     ),
