@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev, project-monorepo]
+  pull_request:
+    branches: [main, dev, project-monorepo]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend - Lint & Build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: mbt-backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: mbt-backend/package.json
+          cache: npm
+          cache-dependency-path: mbt-backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  frontend:
+    name: Frontend - Analyze & Build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: mbt-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Build
+        run: flutter build apk --debug
