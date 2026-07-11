@@ -33,7 +33,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 .pub-preload-cache/
-/build/
+build/
 /coverage/
 
 # Symbolication related
