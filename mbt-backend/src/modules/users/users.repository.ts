@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { LearnerProfile } from '../../common/types/learner-profile.type';
 
 @Injectable()
 export class UsersRepository {
@@ -9,7 +10,7 @@ export class UsersRepository {
     return this.supabaseService.getClient();
   }
 
-  async findById(userId: string) {
+  async findById(userId: string): Promise<LearnerProfile | null> {
     const { data, error } = await this.db
       .from('learner_profiles')
       .select('*')
@@ -23,10 +24,13 @@ export class UsersRepository {
     return data;
   }
 
-  async update(userId: string, updates: Record<string, any>) {
+  async update(
+    userId: string,
+    updates: Record<string, unknown>,
+  ): Promise<LearnerProfile> {
     const { data, error } = await this.db
       .from('learner_profiles')
-      .update(updates)
+      .update(updates as never)
       .eq('id', userId)
       .select()
       .single();
@@ -38,10 +42,13 @@ export class UsersRepository {
     return data;
   }
 
-  async create(userId: string, profile: Record<string, any>) {
+  async create(
+    userId: string,
+    profile: Record<string, unknown>,
+  ): Promise<LearnerProfile> {
     const { data, error } = await this.db
       .from('learner_profiles')
-      .insert({ id: userId, ...profile })
+      .insert({ id: userId, ...profile } as never)
       .select()
       .single();
 
@@ -52,10 +59,13 @@ export class UsersRepository {
     return data;
   }
 
-  async upsert(userId: string, profile: Record<string, any>) {
+  async upsert(
+    userId: string,
+    profile: Record<string, unknown>,
+  ): Promise<LearnerProfile> {
     const { data, error } = await this.db
       .from('learner_profiles')
-      .upsert({ id: userId, ...profile }, { onConflict: 'id' })
+      .upsert({ id: userId, ...profile } as never, { onConflict: 'id' })
       .select()
       .single();
 
@@ -66,10 +76,10 @@ export class UsersRepository {
     return data;
   }
 
-  async upsertAvatarUrl(userId: string, url: string) {
+  async upsertAvatarUrl(userId: string, url: string): Promise<LearnerProfile> {
     const { data, error } = await this.db
       .from('learner_profiles')
-      .update({ avatar_url: url })
+      .update({ avatar_url: url } as never)
       .eq('id', userId)
       .select()
       .single();
@@ -81,16 +91,21 @@ export class UsersRepository {
     return data;
   }
 
-  async clearAvatarUrl(userId: string) {
-    const { error } = await this.db.rpc('clear_avatar_url', { p_user_id: userId });
+  async clearAvatarUrl(userId: string): Promise<void> {
+    const { error } = await this.db.rpc('clear_avatar_url', {
+      p_user_id: userId,
+    } as never);
 
     if (error) {
       throw new BadRequestException(error.message);
     }
   }
 
-  async updateLastLogin(userId: string, deviceId?: string) {
-    const updates: Record<string, any> = {
+  async updateLastLogin(
+    userId: string,
+    deviceId?: string,
+  ): Promise<LearnerProfile> {
+    const updates: Record<string, unknown> = {
       last_login_at: new Date().toISOString(),
     };
 

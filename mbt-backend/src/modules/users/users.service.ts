@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UsersRepository } from './users.repository';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -15,7 +19,7 @@ export class UsersService {
     return this.supabaseService.getClient();
   }
 
-  async getProfile(userId: string) {    
+  async getProfile(userId: string) {
     const data = await this.usersRepository.findById(userId);
 
     if (!data) {
@@ -32,8 +36,8 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, updateData: UpdateProfileDto) {
-    const dbUpdate: Record<string, any> = {};
-    const metaUpdate: Record<string, any> = {};
+    const dbUpdate: Record<string, unknown> = {};
+    const metaUpdate: Record<string, unknown> = {};
 
     if (updateData.fullName !== undefined) {
       dbUpdate.full_name = updateData.fullName;
@@ -46,7 +50,10 @@ export class UsersService {
       metaUpdate.phone = updateData.phone;
     }
 
-    if (Object.keys(dbUpdate).length === 0 && Object.keys(metaUpdate).length === 0) {
+    if (
+      Object.keys(dbUpdate).length === 0 &&
+      Object.keys(metaUpdate).length === 0
+    ) {
       return this.getProfile(userId);
     }
 
@@ -67,18 +74,18 @@ export class UsersService {
     const existing = await this.usersRepository.findById(userId);
 
     if (existing) {
-      const dbUpdate: Record<string, any> = {
+      const dbUpdate: Record<string, unknown> = {
         full_name: createData.fullName,
         onboarding_completed: true,
         last_login_at: new Date().toISOString(),
       };
 
-      const metaUpdate: Record<string, any> = {
+      const metaUpdate: Record<string, unknown> = {
         custom_full_name: createData.fullName,
         full_name: createData.fullName,
       };
 
-      const data = await this.usersRepository.update(userId, dbUpdate);      
+      const data = await this.usersRepository.update(userId, dbUpdate);
 
       await this.db.auth.admin.updateUserById(userId, {
         user_metadata: metaUpdate,
@@ -87,7 +94,7 @@ export class UsersService {
       return data;
     }
 
-    const newProfile = {
+    const newProfile: Record<string, unknown> = {
       is_active: true,
       is_deleted: false,
       onboarding_completed: true,
@@ -102,14 +109,14 @@ export class UsersService {
         full_name: createData.fullName,
       },
     });
-    
+
     return data;
   }
 
   async updateLoginDetails(userId: string, deviceId?: string) {
     const existing = await this.usersRepository.findById(userId);
 
-    const updates: Record<string, any> = {
+    const updates: Record<string, unknown> = {
       last_login_at: new Date().toISOString(),
     };
 
@@ -120,7 +127,12 @@ export class UsersService {
     return this.usersRepository.update(userId, updates);
   }
 
-  async uploadAvatar(userId: string, fileBuffer: Buffer, originalName: string, mimeType: string) {
+  async uploadAvatar(
+    userId: string,
+    fileBuffer: Buffer,
+    originalName: string,
+    mimeType: string,
+  ) {
     await this.removeExistingAvatar(userId);
 
     const fileExt = originalName.split('.').pop() || 'png';
@@ -134,12 +146,14 @@ export class UsersService {
       });
 
     if (uploadError) {
-      throw new BadRequestException(`Failed to upload avatar: ${uploadError.message}`);
+      throw new BadRequestException(
+        `Failed to upload avatar: ${uploadError.message}`,
+      );
     }
 
-    const { data: { publicUrl } } = this.db.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
+    const {
+      data: { publicUrl },
+    } = this.db.storage.from('avatars').getPublicUrl(filePath);
 
     const data = await this.usersRepository.upsertAvatarUrl(userId, publicUrl);
 
