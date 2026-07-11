@@ -45,9 +45,7 @@ export class UsersController {
   }
 
   @Post('me/login-details')
-  updateLoginDetails(
-    @Req() req: AuthenticatedRequest,
-  ) {
+  updateLoginDetails(@Req() req: AuthenticatedRequest) {
     return this.usersService.updateLoginDetails(req.user.id);
   }
 

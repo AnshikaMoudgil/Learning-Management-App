@@ -26,10 +26,7 @@ export class AuthService {
     return { message: 'OTP sent successfully' };
   }
 
-  async verifyOtp(
-    phone: string,
-    token: string,
-  ): Promise<AuthResponseDto> {
+  async verifyOtp(phone: string, token: string): Promise<AuthResponseDto> {
     const { data, error } = await this.client.auth.verifyOtp({
       phone,
       token,
@@ -64,9 +61,7 @@ export class AuthService {
     return this.buildAuthResponse(data.session, data.user);
   }
 
-  async getSession(
-    userId: string,
-  ): Promise<AuthResponseDto> {
+  async getSession(userId: string): Promise<AuthResponseDto> {
     const profile = await this.checkSession(userId);
 
     const { data: userData, error: userError } =

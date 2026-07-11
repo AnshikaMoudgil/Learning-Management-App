@@ -12,9 +12,7 @@ import { SupabaseService } from '../../modules/supabase/supabase.service';
 export class DeviceGuard implements CanActivate {
   constructor(private supabaseService: SupabaseService) {}
 
-  async canActivate(
-    context: ExecutionContext,
-  ): Promise<boolean> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const deviceFingerprint = request.headers['x-device-fingerprint'];
 
@@ -34,7 +32,10 @@ export class DeviceGuard implements CanActivate {
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (boundDevice && (boundDevice as { fingerprint: string }).fingerprint !== deviceFingerprint) {
+    if (
+      boundDevice &&
+      (boundDevice as { fingerprint: string }).fingerprint !== deviceFingerprint
+    ) {
       throw new UnauthorizedException(
         'This account is permanently bound to another device.',
       );

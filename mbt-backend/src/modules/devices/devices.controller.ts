@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { DevicesService } from './devices.service';
 import { BindDeviceDto } from './dto/bind-device.dto';
@@ -27,10 +20,7 @@ export class DevicesController {
   }
 
   @Post('bind')
-  bindDevice(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: BindDeviceDto,
-  ) {
+  bindDevice(@Req() req: AuthenticatedRequest, @Body() body: BindDeviceDto) {
     return this.devicesService.bindDevice(
       req.user.id,
       body.fingerprint,

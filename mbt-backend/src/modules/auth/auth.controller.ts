@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
@@ -37,9 +30,7 @@ export class AuthController {
 
   @Get('session')
   @UseGuards(AuthGuard)
-  getSession(
-    @Req() req: AuthenticatedRequest,
-  ) {
+  getSession(@Req() req: AuthenticatedRequest) {
     return this.authService.getSession(req.user.id);
   }
 }

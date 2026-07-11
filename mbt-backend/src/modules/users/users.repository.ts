@@ -101,9 +101,7 @@ export class UsersRepository {
     }
   }
 
-  async updateLastLogin(
-    userId: string,
-  ): Promise<Profile> {
+  async updateLastLogin(userId: string): Promise<Profile> {
     const updates: Record<string, unknown> = {
       last_login_at: new Date().toISOString(),
     };
