@@ -39,9 +39,8 @@ export default function CoursesPage() {
 
       if (error) throw error;
       setCourses(data || []);
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to load courses.');
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -63,9 +62,9 @@ export default function CoursesPage() {
       toast.success('Course deleted successfully.');
       setCourses(courses.filter((course) => course.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(loadingToast);
-      toast.error(err.message || 'Failed to delete course.');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete course.');
     }
   };
 

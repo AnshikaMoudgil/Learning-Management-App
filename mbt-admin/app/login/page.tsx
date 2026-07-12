@@ -91,9 +91,9 @@ export default function LoginPage() {
       // Force page reload/navigation to dashboard to trigger cookies/middleware update
       router.push('/dashboard');
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(loadingToast);
-      toast.error(err.message || 'An unexpected error occurred.');
+      toast.error(err instanceof Error ? err.message : 'An unexpected error occurred.');
       setIsLoading(false);
     }
   };

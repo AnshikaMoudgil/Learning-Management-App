@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { Search, Plus, Trash2, ShieldAlert, UserCheck, Shield, HelpCircle, X, Loader2 } from 'lucide-react';
+import { Search, Plus, Trash2, ShieldAlert, Shield, HelpCircle, X, Loader2 } from 'lucide-react';
 import Select from '@/components/Select';
 
 interface Profile {
@@ -56,9 +56,8 @@ export default function ManageAdminsPage() {
 
       const data = await response.json();
       setUsers(data.profiles || []);
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to load user directories.');
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -131,10 +130,9 @@ export default function ManageAdminsPage() {
       setInviteRole('admin');
       
       fetchUsers();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(loadingToast);
-      toast.error(err.message || 'Invitation failed.');
-      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Invitation failed.');
     } finally {
       setIsInviting(false);
     }
@@ -166,9 +164,9 @@ export default function ManageAdminsPage() {
       toast.dismiss(loadingToast);
       toast.success('Role updated successfully.');
       setUsers(users.map(u => u.id === targetUserId ? { ...u, role: newRole } : u));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(loadingToast);
-      toast.error(err.message || 'Failed to update role.');
+      toast.error(err instanceof Error ? err.message : 'Failed to update role.');
     }
   };
 
@@ -200,9 +198,9 @@ export default function ManageAdminsPage() {
       toast.dismiss(loadingToast);
       toast.success(`User status updated to ${newStatus}.`);
       setUsers(users.map(u => u.id === targetUserId ? { ...u, status: newStatus } : u));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(loadingToast);
-      toast.error(err.message || 'Failed to change status.');
+      toast.error(err instanceof Error ? err.message : 'Failed to change status.');
     }
   };
 
@@ -231,9 +229,9 @@ export default function ManageAdminsPage() {
       toast.dismiss(loadingToast);
       toast.success('User deleted successfully.');
       setUsers(users.filter(u => u.id !== targetUserId));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(loadingToast);
-      toast.error(err.message || 'Failed to delete user.');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete user.');
     }
   };
 

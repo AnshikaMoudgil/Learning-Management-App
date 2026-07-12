@@ -84,8 +84,7 @@ export default function DashboardLayout({
           role: profileData.role,
           avatar_url: profileData.avatar_url,
         });
-      } catch (err) {
-        console.error('Auth verification error:', err);
+      } catch {
         router.push('/login');
       } finally {
         setIsLoading(false);
@@ -102,9 +101,9 @@ export default function DashboardLayout({
       toast.dismiss(loadingToast);
       toast.success('Signed out successfully.');
       router.push('/login');
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(loadingToast);
-      toast.error(err.message || 'Logout failed.');
+      toast.error(err instanceof Error ? err.message : 'Logout failed.');
     }
   };
 

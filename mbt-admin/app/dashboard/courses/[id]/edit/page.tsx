@@ -86,9 +86,8 @@ export default function EditCoursePage() {
         setIsPublished(data.is_published || false);
         setThumbnailUrl(data.thumbnail_url || '');
         setPreviewVideoUrl(data.preview_video_url || '');
-      } catch (err: any) {
+      } catch {
         toast.error('Failed to load course details.');
-        console.error(err);
       } finally {
         setIsLoading(false);
       }
@@ -149,10 +148,9 @@ export default function EditCoursePage() {
 
       toast.dismiss(uploadToast);
       toast.success('Course image updated successfully.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(uploadToast);
-      toast.error(err.message || 'Image upload failed.');
-      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Image upload failed.');
     } finally {
       setIsUploading(false);
     }
@@ -218,10 +216,9 @@ export default function EditCoursePage() {
       toast.dismiss(savingToast);
       toast.success('Course updated successfully!');
       router.push('/dashboard/courses');
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(savingToast);
-      toast.error(err.message || 'Failed to update course.');
-      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Failed to update course.');
     } finally {
       setIsSaving(false);
     }

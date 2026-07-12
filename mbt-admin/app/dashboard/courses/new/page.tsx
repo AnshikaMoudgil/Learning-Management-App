@@ -94,10 +94,9 @@ export default function NewCoursePage() {
       setThumbnailUrl(publicUrl);
       toast.dismiss(uploadToast);
       toast.success('Course image uploaded successfully.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(uploadToast);
-      toast.error(err.message || 'Image upload failed.');
-      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Image upload failed.');
     } finally {
       setIsUploading(false);
     }
@@ -160,10 +159,9 @@ export default function NewCoursePage() {
       toast.dismiss(savingToast);
       toast.success('Course created successfully!');
       router.push('/dashboard/courses');
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(savingToast);
-      toast.error(err.message || 'Failed to create course.');
-      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Failed to create course.');
     } finally {
       setIsLoading(false);
     }

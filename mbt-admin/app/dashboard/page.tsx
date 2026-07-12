@@ -52,8 +52,7 @@ export default function OverviewPage() {
           totalStaff: data.totalStaff,
           publishedCourses: data.publishedCourses,
         });
-      } catch (err: any) {
-        console.error('Stats loading error:', err);
+      } catch {
         toast.error('Error fetching dashboard statistics.');
       } finally {
         setIsLoading(false);

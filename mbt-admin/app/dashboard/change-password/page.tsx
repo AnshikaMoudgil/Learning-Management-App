@@ -67,10 +67,9 @@ export default function ChangePasswordPage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.dismiss(updateToast);
-      toast.error(err.message || 'Failed to update password.');
-      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Failed to update password.');
     } finally {
       setIsLoading(false);
     }
