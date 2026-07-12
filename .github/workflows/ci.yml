@@ -17,9 +17,11 @@ jobs:
   backend:
     name: Backend - Lint & Build
     runs-on: ubuntu-24.04
+
     defaults:
       run:
         working-directory: mbt-backend
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,9 +45,11 @@ jobs:
   frontend:
     name: Frontend - Analyze & Build
     runs-on: ubuntu-24.04
+
     defaults:
       run:
         working-directory: mbt-app
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,6 +58,16 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+
+      - name: Create .env
+        run: |
+          cat > .env <<EOF
+          GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_ANDROID_CLIENT_ID=${{ secrets.GOOGLE_ANDROID_CLIENT_ID }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          EOF
 
       - name: Install dependencies
         run: flutter pub get
