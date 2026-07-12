@@ -6,7 +6,7 @@ import {
 import { SupabaseService } from '../supabase/supabase.service';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import type { Session, User } from '@supabase/supabase-js';
-import { LearnerProfile } from '../../common/types/learner-profile.type';
+import { Profile } from '../../common/types/profile.type';
 
 @Injectable()
 export class AuthService {
@@ -26,11 +26,7 @@ export class AuthService {
     return { message: 'OTP sent successfully' };
   }
 
-  async verifyOtp(
-    phone: string,
-    token: string,
-    deviceId?: string,
-  ): Promise<AuthResponseDto> {
+  async verifyOtp(phone: string, token: string): Promise<AuthResponseDto> {
     const { data, error } = await this.client.auth.verifyOtp({
       phone,
       token,
@@ -43,13 +39,12 @@ export class AuthService {
       );
     }
 
-    return this.buildAuthResponse(data.session, data.user!, deviceId);
+    return this.buildAuthResponse(data.session, data.user!);
   }
 
   async authenticateWithGoogle(
     idToken: string,
     accessToken?: string,
-    deviceId?: string,
   ): Promise<AuthResponseDto> {
     const { data, error } = await this.client.auth.signInWithIdToken({
       provider: 'google',
@@ -63,23 +58,11 @@ export class AuthService {
       );
     }
 
-    return this.buildAuthResponse(data.session, data.user, deviceId);
+    return this.buildAuthResponse(data.session, data.user);
   }
 
-  async getSession(
-    userId: string,
-    deviceId?: string,
-  ): Promise<AuthResponseDto> {
-    const profile = await this.checkSession(userId, deviceId);
-
-    if (deviceId && profile && !profile.deviceId) {
-      await this.client
-        .from('learner_profiles')
-        .update({ device_id: deviceId } as never)
-        .eq('id', userId);
-
-      profile.deviceId = deviceId;
-    }
+  async getSession(userId: string): Promise<AuthResponseDto> {
+    const profile = await this.checkSession(userId);
 
     const { data: userData, error: userError } =
       await this.client.auth.admin.getUserById(userId);
@@ -103,10 +86,9 @@ export class AuthService {
 
   private async checkSession(
     userId: string,
-    deviceId?: string,
   ): Promise<AuthResponseDto['profile']> {
     const { data, error } = await this.client
-      .from('learner_profiles')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
@@ -119,7 +101,7 @@ export class AuthService {
       return null;
     }
 
-    const profile = data as LearnerProfile;
+    const profile = data as Profile;
 
     if (profile.is_deleted) {
       throw new UnauthorizedException(
@@ -133,28 +115,14 @@ export class AuthService {
       );
     }
 
-    if (deviceId && profile.device_id && profile.device_id !== deviceId) {
-      throw new UnauthorizedException('DEVICE_MISMATCH');
-    }
-
     return this.mapProfile(profile);
   }
 
   private async buildAuthResponse(
     session: Session,
     user: User,
-    deviceId?: string,
   ): Promise<AuthResponseDto> {
-    const profile = await this.checkSession(user.id, deviceId);
-
-    if (deviceId && profile && !profile.deviceId) {
-      await this.client
-        .from('learner_profiles')
-        .update({ device_id: deviceId } as never)
-        .eq('id', user.id);
-
-      profile.deviceId = deviceId;
-    }
+    const profile = await this.checkSession(user.id);
 
     return {
       accessToken: session.access_token,
@@ -170,14 +138,16 @@ export class AuthService {
     };
   }
 
-  private mapProfile(data: LearnerProfile): AuthResponseDto['profile'] {
+  private mapProfile(data: Profile): AuthResponseDto['profile'] {
     return {
       id: data.id,
       fullName: data.full_name ?? undefined,
       avatarUrl: data.avatar_url ?? undefined,
+      role: data.role,
+      status: data.status,
+      about: data.about ?? undefined,
       isActive: data.is_active,
       onboardingCompleted: data.onboarding_completed,
-      deviceId: data.device_id ?? undefined,
       lastLoginAt: data.last_login_at ?? undefined,
     };
   }

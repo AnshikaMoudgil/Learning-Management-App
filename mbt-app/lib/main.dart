@@ -14,7 +14,7 @@ import 'theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await dotenv.load(fileName: ".env");
 
   await Supabase.initialize(
@@ -43,7 +43,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Start listener immediately, but delay routing for initial session to show splash screen
     _setupAuthListener();
   }
 
@@ -62,55 +61,41 @@ class _MyAppState extends State<MyApp> {
         return;
       }
 
-      // Only perform routing on initial startup or explicit sign in.
-      // We ignore userUpdated to prevent interrupting CreateProfileScreen.
       if (event == AuthChangeEvent.initialSession || event == AuthChangeEvent.signedIn) {
         if (event == AuthChangeEvent.initialSession) {
-          // Wait for splash screen
           await Future.delayed(const Duration(milliseconds: 2500));
         }
 
         if (session != null) {
           try {
-            // Perform backend profile validation
             final profile = await profileService.validateSession(session);
-            
+
             if (profile == null) {
               final prefs = await SharedPreferences.getInstance();
               final isSignupFlow = prefs.getBool('is_signup_flow') ?? false;
 
               if (!isSignupFlow) {
-                // User tried to login, but has no account
                 _showErrorAndLogout('No account is linked with this app. Please sign up first.');
                 return;
               }
-              // New user from Signup tab, go to CreateProfileScreen
               _navigateTo(const CreateProfileScreen());
             } else if (!profile.onboardingCompleted) {
-              // Auth user exists, but the learner profile still needs app details.
               _navigateTo(const CreateProfileScreen());
             } else {
-              // Valid and completed onboarding
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('is_signup_flow', false);
               await profileService.updateLoginDetails(session.user.id);
+              await profileService.bindDevice(session.user.id);
               _navigateTo(const HomeDashboard());
             }
           } catch (e) {
-            // If magic string or regular error
-            if (e.toString().contains('DEVICE_MISMATCH')) {
-               _showErrorAndLogout('Device mismatch. You can only use one active device.');
-            } else {
-               _showErrorAndLogout(e.toString());
-            }
+            _showErrorAndLogout(e.toString());
           }
         } else {
-          // No session
           if (mounted) {
             setState(() {
               _isLoading = false;
             });
-            // Initial app load with no session goes to Onboarding Screen after splash
             _navigateTo(const OnboardingScreen());
           }
         }

@@ -78,6 +78,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_signup_flow', false);
+      await _profileService.bindDevice(Supabase.instance.client.auth.currentUser!.id);
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(

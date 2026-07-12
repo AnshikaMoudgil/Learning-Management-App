@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  UseGuards,
-  Req,
-  Query,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
@@ -25,7 +17,7 @@ export class AuthController {
 
   @Post('verify-otp')
   verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.authService.verifyOtp(dto.phone, dto.token, dto.deviceId);
+    return this.authService.verifyOtp(dto.phone, dto.token);
   }
 
   @Post('google')
@@ -33,16 +25,12 @@ export class AuthController {
     return this.authService.authenticateWithGoogle(
       dto.idToken,
       dto.accessToken,
-      dto.deviceId,
     );
   }
 
   @Get('session')
   @UseGuards(AuthGuard)
-  getSession(
-    @Req() req: AuthenticatedRequest,
-    @Query('deviceId') deviceId?: string,
-  ) {
-    return this.authService.getSession(req.user.id, deviceId);
+  getSession(@Req() req: AuthenticatedRequest) {
+    return this.authService.getSession(req.user.id);
   }
 }

@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
 import '../services/profile_service.dart';
 import '../services/auth_service.dart';
-import '../models/learner_profile.dart';
+import '../models/profile.dart';
 import 'home_dashboard.dart';
 import 'my_learning_screen.dart';
 import 'live_classes_screen.dart';
@@ -29,7 +29,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final ProfileService _profileService = ProfileService();
   final AuthService _authService = AuthService();
-  LearnerProfile? _profile;
+  Profile? _profile;
   bool _isLoading = true;
 
   @override

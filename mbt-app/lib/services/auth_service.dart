@@ -3,8 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:uuid/uuid.dart';
 import 'api_client.dart';
 
 class AuthService {
@@ -12,8 +10,6 @@ class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   Future<Map<String, dynamic>> signInWithGoogle() async {
-    final deviceId = await _getDeviceId();
-
     if (kIsWeb) {
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
@@ -46,7 +42,6 @@ class AuthService {
     final result = await _api.post('/api/v1/auth/google', body: {
       'idToken': idToken,
       if (accessToken != null) 'accessToken': accessToken,
-      'deviceId': deviceId,
     });
 
     if (result != null && result['refreshToken'] != null) {
@@ -64,12 +59,9 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> verifyOtp(String phone, String token) async {
-    final deviceId = await _getDeviceId();
-
     final result = await _api.post('/api/v1/auth/verify-otp', body: {
       'phone': phone,
       'token': token,
-      'deviceId': deviceId,
     });
 
     if (result != null && result['refreshToken'] != null) {
@@ -89,36 +81,5 @@ class AuthService {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-  }
-
-  Future<String> _getDeviceId() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? storedId = prefs.getString('local_device_id');
-    if (storedId != null && storedId.isNotEmpty) {
-      return storedId;
-    }
-
-    String deviceId = '';
-    final deviceInfo = DeviceInfoPlugin();
-    try {
-      if (kIsWeb) {
-        deviceId = const Uuid().v4();
-      } else {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          final info = await deviceInfo.androidInfo;
-          deviceId = info.id;
-        } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-          final info = await deviceInfo.iosInfo;
-          deviceId = info.identifierForVendor ?? const Uuid().v4();
-        } else {
-          deviceId = const Uuid().v4();
-        }
-      }
-    } catch (e) {
-      deviceId = const Uuid().v4();
-    }
-
-    await prefs.setString('local_device_id', deviceId);
-    return deviceId;
   }
 }
