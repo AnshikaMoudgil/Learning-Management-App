@@ -6,29 +6,25 @@ export async function GET(request: Request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
       return NextResponse.json({ error: 'Service role key not configured.' }, { status: 500 });
     }
 
-    // 1. Verify caller token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'No authorization token.' }, { status: 401 });
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const callerClient = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
-    const { data: { user }, error: authError } = await callerClient.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid session.' }, { status: 401 });
-    }
-
-    // 2. Use service role to count
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Invalid session.' }, { status: 401 });
+    }
 
     const [
       { count: totalCourses },

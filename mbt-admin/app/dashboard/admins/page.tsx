@@ -66,19 +66,16 @@ export default function ManageAdminsPage() {
 
   useEffect(() => {
     async function init() {
-      // 1. Get caller role
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        if (profile) setCurrentUserRole(profile.role);
-      }
-      
-      // 2. Fetch users
-      await fetchUsers();
+
+      await Promise.all([
+        session
+          ? supabase.from('profiles').select('role').eq('id', session.user.id).single().then(
+              ({ data: profile }) => { if (profile) setCurrentUserRole(profile.role); }
+            )
+          : Promise.resolve(),
+        fetchUsers(),
+      ]);
     }
     init();
   }, []);

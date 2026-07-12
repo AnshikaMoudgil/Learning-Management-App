@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 interface Option {
@@ -26,11 +26,50 @@ export default function Select({
   error,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const calculatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropdownHeight = Math.min(options.length * 44 + 8, 240);
+
+    if (spaceBelow >= dropdownHeight) {
+      setDropdownStyle({
+        position: 'fixed',
+        top: `${rect.bottom + 4}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+      });
+    } else {
+      setDropdownStyle({
+        position: 'fixed',
+        bottom: `${window.innerHeight - rect.top + 4}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+      });
+    }
+  }, [options.length]);
+
+  useEffect(() => {
+    if (isOpen) {
+      calculatePosition();
+      const handleScroll = () => calculatePosition();
+      const handleResize = () => calculatePosition();
+      document.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleResize);
+      return () => {
+        document.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [isOpen, calculatePosition]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -41,8 +80,9 @@ export default function Select({
   const selectedOption = options.find((opt) => opt.value === value);
 
   return (
-    <div ref={ref} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${className}`}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex w-full items-center justify-between rounded-lg border ${
@@ -56,7 +96,10 @@ export default function Select({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-zinc-700 bg-zinc-900 py-1 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div
+          style={dropdownStyle}
+          className="z-50 rounded-xl border border-zinc-700 bg-zinc-900 py-1 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        >
           {options.map((opt) => (
             <button
               key={opt.value}
