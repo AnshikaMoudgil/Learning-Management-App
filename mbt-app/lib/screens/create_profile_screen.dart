@@ -8,6 +8,7 @@ import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
 import '../services/profile_service.dart';
 import 'home_dashboard.dart';
+import 'package:go_router/go_router.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   const CreateProfileScreen({Key? key}) : super(key: key);
@@ -81,11 +82,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       await _profileService.bindDevice(Supabase.instance.client.auth.currentUser!.id);
 
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeDashboard()),
-          (route) => false,
-        );
+        context.go('/home');
       }
     } catch (e) {
       if (mounted) {
@@ -105,7 +102,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,

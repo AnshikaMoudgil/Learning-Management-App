@@ -9,6 +9,7 @@ import '../widgets/wave_background.dart';
 import 'create_profile_screen.dart';
 import 'dashboard_layout.dart';
 import 'otp_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -75,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
       await _authService.sendOtp('$_countryCode$phone');
       if (mounted) {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => OtpScreen(phone: '$_countryCode$phone')));
+        context.push('/otp?phone=$_countryCode$phone');
       }
     } catch (e) {
       if (mounted) {
@@ -104,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 alignment: Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(),
                 ),
               ),
               const SizedBox(height: 8),

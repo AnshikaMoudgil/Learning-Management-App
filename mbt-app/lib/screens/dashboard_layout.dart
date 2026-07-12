@@ -1,43 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
-import 'home_dashboard.dart';
-import 'my_courses_screen.dart';
-import 'continue_watching_screen.dart';
-import 'downloads_screen.dart';
-import 'more_screen.dart';
 
-class DashboardLayout extends StatefulWidget {
-  const DashboardLayout({Key? key}) : super(key: key);
+class DashboardLayout extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
 
-  @override
-  State<DashboardLayout> createState() => _DashboardLayoutState();
-}
+  const DashboardLayout({Key? key, required this.navigationShell}) : super(key: key);
 
-class _DashboardLayoutState extends State<DashboardLayout> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const HomeDashboard(),
-    const MyCoursesScreen(),
-    const ContinueWatchingScreen(),
-    const DownloadsScreen(),
-    const MoreScreen(),
-  ];
+  void _onTap(int index) {
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        currentIndex: navigationShell.currentIndex,
+        onTap: _onTap,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primaryBlue,
         unselectedItemColor: AppColors.textLight,
@@ -45,10 +28,10 @@ class _DashboardLayoutState extends State<DashboardLayout> {
         unselectedLabelStyle: const TextStyle(fontSize: 10),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.class_outlined), activeIcon: Icon(Icons.class_), label: 'My Courses'),
-          BottomNavigationBarItem(icon: Icon(Icons.play_circle_outline), activeIcon: Icon(Icons.play_circle_fill), label: 'Continue'),
-          BottomNavigationBarItem(icon: Icon(Icons.download_outlined), activeIcon: Icon(Icons.download), label: 'Downloads'),
-          BottomNavigationBarItem(icon: Icon(Icons.more_horiz), activeIcon: Icon(Icons.more_horiz), label: 'More'),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), activeIcon: Icon(Icons.menu_book), label: 'My Learning'),
+          BottomNavigationBarItem(icon: Icon(Icons.video_camera_front_outlined), activeIcon: Icon(Icons.video_camera_front), label: 'Live Classes'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), activeIcon: Icon(Icons.shopping_bag), label: 'Store'),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_outlined), activeIcon: Icon(Icons.menu), label: 'More'),
         ],
       ),
     );

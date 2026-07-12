@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import 'dashboard_layout.dart'; // Just to link back to home if needed
+import 'dashboard_layout.dart';
+import 'package:go_router/go_router.dart'; // Just to link back to home if needed
 
 class PaymentSuccessScreen extends StatelessWidget {
   const PaymentSuccessScreen({Key? key}) : super(key: key);
@@ -192,7 +193,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 54,
                 child: OutlinedButton(
-                  onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const DashboardLayout()), (route) => false),
+                  onPressed: () => context.go('/home'),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide.none,
                     backgroundColor: cardColor,

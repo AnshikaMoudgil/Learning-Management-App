@@ -6,6 +6,7 @@ import 'recent_recordings_screen.dart';
 import 'profile_screen.dart';
 import 'daily_schedule_screen.dart';
 import 'class_details_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class LiveClassesScreen extends StatefulWidget {
   const LiveClassesScreen({Key? key}) : super(key: key);
@@ -56,11 +57,11 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
           Stack(
             alignment: Alignment.center,
             children: [
-              IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
               Positioned(
                 right: 8,
                 top: 8,
@@ -97,22 +98,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
           )
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2,
-        onTap: _onNavTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.textLight,
-        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 10),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Learning'),
-          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'Live Classes'),
-          BottomNavigationBarItem(icon: Icon(Icons.play_circle_outline), label: 'Recordings'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-      ),
+      
     );
   }
 
@@ -269,7 +255,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
               const SizedBox(width: 12),
               OutlinedButton(
                 onPressed: () {
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const RecentRecordingsScreen()));
+                  context.pushReplacement('/recent-recordings');
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryBlue,
@@ -321,7 +307,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
   }) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const ClassDetailsScreen()));
+        context.push('/class-details');
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -474,7 +460,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const DailyScheduleScreen()));
+            context.push('/daily-schedule');
           },
           icon: const Icon(Icons.calendar_today, size: 16, color: AppColors.primaryBlue),
           label: const Text('View Full Schedule for 2 May', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),

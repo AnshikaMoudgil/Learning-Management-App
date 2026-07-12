@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'class_details_screen.dart';
 import 'recent_recordings_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class DailyScheduleScreen extends StatefulWidget {
   const DailyScheduleScreen({Key? key}) : super(key: key);
@@ -20,7 +21,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
         title: const Text('2 May 2025', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         actions: [
@@ -103,7 +104,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                       const SizedBox(width: 12),
                       OutlinedButton(
                         onPressed: () {
-                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const RecentRecordingsScreen()));
+                          context.pushReplacement('/recent-recordings');
                         },
                         style: OutlinedButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -228,7 +229,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                           const SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const ClassDetailsScreen()));
+                              context.push('/class-details');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryBlue,

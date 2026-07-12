@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class TermsOfServiceScreen extends StatefulWidget {
   final bool showAcceptance;
@@ -55,7 +56,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Terms of Service',
@@ -234,7 +235,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                         ),
                         onPressed: _isAccepted
                             ? () {
-                                Navigator.pop(context, true);
+                                context.pop(true);
                               }
                             : null,
                         child: const Text(

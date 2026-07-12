@@ -11,6 +11,7 @@ import 'course_progress_screen.dart';
 import 'expiring_courses_screen.dart';
 import 'continue_watching_screen.dart';
 import 'notifications_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({Key? key}) : super(key: key);
@@ -39,25 +40,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   void _onNavTapped(int index) {
-    if (index == 0) return;
-    Widget nextScreen;
-    switch (index) {
-      case 1:
-        nextScreen = const MyCoursesScreen();
-        break;
-      case 2:
-        nextScreen = const LiveClassesScreen();
-        break;
-      case 3:
-        nextScreen = const RecentRecordingsScreen();
-        break;
-      case 4:
-        nextScreen = const ProfileScreen();
-        break;
-      default:
-        return;
-    }
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => nextScreen));
+    // Nav handled by dashboard_layout now
   }
 
   @override
@@ -98,7 +81,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     ),
                     Stack(
                       children: [
-                        IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
+                        IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
                         Positioned(
                           right: 8,
                           top: 8,
@@ -111,14 +94,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         )
                       ],
                     ),
-                    IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () {}),
+                    IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
                   ],
                 ),
               ),
 
               // Banner Carousel
               SizedBox(
-                height: 160,
+                height: 180,
                 child: PageView(
                   controller: _pageController,
                   onPageChanged: (index) => setState(() => _bannerIndex = index),
@@ -173,7 +156,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
               // Continue Watching
               _buildSectionHeader('Continue Watching', onViewAll: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ContinueWatchingScreen()));
+                context.push('/continue-watching');
               }),
               SizedBox(
                 height: 110,
@@ -189,7 +172,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
               // My Courses
               _buildSectionHeader('My Courses', onViewAll: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const MyCoursesScreen()));
+                context.push('/my-courses');
               }),
               SizedBox(
                 height: 170,
@@ -209,7 +192,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
               // Recent Recordings
               _buildSectionHeader('Recent Recordings', onViewAll: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const RecentRecordingsScreen()));
+                context.push('/recent-recordings');
               }),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -232,7 +215,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CourseProgressScreen())),
+                        onTap: () => context.push('/course-progress'),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -296,7 +279,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     const SizedBox(width: 12),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpiringCoursesScreen())),
+                          onTap: () => context.push('/expiring-courses'),
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -348,7 +331,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
                 // Notifications
                 _buildSectionHeader('Notifications', onViewAll: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                  context.push('/notifications');
                 }),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -364,22 +347,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ],
             ),
           ),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: 0,
-          onTap: _onNavTapped,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppColors.primaryBlue,
-          unselectedItemColor: AppColors.textLight,
-          selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-          unselectedLabelStyle: const TextStyle(fontSize: 10),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Courses'),
-            BottomNavigationBarItem(icon: Icon(Icons.videocam_outlined), label: 'Live Classes'),
-            BottomNavigationBarItem(icon: Icon(Icons.play_circle_outline), label: 'Recordings'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-          ],
         ),
       );
     }
@@ -681,7 +648,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             ),
           ),
           IconButton(icon: const Icon(Icons.file_download_outlined, color: AppColors.primaryBlue), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.more_vert, color: AppColors.textLight), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.more_vert, color: AppColors.textLight), onPressed: () => context.push('/more')),
         ],
       ),
     );

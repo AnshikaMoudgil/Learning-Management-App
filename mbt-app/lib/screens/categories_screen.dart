@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'category_detail_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({Key? key}) : super(key: key);
@@ -12,14 +13,14 @@ class CategoriesScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
         title: const Text('Categories', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         actions: [
           Stack(
             alignment: Alignment.center,
             children: [
-              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () => context.push('/cart')),
               Positioned(
                 right: 8,
                 top: 8,
@@ -32,7 +33,7 @@ class CategoriesScreen extends StatelessWidget {
               )
             ],
           ),
-          IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
         ],
       ),
       body: Column(
@@ -80,7 +81,7 @@ class CategoriesScreen extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         if (title == 'Development') {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryDetailScreen()));
+          context.push('/category-detail');
         }
       },
       child: Container(

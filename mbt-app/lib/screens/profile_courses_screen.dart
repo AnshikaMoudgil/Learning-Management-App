@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileCoursesScreen extends StatefulWidget {
   const ProfileCoursesScreen({Key? key}) : super(key: key);
@@ -18,11 +19,11 @@ class _ProfileCoursesScreenState extends State<ProfileCoursesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
         title: const Text('My Courses', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
         ],
       ),
       body: Column(

@@ -4,6 +4,7 @@ import 'home_dashboard.dart';
 import 'live_classes_screen.dart';
 import 'recent_recordings_screen.dart';
 import 'profile_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class MyCoursesScreen extends StatefulWidget {
   final List<Map<String, dynamic>> courses;
@@ -116,22 +117,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
         ),
       ),
       body: widget.courses.isEmpty ? _buildEmptyState() : _buildPopulatedState(),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        onTap: _onNavTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.textLight,
-        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 10),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Courses'),
-          BottomNavigationBarItem(icon: Icon(Icons.videocam_outlined), label: 'Live Classes'),
-          BottomNavigationBarItem(icon: Icon(Icons.play_circle_outline), label: 'Recordings'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-      ),
+      
     );
   }
 
