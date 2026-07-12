@@ -6,6 +6,7 @@ import 'notification_center_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'course_validity_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({Key? key}) : super(key: key);
@@ -25,58 +26,66 @@ class MoreScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('More', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                        SizedBox(height: 4),
-                        Text('Manage your account and app settings', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('More', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                          SizedBox(height: 4),
+                          Text('Manage your account and app settings', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                        ],
+                      ),
                     ),
                     Row(
                       children: [
-                        Stack(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.lightBlueBg,
-                                borderRadius: BorderRadius.circular(10),
+                        GestureDetector(
+                          onTap: () => context.push('/cart'),
+                          child: Stack(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.lightBlueBg,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark, size: 20),
                               ),
-                              child: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark, size: 20),
-                            ),
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: AppColors.primaryBlue, shape: BoxShape.circle),
-                                child: const Text('1', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(color: AppColors.primaryBlue, shape: BoxShape.circle),
+                                  child: const Text('1', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        Stack(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.lightBlueBg,
-                                borderRadius: BorderRadius.circular(10),
+                        GestureDetector(
+                          onTap: () => context.push('/notifications'),
+                          child: Stack(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.lightBlueBg,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.notifications_outlined, color: AppColors.textDark, size: 20),
                               ),
-                              child: const Icon(Icons.notifications_outlined, color: AppColors.textDark, size: 20),
-                            ),
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -96,7 +105,7 @@ class MoreScreen extends StatelessWidget {
 
                       return InkWell(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
+                          context.push('/edit-profile');
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: Container(
@@ -157,53 +166,6 @@ class MoreScreen extends StatelessWidget {
                 ),
               const SizedBox(height: 16),
 
-              // Premium Banner
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F6FF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFD6E0FF)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryBlue.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.verified, color: AppColors.primaryBlue, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text("You're a Premium Learner", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                            SizedBox(height: 2),
-                            Text('Enjoy all premium features and unlimited access', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
-                          ],
-                        ),
-                      ),
-                      OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.primaryBlue),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          minimumSize: Size.zero,
-                        ),
-                        child: const Text('View Benefits', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
               // Account Section
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
@@ -211,13 +173,19 @@ class MoreScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _buildMenuItem(context, Icons.person_outline, 'Edit Profile', onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
+                context.push('/edit-profile');
               }),
-              _buildMenuItem(context, Icons.credit_card_outlined, 'My Subscriptions'),
-              _buildMenuItem(context, Icons.workspace_premium_outlined, 'Certificates'),
-              _buildMenuItem(context, Icons.devices_outlined, 'Active Devices'),
+              _buildMenuItem(context, Icons.credit_card_outlined, 'My Subscriptions', onTap: () {
+                context.push('/subscriptions');
+              }),
+              _buildMenuItem(context, Icons.workspace_premium_outlined, 'Certificates', onTap: () {
+                context.push('/certificates');
+              }),
+              _buildMenuItem(context, Icons.devices_outlined, 'Active Devices', onTap: () {
+                context.push('/active-devices');
+              }),
               _buildMenuItem(context, Icons.notifications_outlined, 'Notification Settings', onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationCenterScreen()));
+                context.push('/notification-settings');
               }),
               const SizedBox(height: 24),
 
@@ -230,10 +198,10 @@ class MoreScreen extends StatelessWidget {
               _buildMenuItem(context, Icons.help_outline, 'Help Center', subtitle: 'Find answers to common questions'),
               _buildMenuItem(context, Icons.headset_mic_outlined, 'Support', subtitle: 'Get help from our support team'),
               _buildMenuItem(context, Icons.shield_outlined, 'Privacy Policy', subtitle: 'Learn how we protect your data', onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+                context.push('/privacy');
               }),
               _buildMenuItem(context, Icons.description_outlined, 'Terms of Service', subtitle: 'Read our terms and conditions', onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()));
+                context.push('/terms');
               }),
               _buildMenuItem(context, Icons.info_outline, 'About Us', subtitle: 'More about our platform'),
               const SizedBox(height: 16),

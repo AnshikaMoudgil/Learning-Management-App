@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'renew_course_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class CourseValidityScreen extends StatelessWidget {
   const CourseValidityScreen({Key? key}) : super(key: key);
@@ -14,7 +15,7 @@ class CourseValidityScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +345,7 @@ class CourseValidityScreen extends StatelessWidget {
                   height: 28,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RenewCourseScreen()));
+                      context.push('/renew-course');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: daysColor,

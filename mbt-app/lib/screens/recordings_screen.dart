@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class RecordingsScreen extends StatelessWidget {
   const RecordingsScreen({Key? key}) : super(key: key);
@@ -20,11 +21,11 @@ class RecordingsScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
           Stack(
             alignment: Alignment.center,
             children: [
-              IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
               Positioned(
                 right: 8,
                 top: 8,

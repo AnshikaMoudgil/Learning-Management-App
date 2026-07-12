@@ -7,6 +7,7 @@ import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
 import 'create_profile_screen.dart';
 import 'dashboard_layout.dart';
+import 'package:go_router/go_router.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phone;
@@ -112,7 +113,7 @@ class _OtpScreenState extends State<OtpScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
       ),
       body: WaveBackground(
@@ -225,7 +226,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 const SizedBox(height: 24),
                 
                 TextButton.icon(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(),
                   icon: const Icon(Icons.phone_outlined, color: AppColors.primaryBlue, size: 18),
                   label: const Text('Change Phone Number', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.w600)),
                 ),

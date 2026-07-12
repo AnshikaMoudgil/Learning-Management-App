@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class RecordedClassPlayerScreen extends StatefulWidget {
   const RecordedClassPlayerScreen({Key? key}) : super(key: key);
@@ -66,7 +67,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () => context.pop(),
                   child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
@@ -626,7 +627,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => context.pop(),
               icon: const Icon(Icons.close, size: 16, color: AppColors.textDark),
               label: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
               style: OutlinedButton.styleFrom(

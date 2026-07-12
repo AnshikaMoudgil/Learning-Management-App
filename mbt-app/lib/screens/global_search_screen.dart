@@ -5,6 +5,7 @@ import 'my_courses_screen.dart';
 import 'live_classes_screen.dart';
 import 'downloads_screen.dart';
 import 'more_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class GlobalSearchScreen extends StatefulWidget {
   const GlobalSearchScreen({Key? key}) : super(key: key);
@@ -60,10 +61,10 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
               backgroundImage: AssetImage('assets/1.png'),
             ),
             const Spacer(),
-            IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () {}),
+            IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
             Stack(
               children: [
-                IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
                 Positioned(
                   right: 8,
                   top: 8,
@@ -125,10 +126,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                 const SizedBox(width: 12),
                 GestureDetector(
                   onTap: () {
-                    _searchController.clear();
-                    setState(() {
-                      _hasSearched = false;
-                    });
+                    context.pop();
                   },
                   child: const Text('Cancel', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 14)),
                 )
@@ -143,22 +141,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0, // Since it's global search, none might be purely active, but we can set 0 or keep styling unselected
-        onTap: _onNavTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.textLight,
-        unselectedItemColor: AppColors.textLight,
-        selectedLabelStyle: const TextStyle(fontSize: 10),
-        unselectedLabelStyle: const TextStyle(fontSize: 10),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.video_library_outlined), label: 'My Courses'),
-          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'Live Classes'),
-          BottomNavigationBarItem(icon: Icon(Icons.download_outlined), label: 'Downloads'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
-        ],
-      ),
+      
     );
   }
 

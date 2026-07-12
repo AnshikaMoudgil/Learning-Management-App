@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import '../widgets/share_bottom_sheet.dart';
 
 class LiveClassDetailsScreen extends StatelessWidget {
   const LiveClassDetailsScreen({Key? key}) : super(key: key);
@@ -14,13 +16,17 @@ class LiveClassDetailsScreen extends StatelessWidget {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Live Class Details', style: TextStyle(color: AppColors.textDark, fontSize: 18, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.share_outlined, color: AppColors.textDark),
-            onPressed: () {},
+            onPressed: () => ShareUtils.showShareBottomSheet(
+              context,
+              courseName: 'Live Class Details',
+              url: 'https://app.skilltech.com/live-classes/details',
+            ),
           ),
         ],
       ),

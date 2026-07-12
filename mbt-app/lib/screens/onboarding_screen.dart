@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
 import 'login_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -21,7 +22,7 @@ class OnboardingScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 16.0, top: 8.0),
                 child: TextButton(
                   onPressed: () {
-                     Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                     context.push('/login');
                   },
                   child: const Text('Skip', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
@@ -72,7 +73,7 @@ class OnboardingScreen extends StatelessWidget {
                 height: 54,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                    context.push('/login');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,

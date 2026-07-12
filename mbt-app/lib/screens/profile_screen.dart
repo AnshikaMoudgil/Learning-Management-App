@@ -18,6 +18,7 @@ import 'help_center_screen.dart';
 import 'support_screen.dart';
 import 'about_us_screen.dart';
 import 'login_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -80,11 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     await _authService.signOut();
     if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+      context.go('/login');
     }
   }
 
@@ -105,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Stack(
             alignment: Alignment.center,
             children: [
-              IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
               Positioned(
                 right: 8,
                 top: 8,
@@ -144,7 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const SizedBox(height: 8),
                               GestureDetector(
                                 onTap: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())).then((_) => _loadProfile());
+                                  context.push('/edit-profile').then((_) => _loadProfile());
                                 },
                                 child: const Text('View Profile', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
                               ),
@@ -173,22 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 4,
-        onTap: (i) => _onNavTapped(context, i),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.textLight,
-        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 10),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Learning'),
-          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'Live Classes'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), label: 'Store'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+      
     );
   }
 

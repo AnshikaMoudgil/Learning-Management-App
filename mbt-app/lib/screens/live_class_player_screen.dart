@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class LiveClassPlayerScreen extends StatefulWidget {
   const LiveClassPlayerScreen({Key? key}) : super(key: key);
@@ -64,7 +65,7 @@ class _LiveClassPlayerScreenState extends State<LiveClassPlayerScreen> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () => context.pop(),
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(8)),

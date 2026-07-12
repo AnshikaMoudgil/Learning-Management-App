@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class PopularCoursesScreen extends StatelessWidget {
   const PopularCoursesScreen({Key? key}) : super(key: key);
@@ -11,14 +12,14 @@ class PopularCoursesScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
         title: const Text('Popular Courses', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         actions: [
           Stack(
             alignment: Alignment.center,
             children: [
-              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () => context.push('/cart')),
               Positioned(
                 right: 8,
                 top: 8,
@@ -31,7 +32,7 @@ class PopularCoursesScreen extends StatelessWidget {
               )
             ],
           ),
-          IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
         ],
       ),
       body: Column(

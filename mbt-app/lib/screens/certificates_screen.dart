@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
 
 class CertificatesScreen extends StatefulWidget {
   const CertificatesScreen({Key? key}) : super(key: key);
@@ -18,7 +19,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
         title: const Text('Certificates', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
       ),
@@ -85,13 +86,15 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
   }
 
   Widget _buildEarnedCard(String title, String date) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
+    return GestureDetector(
+      onTap: () => context.push('/certificate-preview'),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
@@ -149,7 +152,7 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildInProgressCard(String title, int progress) {

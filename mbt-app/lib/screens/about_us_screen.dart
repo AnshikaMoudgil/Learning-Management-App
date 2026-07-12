@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'terms_of_service_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'package:go_router/go_router.dart';
 // Note: Refund policy screen can be added later if needed
 
 class AboutUsScreen extends StatelessWidget {
@@ -14,7 +15,7 @@ class AboutUsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
         title: const Text('About Us', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
       ),
@@ -68,10 +69,10 @@ class AboutUsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           _buildLinkItem('Terms of Service', onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()));
+            context.push('/terms');
           }),
           _buildLinkItem('Privacy Policy', onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+            context.push('/privacy');
           }),
           _buildLinkItem('Refund Policy', onTap: () {}),
           ListTile(

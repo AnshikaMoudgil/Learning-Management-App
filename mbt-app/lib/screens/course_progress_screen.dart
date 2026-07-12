@@ -1,446 +1,516 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import '../widgets/share_bottom_sheet.dart';
 
-class CourseProgressScreen extends StatelessWidget {
-  final Map<String, dynamic>? course;
+class CourseProgressScreen extends StatefulWidget {
+  const CourseProgressScreen({Key? key}) : super(key: key);
 
-  const CourseProgressScreen({
-    super.key,
-    this.course, // If null or progress == 0, show empty state
-  });
+  @override
+  State<CourseProgressScreen> createState() => _CourseProgressScreenState();
+}
+
+class _CourseProgressScreenState extends State<CourseProgressScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    bool hasCourse = course != null;
-    double progress = hasCourse ? (course!['progress'] ?? 0.0) : 0.0;
-    bool isCompleted = progress >= 1.0;
-
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Course Progress', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
-      body: !hasCourse ? _buildEmptyState(context) : _buildPopulatedState(context, isCompleted, progress),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/course_progress_empty.png',
-              width: 250,
-              height: 250,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(Icons.analytics_outlined, size: 120, color: AppColors.primaryBlue);
-              },
+      body: CustomScrollView(
+        slivers: [
+          // Header Hero
+          SliverAppBar(
+            expandedHeight: 280,
+            pinned: true,
+            backgroundColor: AppColors.primaryBlue,
+            leading: IconButton(
+              icon: const Icon(Icons.chevron_left, color: Colors.white),
+              onPressed: () => context.pop(),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'No Courses Yet',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "You haven't enrolled in any courses.\nStart your learning journey today!",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textLight,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
-                label: const Text(
-                  'Explore Courses',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 0,
-                ),
-                onPressed: () {},
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () {},
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Browse Free Content', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 14)),
-                  Icon(Icons.chevron_right, color: AppColors.primaryBlue, size: 18),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPopulatedState(BuildContext context, bool isCompleted, double progress) {
-    final Color progressColor = isCompleted ? Colors.green : AppColors.primaryBlue;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Course Header
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey.shade900,
-                  image: course!['thumbnail'] != null
-                      ? DecorationImage(
-                          image: AssetImage(course!['thumbnail']),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      course!['title'] ?? 'Course Title',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Instructor: ${course!['instructor'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.star, color: Colors.orange, size: 12),
-                          SizedBox(width: 4),
-                          Text('Premium', style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ],
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.ios_share, color: Colors.white),
+                onPressed: () => ShareUtils.showShareBottomSheet(
+                  context,
+                  courseName: 'iPhone Hardware Complete Course',
+                  url: 'https://app.skilltech.com/courses/iphone-hardware',
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 24),
-          // Progress Summary
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: CircularProgressIndicator(
-                        value: progress,
-                        strokeWidth: 8,
-                        backgroundColor: AppColors.border,
-                        valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                      ),
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('${(progress * 100).toInt()}%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                        Text(isCompleted ? 'Complete' : 'Complete', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Overall Progress', style: TextStyle(fontSize: 12, color: AppColors.textLight, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(
-                        isCompleted ? 'Outstanding! 🎉' : "You're doing great! Keep it up!",
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: progressColor),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        height: 4,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: AppColors.border,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: progress,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: progressColor,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text('${course!['completedLessons'] ?? 0} / ${course!['totalLessons'] ?? 0} Lessons Completed', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!isCompleted) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.lightBlueBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.emoji_events, color: AppColors.primaryBlue, size: 16),
-                  SizedBox(width: 8),
-                  Expanded(child: Text('Complete remaining modules to unlock your certificate.', style: TextStyle(fontSize: 10, color: AppColors.primaryBlue))),
-                ],
-              ),
-            ),
-          ],
-          if (isCompleted) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.emoji_events, color: Colors.green, size: 16),
-                  SizedBox(width: 8),
-                  Expanded(child: Text('Congratulations! You\'ve completed the entire course.', style: TextStyle(fontSize: 10, color: Colors.green))),
-                ],
-              ),
-            ),
-          ],
-          
-          const SizedBox(height: 24),
-          // Live Session Attendance
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.cast, color: AppColors.primaryBlue, size: 16),
-                        SizedBox(width: 8),
-                        Text('Live Session Attendance', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                      ],
-                    ),
-                    const Row(
-                      children: [
-                        Text('View Details', style: TextStyle(fontSize: 11, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-                        Icon(Icons.chevron_right, size: 16, color: AppColors.primaryBlue),
-                      ],
-                    )
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatCol('${course!['totalSessions'] ?? 0}', 'Total Sessions'),
-                    _buildStatCol('${course!['attendedSessions'] ?? 0}', 'Attended'),
-                    _buildStatCol('${course!['missedSessions'] ?? 0}', 'Missed'),
-                    _buildStatCol('${course!['attendancePercent'] ?? 0}%', 'Attendance'),
-                  ],
-                )
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-          const Text('Course Modules', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-          const SizedBox(height: 16),
-
-          // Modules List
-          if (course!['modules'] != null)
-            ...((course!['modules'] as List).map((mod) => _buildModuleTile(mod)).toList()),
-
-          if (isCompleted) ...[
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-              ),
-              child: Row(
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
                 children: [
-                  const Icon(Icons.workspace_premium, color: Colors.green, size: 40),
-                  const SizedBox(width: 16),
-                  Expanded(
+                  Image.asset('assets/iphone_hardware.png', fit: BoxFit.cover),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent],
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 40,
+                    left: 20,
+                    right: 20,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Certificate Unlocked', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green)),
-                        const Text("You're eligible for your certificate.", style: TextStyle(fontSize: 12, color: Colors.green)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(12)),
+                          child: const Text('In Progress', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'iPhone Hardware Complete Course',
+                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.download, size: 14),
-                          label: const Text('View Certificate', style: TextStyle(fontSize: 12)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                            minimumSize: const Size(0, 32),
-                            elevation: 0,
-                          ),
-                          onPressed: () {},
-                        )
+                        const Text(
+                          'Master iPhone hardware repair from basics to advanced level.',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.account_circle, color: Colors.white70, size: 16),
+                            const SizedBox(width: 4),
+                            const Text('MBT Faculty', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.verified, color: Colors.blue, size: 14),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: const [
+                            Icon(Icons.star, color: Colors.amber, size: 14),
+                            SizedBox(width: 4),
+                            Text('4.8 (2.4K students)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          ],
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-          ]
+          ),
+          
+          // Body Content
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                // Cards overlapping the header slightly
+                Transform.translate(
+                  offset: const Offset(0, -20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        // Progress Card
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                          ),
+                          child: Row(
+                            children: [
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 60,
+                                    height: 60,
+                                    child: CircularProgressIndicator(
+                                      value: 0.65,
+                                      strokeWidth: 6,
+                                      backgroundColor: Colors.grey.shade200,
+                                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                                    ),
+                                  ),
+                                  const Text('65%', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                                ],
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('Course Progress', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 14)),
+                                        GestureDetector(
+                                          onTap: () {},
+                                          child: Row(
+                                            children: const [
+                                              Text('View Learning Analytics', style: TextStyle(color: AppColors.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold)),
+                                              SizedBox(width: 4),
+                                              Icon(Icons.bar_chart, color: AppColors.primaryBlue, size: 12),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: const [
+                                        Text("You've completed ", style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                                        Text('28 of 43 ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                                        Text('lessons', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    LinearProgressIndicator(
+                                      value: 0.65,
+                                      backgroundColor: Colors.grey.shade200,
+                                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                                      minHeight: 4,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Text('42h 30m / 65h', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Certificate Status
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                child: const Icon(Icons.workspace_premium, color: Colors.green, size: 24),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: const [
+                                    Text('Certificate Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
+                                    SizedBox(height: 4),
+                                    Text('Complete all lessons and assessments to earn your certificate.', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  border: Border.all(color: Colors.green.shade300),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text('Not Earned', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 10)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Tabs
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelColor: AppColors.primaryBlue,
+                  unselectedLabelColor: AppColors.textLight,
+                  indicatorColor: AppColors.primaryBlue,
+                  indicatorWeight: 3,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 12),
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [Icon(Icons.dashboard_outlined, size: 16), SizedBox(width: 4), Text('Modules')],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [Icon(Icons.podcasts, size: 16), SizedBox(width: 4), Text('Live Classes')],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [Icon(Icons.videocam_outlined, size: 16), SizedBox(width: 4), Text('Recordings')],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [Icon(Icons.description_outlined, size: 16), SizedBox(width: 4), Text('Resources')],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                // Tab Content
+                IndexedStack(
+                  index: _tabController.index,
+                  children: [
+                    _buildModulesTab(),
+                    _buildLiveClassesTab(),
+                    _buildRecordingsTab(),
+                    _buildResourcesTab(),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCol(String value, String label) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
-      ],
+  Widget _buildModulesTab() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text('Modules', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark)),
+              Text('Expand All', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryBlue)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          _buildModuleTile(
+            number: '1',
+            title: 'Introduction to iPhone Hardware',
+            subtitle: '5 Lessons • 1h 20m',
+            status: 'Completed',
+            statusColor: Colors.green,
+            isExpanded: false,
+            children: [],
+          ),
+          const SizedBox(height: 12),
+          _buildModuleTile(
+            number: '2',
+            title: 'iPhone Disassembly & Assembly',
+            subtitle: '7 Lessons • 2h 10m',
+            status: 'Completed',
+            statusColor: Colors.green,
+            isExpanded: false,
+            children: [],
+          ),
+          const SizedBox(height: 12),
+          _buildModuleTile(
+            number: '3',
+            title: 'Display Unit Repair',
+            subtitle: '10 Lessons • 6h 30m',
+            status: '70%',
+            statusColor: AppColors.primaryBlue,
+            isExpanded: true,
+            children: [
+              _buildLessonItem('3.1 Introduction to Display Unit', '08:45', true, false),
+              _buildLessonItem('3.2 Display Light Problem Diagnosis', '18:20', true, false),
+              _buildLessonItem('3.3 Display Replacement Process', '22:15', true, true), // Active
+              _buildLessonItem('3.4 True Tone & Display IC', '16:40', false, false), // Locked
+              _buildLessonItem('3.5 Practical: Display Repair', '45:30', false, false), // Locked
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildModuleTile(
+            number: '4',
+            title: 'Battery & Charging System',
+            subtitle: '6 Lessons • 3h 40m',
+            status: '40%',
+            statusColor: AppColors.primaryBlue,
+            isExpanded: false,
+            children: [],
+          ),
+          const SizedBox(height: 12),
+          _buildModuleTile(
+            number: '5',
+            title: 'Board Level Troubleshooting',
+            subtitle: '15 Lessons • 12h 50m',
+            status: '0%',
+            statusColor: AppColors.primaryBlue,
+            isExpanded: false,
+            children: [],
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 
-  Widget _buildModuleTile(Map<String, dynamic> module) {
-    double modProgress = module['progress'] ?? 0.0;
-    bool modCompleted = modProgress >= 1.0;
-    bool modLocked = module['locked'] ?? false;
-
-    IconData icon;
-    Color iconColor;
-    if (modLocked) {
-      icon = Icons.lock;
-      iconColor = AppColors.textLight;
-    } else if (modCompleted) {
-      icon = Icons.check_circle;
-      iconColor = Colors.green;
-    } else {
-      icon = Icons.play_circle_fill;
-      iconColor = AppColors.primaryBlue;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Theme(
-        data: ThemeData().copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: Icon(icon, color: iconColor),
-          title: Text(
-            module['title'] ?? 'Module',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: modLocked ? AppColors.textLight : AppColors.textDark,
-            ),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text('${module['completedLessons'] ?? 0} / ${module['totalLessons'] ?? 0} Lessons', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: LinearProgressIndicator(
-                      value: modProgress,
-                      backgroundColor: AppColors.border,
-                      valueColor: AlwaysStoppedAnimation<Color>(modCompleted ? Colors.green : AppColors.primaryBlue),
-                      minHeight: 4,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('${(modProgress * 100).toInt()}%', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
-                ],
-              ),
-            ],
-          ),
+  Widget _buildLiveClassesTab() {
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Center(
+        child: Column(
           children: const [
-            Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text('Module lessons list goes here.', style: TextStyle(color: AppColors.textLight)),
-            )
+            Icon(Icons.podcasts, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No live classes scheduled for this course.', style: TextStyle(color: Colors.grey)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRecordingsTab() {
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Center(
+        child: Column(
+          children: const [
+            Icon(Icons.videocam_outlined, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No recordings available.', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResourcesTab() {
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Center(
+        child: Column(
+          children: const [
+            Icon(Icons.description_outlined, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No resources uploaded yet.', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModuleTile({
+    required String number,
+    required String title,
+    required String subtitle,
+    required String status,
+    required Color statusColor,
+    required bool isExpanded,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isExpanded ? Colors.blue.withValues(alpha: 0.05) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isExpanded ? Colors.blue.withValues(alpha: 0.2) : Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(color: AppColors.primaryBlue, shape: BoxShape.circle),
+                  child: Center(child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
+                      const SizedBox(height: 4),
+                      Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                  child: Text(status, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 8),
+                Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.grey.shade600),
+              ],
+            ),
+          ),
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.only(left: 32, right: 16, bottom: 16),
+              child: Column(children: children),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLessonItem(String title, String duration, bool isUnlocked, bool isActive) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(
+            isUnlocked ? (isActive ? Icons.play_circle_fill : Icons.check_circle_outline) : Icons.radio_button_unchecked,
+            color: isActive ? AppColors.primaryBlue : (isUnlocked ? Colors.green : Colors.grey.shade300),
+            size: 16,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: isActive ? AppColors.primaryBlue : (isUnlocked ? AppColors.textDark : AppColors.textLight),
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+          Text(duration, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+          const SizedBox(width: 12),
+          Icon(
+            isUnlocked ? Icons.play_circle_outline : Icons.lock_outline,
+            color: isActive ? AppColors.primaryBlue : Colors.grey.shade400,
+            size: 16,
+          ),
+        ],
       ),
     );
   }

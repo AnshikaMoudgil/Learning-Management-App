@@ -4,6 +4,7 @@ import 'home_dashboard.dart';
 import 'my_courses_screen.dart';
 import 'live_classes_screen.dart';
 import 'more_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({Key? key}) : super(key: key);
@@ -47,14 +48,14 @@ class _WishlistScreenState extends State<WishlistScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Wishlist', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
           Stack(
             children: [
-              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () => context.push('/cart')),
               Positioned(
                 right: 8,
                 top: 8,
@@ -71,22 +72,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
         ],
       ),
       body: _isEmpty ? _buildEmptyState() : _buildPopulatedState(),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 3,
-        onTap: _onNavTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.textLight,
-        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 10),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.video_library_outlined), label: 'My Courses'),
-          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'Live Classes'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Wishlist'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'More'),
-        ],
-      ),
+      
     );
   }
 

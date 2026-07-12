@@ -3,11 +3,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/splash_screen.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/home_dashboard.dart';
-import 'screens/create_profile_screen.dart';
-import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart'; // keeping for fallback if needed, but not necessary
+import 'router/app_router.dart';
+
 import 'services/profile_service.dart';
 import 'services/auth_service.dart';
 import 'theme/app_colors.dart';
@@ -53,10 +51,7 @@ class _MyAppState extends State<MyApp> {
 
       if (event == AuthChangeEvent.signedOut) {
         if (mounted) {
-          navigatorKey.currentState?.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-            (route) => false,
-          );
+          appRouter.go(RouteNames.login);
         }
         return;
       }
@@ -78,15 +73,15 @@ class _MyAppState extends State<MyApp> {
                 _showErrorAndLogout('No account is linked with this app. Please sign up first.');
                 return;
               }
-              _navigateTo(const CreateProfileScreen());
+              _navigateTo(RouteNames.createProfile);
             } else if (!profile.onboardingCompleted) {
-              _navigateTo(const CreateProfileScreen());
+              _navigateTo(RouteNames.createProfile);
             } else {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('is_signup_flow', false);
               await profileService.updateLoginDetails(session.user.id);
               await profileService.bindDevice(session.user.id);
-              _navigateTo(const HomeDashboard());
+              _navigateTo(RouteNames.home);
             }
           } catch (e) {
             _showErrorAndLogout(e.toString());
@@ -96,32 +91,27 @@ class _MyAppState extends State<MyApp> {
             setState(() {
               _isLoading = false;
             });
-            _navigateTo(const OnboardingScreen());
+            _navigateTo(RouteNames.onboarding);
           }
         }
       }
     });
   }
 
-  void _navigateTo(Widget screen) {
+  void _navigateTo(String route) {
     if (mounted) {
-      navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => screen),
-        (route) => false,
-      );
+      appRouter.go(route);
     }
   }
 
   Future<void> _showErrorAndLogout(String message) async {
-    if (mounted && navigatorKey.currentContext != null) {
-      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(SnackBar(content: Text(message)));
+    final context = navigatorKey.currentContext ?? appRouter.routerDelegate.navigatorKey.currentContext;
+    if (mounted && context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
     await authService.signOut();
     if (mounted) {
-      navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+      appRouter.go(RouteNames.login);
     }
   }
 
@@ -133,8 +123,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
+    return MaterialApp.router(
+      routerConfig: appRouter,
       title: 'MBT LMS',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -148,7 +138,6 @@ class _MyAppState extends State<MyApp> {
           iconTheme: IconThemeData(color: AppColors.textDark),
         ),
       ),
-      home: const SplashScreen(),
     );
   }
 }

@@ -4,6 +4,8 @@ import 'home_dashboard.dart';
 import 'my_learning_screen.dart';
 import 'live_classes_screen.dart';
 import 'profile_screen.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/filter_bottom_sheet.dart';
 
 class RecentRecordingsScreen extends StatefulWidget {
   final List<Map<String, dynamic>> recordings;
@@ -59,8 +61,8 @@ class _RecentRecordingsScreenState extends State<RecentRecordingsScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.filter_alt_outlined, color: AppColors.textDark), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
+          IconButton(icon: const Icon(Icons.filter_alt_outlined, color: AppColors.textDark), onPressed: () => FilterBottomSheet.show(context)),
         ],
       ),
       body: Column(
@@ -141,22 +143,7 @@ class _RecentRecordingsScreenState extends State<RecentRecordingsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 3,
-        onTap: _onNavTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.textLight,
-        selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 10),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Learning'),
-          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'Live Classes'),
-          BottomNavigationBarItem(icon: Icon(Icons.download), label: 'Downloads'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-      ),
+      
 
     );
   }
@@ -223,7 +210,7 @@ class _RecentRecordingsScreenState extends State<RecentRecordingsScreen> {
             TextButton(
               onPressed: () {
                 // Return and maybe go to My Courses tab
-                Navigator.pop(context);
+                context.pop();
               },
               child: const Text(
                 'Go to My Courses >',
