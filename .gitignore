@@ -54,4 +54,14 @@ app.*.map.json
 mbt-backend/dist/
 mbt-backend/node_modules/
 
+# Admin
+mbt-admin/node_modules/
+mbt-admin/.next/
+mbt-admin/out/
+mbt-admin/build/
+mbt-admin/coverage/
+mbt-admin/.vercel/
+mbt-admin/.env*
+mbt-admin/*.tsbuildinfo
+mbt-admin/next-env.d.ts
 
