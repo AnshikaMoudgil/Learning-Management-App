@@ -41,6 +41,8 @@ import '../screens/help_center_screen.dart';
 import '../screens/privacy_policy_screen.dart';
 import '../screens/terms_of_service_screen.dart';
 import '../screens/about_us_screen.dart';
+import '../screens/device_blocked_screen.dart';
+import '../screens/request_device_change_screen.dart';
 import '../screens/my_subscriptions_screen.dart';
 import '../screens/payment_success_screen.dart';
 import '../screens/global_search_screen.dart';
@@ -100,6 +102,8 @@ class RouteNames {
   static const aboutLiveClasses = '/about-live-classes';
   static const myCourses = '/my-courses';
   static const recentRecordings = '/recent-recordings';
+  static const deviceBlocked = '/device-blocked';
+  static const requestDeviceChange = '/request-device-change';
   static const store = '/store';
   static const cart = '/cart';
 }
@@ -130,6 +134,8 @@ final appRouter = GoRouter(
       RouteNames.courseProgress,
       RouteNames.subscriptions,
       RouteNames.notificationSettings,
+      RouteNames.deviceBlocked,
+      RouteNames.requestDeviceChange,
     ];
 
     final isProtected = protectedRoutes.any((route) => state.uri.path.startsWith(route));
@@ -368,6 +374,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.recentRecordings,
       builder: (context, state) => const RecentRecordingsScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.deviceBlocked,
+      builder: (context, state) => const DeviceBlockedScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.requestDeviceChange,
+      builder: (context, state) => const RequestDeviceChangeScreen(),
     ),
   ],
 );

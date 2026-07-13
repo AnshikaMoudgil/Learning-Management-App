@@ -2,8 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
-import { BookOpen, UserCheck, CheckCircle2, ChevronRight, GraduationCap } from 'lucide-react';
+import { BookOpen, UserCheck, CheckCircle2, ChevronRight, GraduationCap, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -15,6 +16,7 @@ interface Stats {
 }
 
 export default function OverviewPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats>({
     totalCourses: 0,
     totalLearners: 0,
@@ -22,8 +24,31 @@ export default function OverviewPage() {
     publishedCourses: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
+    async function checkAccess() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/login'); return; }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+        toast.error('Access denied.');
+        router.push('/dashboard/courses');
+        return;
+      }
+      setIsAuthorized(true);
+    }
+    checkAccess();
+  }, [router]);
+
+  useEffect(() => {
+    if (!isAuthorized) return;
     async function fetchStats() {
       try {
         // Get the current session token to authenticate the API route
@@ -60,7 +85,7 @@ export default function OverviewPage() {
     }
 
     fetchStats();
-  }, []);
+  }, [isAuthorized]);
 
 
   const statCards = [

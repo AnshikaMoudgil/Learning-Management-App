@@ -65,24 +65,33 @@ class _MyAppState extends State<MyApp> {
           try {
             final profile = await profileService.validateSession(session);
 
-            if (profile == null) {
-              final prefs = await SharedPreferences.getInstance();
-              final isSignupFlow = prefs.getBool('is_signup_flow') ?? false;
+              if (profile == null) {
+                final prefs = await SharedPreferences.getInstance();
+                final isSignupFlow = prefs.getBool('is_signup_flow') ?? false;
 
-              if (!isSignupFlow) {
-                _showErrorAndLogout('No account is linked with this app. Please sign up first.');
-                return;
+                if (!isSignupFlow) {
+                  _showErrorAndLogout('No account is linked with this app. Please sign up first.');
+                  return;
+                }
+                _navigateTo(RouteNames.createProfile);
+              } else if (!profile.onboardingCompleted) {
+                _navigateTo(RouteNames.createProfile);
+              } else {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('is_signup_flow', false);
+                try {
+                  await profileService.bindDevice(session.user.id);
+                  await profileService.updateLoginDetails(session.user.id);
+                  _navigateTo(RouteNames.home);
+                } catch (e) {
+                  final msg = e.toString();
+                  if (msg.contains('bound to another device') || msg.contains('device')) {
+                    _navigateTo(RouteNames.deviceBlocked);
+                  } else {
+                    _showErrorAndLogout(msg);
+                  }
+                }
               }
-              _navigateTo(RouteNames.createProfile);
-            } else if (!profile.onboardingCompleted) {
-              _navigateTo(RouteNames.createProfile);
-            } else {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('is_signup_flow', false);
-              await profileService.updateLoginDetails(session.user.id);
-              await profileService.bindDevice(session.user.id);
-              _navigateTo(RouteNames.home);
-            }
           } catch (e) {
             _showErrorAndLogout(e.toString());
           }

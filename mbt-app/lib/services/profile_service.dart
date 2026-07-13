@@ -55,13 +55,10 @@ class ProfileService {
   }
 
   Future<void> bindDevice(String userId) async {
-    try {
-      final fingerprint = await _getDeviceFingerprint();
-      await _api.post('/api/v1/devices/bind', body: {
-        'fingerprint': fingerprint,
-      });
-    } catch (_) {
-    }
+    final fingerprint = await _getDeviceFingerprint();
+    await _api.post('/api/v1/devices/bind', body: {
+      'fingerprint': fingerprint,
+    });
   }
 
   Future<String> _getDeviceFingerprint() async {

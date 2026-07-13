@@ -7,12 +7,13 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { DeviceGuard } from '../../common/guards/device.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CoursesService } from './courses.service';
 import type { CourseLevel } from '../../common/types/course.type';
 
 @Controller('api/v1/courses')
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(AuthGuard, RolesGuard, DeviceGuard)
 @Roles('learner', 'admin', 'superadmin', 'instructor')
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}

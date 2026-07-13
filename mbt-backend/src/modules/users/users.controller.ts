@@ -13,13 +13,15 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { DeviceGuard } from '../../common/guards/device.guard';
+import { SkipDeviceCheck } from '../../common/decorators/skip-device-check.decorator';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 
 @Controller('api/v1/users')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, DeviceGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -37,6 +39,7 @@ export class UsersController {
   }
 
   @Post('me/complete')
+  @SkipDeviceCheck()
   completeProfile(
     @Req() req: AuthenticatedRequest,
     @Body() body: CreateProfileDto,

@@ -80,6 +80,10 @@ class AuthService {
     } catch (_) {}
 
     final prefs = await SharedPreferences.getInstance();
+    final savedFingerprint = prefs.getString('device_fingerprint');
     await prefs.clear();
+    if (savedFingerprint != null && savedFingerprint.isNotEmpty) {
+      await prefs.setString('device_fingerprint', savedFingerprint);
+    }
   }
 }

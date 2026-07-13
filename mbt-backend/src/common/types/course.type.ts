@@ -16,6 +16,13 @@ export interface Course {
   validity_days: number | null;
   estimated_duration: string | null;
   is_published: boolean;
+  instructor_id: string | null;
+  average_rating: number;
+  reviews_count: number;
+  is_bestseller: boolean;
+  total_lessons: number;
+  learning_outcomes: string[];
+  requirements: string[];
   created_at: string;
   updated_at: string;
 }

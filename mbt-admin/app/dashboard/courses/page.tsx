@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Plus, Search, BookOpen, Trash2, Edit3, Globe } from 'lucide-react';
+import { Plus, Search, BookOpen, Trash2, Edit3, LayoutList } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Pagination from '@/components/Pagination';
 
@@ -28,14 +28,35 @@ export default function CoursesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
+  const [userRole, setUserRole] = useState<string>('');
 
   const fetchCourses = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+
+      let userRoleValue = '';
+      if (uid) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', uid)
+          .single();
+        userRoleValue = profile?.role || '';
+        setUserRole(userRoleValue);
+      }
+
+      let query = supabase
         .from('courses')
-        .select('id, title, slug, price, is_published, category, level, thumbnail_url', { count: 'exact' })
-        .order('created_at', { ascending: false });
+        .select('id, title, slug, price, is_published, category, level, thumbnail_url', { count: 'exact' });
+
+      if (userRoleValue === 'instructor' && uid) {
+        query = query.eq('created_by', uid);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setCourses(data || []);
@@ -167,13 +188,22 @@ export default function CoursesPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-6 mt-6 border-t border-zinc-800">
-                    <Link
-                      href={`/dashboard/courses/${course.id}/edit`}
-                      className="flex items-center gap-1.5 rounded-lg border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-300 transition-all cursor-pointer"
-                    >
-                      <Edit3 className="h-3.5 w-3.5" />
-                      Edit Details
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/dashboard/courses/${course.id}/edit`}
+                        className="flex items-center gap-1.5 rounded-lg border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-300 transition-all cursor-pointer"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                        Edit
+                      </Link>
+                      <Link
+                        href={`/dashboard/courses/${course.id}/syllabus`}
+                        className="flex items-center gap-1.5 rounded-lg border border-zinc-800 hover:border-teal-700/40 hover:bg-teal-950/20 px-3.5 py-2 text-xs font-semibold text-teal-400 transition-all cursor-pointer"
+                      >
+                        <LayoutList className="h-3.5 w-3.5" />
+                        Syllabus
+                      </Link>
+                    </div>
 
                     <button
                       onClick={() => setDeleteTarget(course)}
