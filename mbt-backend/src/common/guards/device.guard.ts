@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { SupabaseService } from '../../modules/supabase/supabase.service';
 import { SKIP_DEVICE_CHECK_KEY } from '../decorators/skip-device-check.decorator';
@@ -14,6 +15,7 @@ export class DeviceGuard implements CanActivate {
   constructor(
     private supabaseService: SupabaseService,
     private reflector: Reflector,
+    private configService: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -23,6 +25,11 @@ export class DeviceGuard implements CanActivate {
     );
 
     if (skipDeviceCheck) {
+      return true;
+    }
+
+    const enabled = this.configService.get<boolean>('deviceCheckEnabled');
+    if (!enabled) {
       return true;
     }
 

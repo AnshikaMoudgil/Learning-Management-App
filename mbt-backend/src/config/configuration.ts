@@ -19,12 +19,15 @@ export default () => ({
     hardware: {
       keyId: process.env.RAZORPAY_KEY_ID_A,
       keySecret: process.env.RAZORPAY_KEY_SECRET_A,
+      webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET_A,
     },
     software: {
       keyId: process.env.RAZORPAY_KEY_ID_B,
       keySecret: process.env.RAZORPAY_KEY_SECRET_B,
+      webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET_B,
     },
   },
+  deviceCheckEnabled: process.env.DEVICE_CHECK_ENABLED !== 'false',
   zoom: {
     clientId: process.env.ZOOM_CLIENT_ID,
     clientSecret: process.env.ZOOM_CLIENT_SECRET,

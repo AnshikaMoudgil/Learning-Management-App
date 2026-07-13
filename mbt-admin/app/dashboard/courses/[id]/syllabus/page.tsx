@@ -76,7 +76,7 @@ function LessonRow({
   onDelete: (id: string) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState<Lesson>(lesson);
+  const [draft, setDraft] = useState<Lesson>({ ...lesson, is_free_preview: Boolean(lesson.is_free_preview) });
   const [isSaving, setIsSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -91,7 +91,7 @@ function LessonRow({
           description: draft.description?.trim() || null,
           video_url: draft.video_url?.trim() || null,
           video_duration: draft.video_duration?.trim() || null,
-          is_free_preview: draft.is_free_preview,
+          is_free_preview: Boolean(draft.is_free_preview),
         })
         .eq('id', lesson.id);
       if (error) throw error;
@@ -215,7 +215,7 @@ function AddLessonForm({
           description: description.trim() || null,
           video_url: videoUrl.trim() || null,
           video_duration: videoDuration.trim() || null,
-          is_free_preview: isFreePreview,
+          is_free_preview: Boolean(isFreePreview),
           sort_order: nextOrder,
         })
         .select()

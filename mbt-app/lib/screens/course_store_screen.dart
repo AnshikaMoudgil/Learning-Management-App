@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import '../models/course.dart';
+import '../services/course_service.dart';
 
 class CourseStoreScreen extends StatefulWidget {
   const CourseStoreScreen({Key? key}) : super(key: key);
@@ -10,7 +12,10 @@ class CourseStoreScreen extends StatefulWidget {
 }
 
 class _CourseStoreScreenState extends State<CourseStoreScreen> {
-  int _selectedCategoryIndex = 0;
+  String? _selectedCategory;
+  final _courseService = CourseService();
+  late Future<List<Course>> _popularCoursesFuture;
+  late Future<List<Course>> _newlyAddedFuture;
 
   final List<Map<String, dynamic>> _categories = [
     {'icon': Icons.grid_view_rounded, 'name': 'All', 'color': Colors.blue},
@@ -20,6 +25,21 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     {'icon': Icons.business_center_outlined, 'name': 'Business', 'color': Colors.orange},
     {'icon': Icons.campaign_outlined, 'name': 'Marketing', 'color': Colors.cyan},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _popularCoursesFuture = _courseService.getCourses(limit: 6);
+    _newlyAddedFuture = _courseService.getCourses(limit: 10);
+  }
+
+  void _filterByCategory(String? category) {
+    setState(() {
+      _selectedCategory = category;
+      _popularCoursesFuture = _courseService.getCourses(category: category, limit: 6);
+      _newlyAddedFuture = _courseService.getCourses(category: category, limit: 10);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +66,9 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                         ],
                       ),
                     ),
-                    _buildIconBadge(Icons.shopping_cart_outlined, '2', Colors.blue, () => context.push('/cart')),
+                    _buildIconBadge(Icons.shopping_cart_outlined, '0', Colors.blue, () => context.push('/cart')),
                     const SizedBox(width: 16),
-                    _buildIconBadge(Icons.notifications_outlined, '3', Colors.red, () => context.push('/notifications')),
+                    _buildIconBadge(Icons.notifications_outlined, '0', Colors.red, () => context.push('/notifications')),
                   ],
                 ),
               ),
@@ -100,19 +120,19 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _selectedCategoryIndex = 0),
+                        onTap: () => _filterByCategory(_selectedCategory == 'software' ? null : 'software'),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: _selectedCategoryIndex == 0 ? Colors.blue.withValues(alpha: 0.1) : Colors.white,
+                            color: _selectedCategory == 'software' ? Colors.blue.withValues(alpha: 0.1) : Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _selectedCategoryIndex == 0 ? Colors.blue : Colors.grey.shade200),
+                            border: Border.all(color: _selectedCategory == 'software' ? Colors.blue : Colors.grey.shade200),
                           ),
                           child: Column(
                             children: [
-                              Icon(Icons.developer_mode, color: _selectedCategoryIndex == 0 ? Colors.blue : Colors.grey, size: 24),
+                              Icon(Icons.developer_mode, color: _selectedCategory == 'software' ? Colors.blue : Colors.grey, size: 24),
                               const SizedBox(height: 8),
-                              Text('Software', style: TextStyle(fontSize: 12, fontWeight: _selectedCategoryIndex == 0 ? FontWeight.bold : FontWeight.normal, color: AppColors.textDark)),
+                              Text('Software', style: TextStyle(fontSize: 12, fontWeight: _selectedCategory == 'software' ? FontWeight.bold : FontWeight.normal, color: AppColors.textDark)),
                             ],
                           ),
                         ),
@@ -121,19 +141,19 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _selectedCategoryIndex = 1),
+                        onTap: () => _filterByCategory(_selectedCategory == 'hardware' ? null : 'hardware'),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: _selectedCategoryIndex == 1 ? Colors.blue.withValues(alpha: 0.1) : Colors.white,
+                            color: _selectedCategory == 'hardware' ? Colors.blue.withValues(alpha: 0.1) : Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _selectedCategoryIndex == 1 ? Colors.blue : Colors.grey.shade200),
+                            border: Border.all(color: _selectedCategory == 'hardware' ? Colors.blue : Colors.grey.shade200),
                           ),
                           child: Column(
                             children: [
-                              Icon(Icons.memory, color: _selectedCategoryIndex == 1 ? Colors.blue : Colors.grey, size: 24),
+                              Icon(Icons.memory, color: _selectedCategory == 'hardware' ? Colors.blue : Colors.grey, size: 24),
                               const SizedBox(height: 8),
-                              Text('Hardware', style: TextStyle(fontSize: 12, fontWeight: _selectedCategoryIndex == 1 ? FontWeight.bold : FontWeight.normal, color: AppColors.textDark)),
+                              Text('Hardware', style: TextStyle(fontSize: 12, fontWeight: _selectedCategory == 'hardware' ? FontWeight.bold : FontWeight.normal, color: AppColors.textDark)),
                             ],
                           ),
                         ),
@@ -150,51 +170,29 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
               }),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _buildPopularCourseCard(
-                      image: 'assets/iphone_software.png',
-                      title: 'React - The Complete Guide',
-                      subtitle: 'Build modern web apps using React, Hooks, Context API and more.',
-                      author: 'John Doe',
-                      authorRole: 'Senior Frontend Developer',
-                      rating: '4.8',
-                      reviews: '12.6K',
-                      duration: '32 hours',
-                      level: 'Beginner to Advanced',
-                      price: '₹799',
-                      oldPrice: '₹1,999',
-                      isBestseller: true,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildPopularCourseCard(
-                      image: 'assets/android_hardware.png',
-                      title: 'Python for Data Science',
-                      subtitle: 'Learn Python, NumPy, Pandas, Matplotlib and build real-world projects.',
-                      author: 'Priya Sharma',
-                      authorRole: 'Data Scientist',
-                      rating: '4.7',
-                      reviews: '8.9K',
-                      duration: '28 hours',
-                      level: 'Beginner',
-                      price: '₹699',
-                      oldPrice: '₹1,799',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildPopularCourseCard(
-                      image: 'assets/iphone_hardware.png',
-                      title: 'UI/UX Design Masterclass',
-                      subtitle: 'Design beautiful and user-friendly interfaces like a pro.',
-                      author: 'Rohan Verma',
-                      authorRole: 'Product Designer',
-                      rating: '4.6',
-                      reviews: '6.4K',
-                      duration: '18 hours',
-                      level: 'All Levels',
-                      price: '₹599',
-                      oldPrice: '₹1,499',
-                    ),
-                  ],
+                child: FutureBuilder<List<Course>>(
+                  future: _popularCoursesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    if (snapshot.hasError || (snapshot.data ?? []).isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      children: snapshot.data!
+                          .map(
+                            (course) => Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _buildCourseCardFromApi(course),
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 24),
@@ -203,37 +201,32 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
               _buildSectionHeader('Newly Added', onViewAll: () {
                 context.push('/newly-added-courses');
               }),
-              SizedBox(
-                height: 160,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: [
-                    _buildNewlyAddedCard(
-                      icon: Icons.hexagon_outlined,
-                      iconColor: Colors.green,
-                      title: 'Node.js\nComplete Guide',
-                      author: 'Aditya Singh',
-                      rating: '4.5',
-                      reviews: '1.2K',
-                      duration: '16 hours',
-                      price: '₹499',
-                      oldPrice: '₹1,299',
+              FutureBuilder<List<Course>>(
+                future: _newlyAddedFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const SizedBox(
+                      height: 160,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (snapshot.hasError || (snapshot.data ?? []).isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return SizedBox(
+                    height: 160,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      children: snapshot.data!
+                          .map((course) => Padding(
+                                padding: const EdgeInsets.only(right: 16),
+                                child: _buildNewlyAddedCardFromApi(course),
+                              ))
+                          .toList(),
                     ),
-                    const SizedBox(width: 16),
-                    _buildNewlyAddedCard(
-                      icon: Icons.cloud_outlined,
-                      iconColor: Colors.orange,
-                      title: 'AWS Certified\nSolutions Architect',
-                      author: 'Neha Kumari',
-                      rating: '4.7',
-                      reviews: '932',
-                      duration: '20 hours',
-                      price: '₹999',
-                      oldPrice: '₹2,499',
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
             ],
@@ -244,20 +237,22 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
   }
 
   Widget _buildIconBadge(IconData icon, String count, Color badgeColor, VoidCallback onTap) {
+    final showBadge = count != '0' && count.isNotEmpty;
     return Stack(
       alignment: Alignment.center,
       children: [
         IconButton(icon: Icon(icon, color: AppColors.textDark), onPressed: onTap),
-        Positioned(
-          right: 8,
-          top: 8,
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
-            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-            child: Text(count, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-          ),
-        )
+        if (showBadge)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(count, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            ),
+          )
       ],
     );
   }
@@ -280,7 +275,8 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
   }
 
   Widget _buildPopularCourseCard({
-    required String image,
+    String? courseId,
+    required ImageProvider image,
     required String title,
     required String subtitle,
     required String author,
@@ -294,7 +290,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     bool isBestseller = false,
   }) {
     return GestureDetector(
-      onTap: () => context.push('/course'),
+      onTap: () => context.push(courseId == null ? '/course' : '/course?id=$courseId'),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -317,7 +313,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
               height: 160,
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
-                image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
+                image: DecorationImage(image: image, fit: BoxFit.cover),
               ),
               child: Stack(
                 children: [
@@ -363,7 +359,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const CircleAvatar(radius: 10, backgroundImage: AssetImage('assets/1.png')),
+                        const CircleAvatar(radius: 10, child: Icon(Icons.person, size: 12, color: Colors.grey)),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Column(
@@ -412,19 +408,27 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     );
   }
 
-  Widget _buildNewlyAddedCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String author,
-    required String rating,
-    required String reviews,
-    required String duration,
-    required String price,
-    required String oldPrice,
-  }) {
+  Widget _buildCourseCardFromApi(Course course) {
+    return _buildPopularCourseCard(
+      courseId: course.id,
+      image: course.thumbnailUrl != null ? NetworkImage(course.thumbnailUrl!) as ImageProvider : const AssetImage('assets/iphone_software.png') as ImageProvider,
+      title: course.title,
+      subtitle: course.shortDescription ?? course.description ?? '',
+      author: course.instructorName ?? 'Instructor',
+      authorRole: course.category ?? 'Course',
+      rating: course.averageRating.toStringAsFixed(1),
+      reviews: '${course.reviewsCount}',
+      duration: course.estimatedDuration ?? 'Self paced',
+      level: course.level.name,
+      price: '₹${course.effectivePrice.toStringAsFixed(0)}',
+      oldPrice: course.hasDiscount ? '₹${course.price.toStringAsFixed(0)}' : '',
+      isBestseller: course.isBestseller,
+    );
+  }
+
+  Widget _buildNewlyAddedCardFromApi(Course course) {
     return GestureDetector(
-      onTap: () => context.push('/course'),
+      onTap: () => context.push('/course?id=${course.id}'),
       child: Container(
         width: 220,
         padding: const EdgeInsets.all(12),
@@ -443,30 +447,29 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 24),
-                ),
-                const Icon(Icons.favorite_border, size: 18, color: Colors.grey),
-              ],
+            Container(
+              width: double.infinity,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                image: course.thumbnailUrl != null
+                    ? DecorationImage(image: NetworkImage(course.thumbnailUrl!), fit: BoxFit.cover)
+                    : null,
+              ),
+              child: course.thumbnailUrl == null
+                  ? const Icon(Icons.menu_book, color: Colors.grey, size: 28)
+                  : null,
             ),
             const Spacer(),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark), maxLines: 2),
+            Text(course.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark), maxLines: 2),
             const SizedBox(height: 8),
             Row(
               children: [
-                const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
+                const Icon(Icons.person, size: 12, color: Colors.grey),
                 const SizedBox(width: 6),
-                Expanded(child: Text(author, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark))),
-                Text(price, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark)),
+                Expanded(child: Text(course.instructorName ?? 'Instructor', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark))),
+                Text('₹${course.effectivePrice.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark)),
               ],
             ),
             const SizedBox(height: 4),
@@ -474,13 +477,14 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
               children: [
                 const Icon(Icons.star, color: Colors.amber, size: 10),
                 const SizedBox(width: 4),
-                Text('$rating ($reviews)', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                Text('${course.averageRating.toStringAsFixed(1)} (${course.reviewsCount})', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                 const SizedBox(width: 8),
                 const Text('•', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
                 const SizedBox(width: 8),
-                Text(duration, style: const TextStyle(fontSize: 8, color: AppColors.textDark)),
+                Text(course.estimatedDuration ?? 'Self paced', style: const TextStyle(fontSize: 8, color: AppColors.textDark)),
                 const Spacer(),
-                Text(oldPrice, style: const TextStyle(fontSize: 8, color: AppColors.textLight, decoration: TextDecoration.lineThrough)),
+                if (course.hasDiscount)
+                  Text('₹${course.price.toStringAsFixed(0)}', style: const TextStyle(fontSize: 8, color: AppColors.textLight, decoration: TextDecoration.lineThrough)),
               ],
             ),
           ],
@@ -488,4 +492,5 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
       ),
     );
   }
+
 }

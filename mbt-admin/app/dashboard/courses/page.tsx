@@ -20,6 +20,10 @@ interface Course {
   category: string | null;
   level: string;
   thumbnail_url: string | null;
+  average_rating: number;
+  reviews_count: number;
+  instructor_id: string | null;
+  profiles?: { full_name: string }[] | null;
 }
 
 export default function CoursesPage() {
@@ -50,8 +54,7 @@ export default function CoursesPage() {
 
       let query = supabase
         .from('courses')
-        .select('id, title, slug, price, is_published, category, level, thumbnail_url', { count: 'exact' });
-
+        .select('id, title, slug, price, is_published, category, level, thumbnail_url, average_rating, reviews_count, instructor_id, profiles!instructor_id ( full_name )', { count: 'exact' });        
       if (userRoleValue === 'instructor' && uid) {
         query = query.eq('created_by', uid);
       }
@@ -184,6 +187,19 @@ export default function CoursesPage() {
                       <span className="flex items-center gap-1 font-semibold text-zinc-300">
                         ${course.price.toFixed(2)}
                       </span>
+                    </div>
+                    <div className="flex gap-3 text-xs text-zinc-500 mt-2">
+                      {course.average_rating > 0 && (
+                        <span className="flex items-center gap-1 text-amber-400">
+                          ★ {course.average_rating.toFixed(1)}
+                        </span>
+                      )}
+                      {course.reviews_count > 0 && (
+                        <span>({course.reviews_count} reviews)</span>
+                      )}
+                      {course.profiles?.[0]?.full_name && (
+                        <span className="text-teal-400">by {course.profiles[0].full_name}</span>
+                      )}
                     </div>
                   </div>
 

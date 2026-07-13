@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DevicesRepository } from './devices.repository';
 import { Device } from '../../common/types/device.type';
 import { DeviceChangeRequest } from '../../common/types/device-change-request.type';
@@ -31,10 +36,11 @@ export class DevicesService {
 
     const anyDevice = await this.devicesRepository.findAnyByUserId(userId);
     if (anyDevice) {
-      const approved = await this.devicesRepository.findApprovedByUserAndFingerprint(
-        userId,
-        fingerprint,
-      );
+      const approved =
+        await this.devicesRepository.findApprovedByUserAndFingerprint(
+          userId,
+          fingerprint,
+        );
 
       if (approved) {
         await this.devicesRepository.deactivateDevice(anyDevice.id);
@@ -56,7 +62,8 @@ export class DevicesService {
     newFingerprint: string,
     reason?: string,
   ): Promise<DeviceChangeRequest> {
-    const lastApproved = await this.devicesRepository.findLastApprovedRequest(userId);
+    const lastApproved =
+      await this.devicesRepository.findLastApprovedRequest(userId);
 
     if (lastApproved?.reviewed_at) {
       const daysSinceLastChange = Math.floor(
@@ -71,10 +78,11 @@ export class DevicesService {
       }
     }
 
-    const existingPending = await this.devicesRepository.findPendingByUserAndFingerprint(
-      userId,
-      newFingerprint,
-    );
+    const existingPending =
+      await this.devicesRepository.findPendingByUserAndFingerprint(
+        userId,
+        newFingerprint,
+      );
 
     if (existingPending) {
       return existingPending;
@@ -103,7 +111,8 @@ export class DevicesService {
     reviewerId: string,
     status: 'approved' | 'rejected',
   ): Promise<DeviceChangeRequest> {
-    const request = await this.devicesRepository.findChangeRequestById(requestId);
+    const request =
+      await this.devicesRepository.findChangeRequestById(requestId);
 
     if (!request) {
       throw new NotFoundException('Change request not found');
@@ -116,7 +125,9 @@ export class DevicesService {
     );
 
     if (status === 'approved') {
-      const oldDevice = await this.devicesRepository.findActiveByUserId(request.user_id);
+      const oldDevice = await this.devicesRepository.findActiveByUserId(
+        request.user_id,
+      );
       if (oldDevice) {
         await this.devicesRepository.deactivateDevice(oldDevice.id);
       }
@@ -139,10 +150,11 @@ export class DevicesService {
 
     if (device.fingerprint === fingerprint) return true;
 
-    const approved = await this.devicesRepository.findApprovedByUserAndFingerprint(
-      userId,
-      fingerprint,
-    );
+    const approved =
+      await this.devicesRepository.findApprovedByUserAndFingerprint(
+        userId,
+        fingerprint,
+      );
 
     return !!approved;
   }

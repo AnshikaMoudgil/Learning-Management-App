@@ -233,7 +233,9 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.course,
-      builder: (context, state) => const CourseDetailsScreen(),
+      builder: (context, state) => CourseDetailsScreen(
+        courseId: state.uri.queryParameters['id'],
+      ),
     ),
     GoRoute(
       path: RouteNames.courseProgress,
@@ -325,7 +327,11 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.paymentSuccess,
-      builder: (context, state) => const PaymentSuccessScreen(),
+      builder: (context, state) => PaymentSuccessScreen(
+        courseTitle: state.uri.queryParameters['courseTitle'],
+        orderId: state.uri.queryParameters['orderId'],
+        status: state.uri.queryParameters['status'],
+      ),
     ),
     GoRoute(
       path: RouteNames.search,

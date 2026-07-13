@@ -198,7 +198,9 @@ export class DevicesRepository {
     return data ?? [];
   }
 
-  async findLastApprovedRequest(userId: string): Promise<DeviceChangeRequest | null> {
+  async findLastApprovedRequest(
+    userId: string,
+  ): Promise<DeviceChangeRequest | null> {
     const { data, error } = await this.db
       .from('device_change_requests')
       .select('*')
@@ -265,5 +267,4 @@ export class DevicesRepository {
 
     return data;
   }
-
 }
