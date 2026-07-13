@@ -15,7 +15,8 @@ import {
   Loader2,
   Menu,
   X,
-  UserCheck
+  UserCheck,
+  Smartphone
 } from 'lucide-react';
 
 interface Profile {
@@ -107,12 +108,16 @@ export default function DashboardLayout({
     }
   };
 
-  const navItems = [
-    { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Courses', href: '/dashboard/courses', icon: BookOpen },
-    { name: 'Manage Admins', href: '/dashboard/admins', icon: Users },
-    { name: 'Change Password', href: '/dashboard/change-password', icon: KeyRound },
+  const allNavItems = [
+    { name: 'Overview', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'superadmin'] },
+    { name: 'My Profile', href: '/dashboard/instructor-profile', icon: UserCheck, roles: ['instructor'] },
+    { name: 'Courses', href: '/dashboard/courses', icon: BookOpen, roles: ['admin', 'superadmin', 'instructor'] },
+    { name: 'Manage Admins', href: '/dashboard/admins', icon: Users, roles: ['admin', 'superadmin'] },
+    { name: 'Device Requests', href: '/dashboard/device-requests', icon: Smartphone, roles: ['admin', 'superadmin'] },
+    { name: 'Change Password', href: '/dashboard/change-password', icon: KeyRound, roles: ['admin', 'superadmin'] },
   ];
+
+  const navItems = allNavItems.filter(item => item.roles.includes(profile?.role || ''));
 
   if (isLoading) {
     return (

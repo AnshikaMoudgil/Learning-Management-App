@@ -25,6 +25,9 @@ export const courseSchema = z
     isPublished: z.boolean(),
     thumbnailUrl: z.string().optional(),
     previewVideoUrl: z.string().optional(),
+    isBestseller: z.boolean().optional().default(false),
+    learningOutcomes: z.array(z.string()).optional().default([]),
+    requirements: z.array(z.string()).optional().default([]),
   })
   .refine(
     (data) => {

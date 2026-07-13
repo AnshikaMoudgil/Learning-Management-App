@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { Search, Plus, Trash2, ShieldAlert, Shield, HelpCircle, X, Loader2 } from 'lucide-react';
@@ -16,11 +17,13 @@ interface Profile {
 }
 
 export default function ManageAdminsPage() {
+  const router = useRouter();
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
   const [users, setUsers] = useState<Profile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'staff' | 'learners'>('staff');
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   // Invite form states
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -66,18 +69,26 @@ export default function ManageAdminsPage() {
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/login'); return; }
 
-      await Promise.all([
-        session
-          ? supabase.from('profiles').select('role').eq('id', session.user.id).single().then(
-              ({ data: profile }) => { if (profile) setCurrentUserRole(profile.role); }
-            )
-          : Promise.resolve(),
-        fetchUsers(),
-      ]);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+        toast.error('Access denied.');
+        router.push('/dashboard');
+        return;
+      }
+
+      setCurrentUserRole(profile.role);
+      setIsAuthorized(true);
+      fetchUsers();
     }
     init();
-  }, []);
+  }, [router]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();

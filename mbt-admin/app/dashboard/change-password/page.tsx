@@ -1,16 +1,42 @@
 'use strict';
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { KeyRound, Loader2, Lock } from 'lucide-react';
 
 export default function ChangePasswordPage() {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    async function checkAccess() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/login'); return; }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+        toast.error('Access denied.');
+        router.push('/dashboard/courses');
+        return;
+      }
+      setIsAuthorized(true);
+      setIsChecking(false);
+    }
+    checkAccess();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +100,14 @@ export default function ChangePasswordPage() {
       setIsLoading(false);
     }
   };
+
+  if (isChecking) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-xl animate-in fade-in duration-300">

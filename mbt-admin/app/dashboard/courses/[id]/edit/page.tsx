@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import { courseSchema } from '@/app/lib/validations/course.schema';
 import Select from '@/components/Select';
+import ListEditor from '@/components/ListEditor';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Loader2, Upload, BookOpen } from 'lucide-react';
 import Link from 'next/link';
@@ -36,6 +37,7 @@ export default function EditCoursePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -51,6 +53,9 @@ export default function EditCoursePage() {
   const [isPublished, setIsPublished] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [previewVideoUrl, setPreviewVideoUrl] = useState('');
+  const [isBestseller, setIsBestseller] = useState(false);
+  const [learningOutcomes, setLearningOutcomes] = useState<string[]>([]);
+  const [requirements, setRequirements] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -59,6 +64,20 @@ export default function EditCoursePage() {
     const fetchCourse = async () => {
       try {
         setIsLoading(true);
+
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+
+        let userRole = '';
+        if (uid) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', uid)
+            .single();
+          userRole = profile?.role || '';
+        }
+
         const { data, error } = await supabase
           .from('courses')
           .select('*')
@@ -72,6 +91,13 @@ export default function EditCoursePage() {
           return;
         }
 
+        if (userRole === 'instructor' && data.created_by !== uid) {
+          toast.error('You can only edit your own courses.');
+          router.push('/dashboard/courses');
+          return;
+        }
+
+        setIsAuthorized(true);
         setTitle(data.title || '');
         setSlug(data.slug || '');
         setShortDescription(data.short_description || '');
@@ -86,6 +112,9 @@ export default function EditCoursePage() {
         setIsPublished(data.is_published || false);
         setThumbnailUrl(data.thumbnail_url || '');
         setPreviewVideoUrl(data.preview_video_url || '');
+        setIsBestseller(data.is_bestseller || false);
+        setLearningOutcomes(Array.isArray(data.learning_outcomes) ? data.learning_outcomes : []);
+        setRequirements(Array.isArray(data.requirements) ? data.requirements : []);
       } catch {
         toast.error('Failed to load course details.');
       } finally {
@@ -170,7 +199,8 @@ export default function EditCoursePage() {
     const formData = {
       title, slug, shortDescription, description, language, level, category,
       price, discountPrice, validityDays, estimatedDuration, isPublished,
-      thumbnailUrl, previewVideoUrl,
+      thumbnailUrl, previewVideoUrl, isBestseller,
+      learningOutcomes, requirements,
     };
 
     const result = courseSchema.safeParse(formData);
@@ -204,6 +234,13 @@ export default function EditCoursePage() {
         is_published: isPublished,
         thumbnail_url: thumbnailUrl || null,
         preview_video_url: previewVideoUrl || null,
+        is_bestseller: isBestseller,
+        learning_outcomes: (Array.isArray(learningOutcomes) ? learningOutcomes : [])
+          .map((s) => s.trim())
+          .filter(Boolean),
+        requirements: (Array.isArray(requirements) ? requirements : [])
+          .map((s) => s.trim())
+          .filter(Boolean),
       };
 
       const { error } = await supabase
@@ -323,6 +360,20 @@ export default function EditCoursePage() {
                     className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition resize-none"
                   />
                 </div>
+
+                <ListEditor
+                  items={learningOutcomes}
+                  onChange={setLearningOutcomes}
+                  placeholder="e.g. Identify and test mobile ICs"
+                  label="Learning Outcomes"
+                />
+
+                <ListEditor
+                  items={requirements}
+                  onChange={setRequirements}
+                  placeholder="e.g. Basic knowledge of mobile hardware"
+                  label="Requirements"
+                />
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Description</label>
@@ -499,6 +550,19 @@ export default function EditCoursePage() {
                   <div>
                     <span className="text-sm font-semibold text-white block">Publish Course</span>
                     <span className="text-xs text-zinc-500">Make this course visible to users</span>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer select-none py-2">
+                  <input
+                    type="checkbox"
+                    checked={isBestseller}
+                    onChange={(e) => setIsBestseller(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-800 bg-zinc-950 text-amber-500 focus:ring-amber-500/20 focus:ring-offset-0 focus:ring-2"
+                  />
+                  <div>
+                    <span className="text-sm font-semibold text-white block">Bestseller</span>
+                    <span className="text-xs text-zinc-500">Mark this course as bestseller in the store</span>
                   </div>
                 </label>
               </div>

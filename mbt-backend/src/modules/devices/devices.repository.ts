@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { Device } from '../../common/types/device.type';
+import { DeviceChangeRequest } from '../../common/types/device-change-request.type';
 
 @Injectable()
 export class DevicesRepository {
@@ -107,4 +108,162 @@ export class DevicesRepository {
 
     return data;
   }
+
+  async deactivateDevice(deviceId: string): Promise<void> {
+    const { error } = await this.db
+      .from('devices')
+      .update({ is_active: false } as never)
+      .eq('id', deviceId);
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  // --- Device Change Requests ---
+
+  async createChangeRequest(
+    userId: string,
+    newFingerprint: string,
+    reason?: string,
+    oldFingerprint?: string,
+  ): Promise<DeviceChangeRequest> {
+    const { data, error } = await this.db
+      .from('device_change_requests')
+      .insert({
+        user_id: userId,
+        old_fingerprint: oldFingerprint ?? null,
+        new_fingerprint: newFingerprint,
+        reason: reason ?? null,
+      } as never)
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data;
+  }
+
+  async findPendingByUserAndFingerprint(
+    userId: string,
+    fingerprint: string,
+  ): Promise<DeviceChangeRequest | null> {
+    const { data, error } = await this.db
+      .from('device_change_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('new_fingerprint', fingerprint)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data;
+  }
+
+  async findApprovedByUserAndFingerprint(
+    userId: string,
+    fingerprint: string,
+  ): Promise<DeviceChangeRequest | null> {
+    const { data, error } = await this.db
+      .from('device_change_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('new_fingerprint', fingerprint)
+      .eq('status', 'approved')
+      .maybeSingle();
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data;
+  }
+
+  async findUserChangeRequests(userId: string): Promise<DeviceChangeRequest[]> {
+    const { data, error } = await this.db
+      .from('device_change_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data ?? [];
+  }
+
+  async findLastApprovedRequest(userId: string): Promise<DeviceChangeRequest | null> {
+    const { data, error } = await this.db
+      .from('device_change_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'approved')
+      .order('reviewed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data;
+  }
+
+  async findChangeRequestById(id: string): Promise<DeviceChangeRequest | null> {
+    const { data, error } = await this.db
+      .from('device_change_requests')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data;
+  }
+
+  async findAllPendingRequests(): Promise<DeviceChangeRequest[]> {
+    const { data, error } = await this.db
+      .from('device_change_requests')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data ?? [];
+  }
+
+  async updateChangeRequestStatus(
+    requestId: string,
+    status: 'approved' | 'rejected',
+    reviewerId: string,
+  ): Promise<DeviceChangeRequest> {
+    const { data, error } = await this.db
+      .from('device_change_requests')
+      .update({
+        status,
+        reviewed_by: reviewerId,
+        reviewed_at: new Date().toISOString(),
+      } as never)
+      .eq('id', requestId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data;
+  }
+
 }

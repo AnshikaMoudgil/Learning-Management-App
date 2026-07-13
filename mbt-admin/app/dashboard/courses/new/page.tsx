@@ -1,11 +1,12 @@
 'use strict';
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import { courseSchema } from '@/app/lib/validations/course.schema';
 import Select from '@/components/Select';
+import ListEditor from '@/components/ListEditor';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Loader2, Upload, BookOpen } from 'lucide-react';
 import Link from 'next/link';
@@ -32,6 +33,13 @@ export default function NewCoursePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) setUserId(session.user.id);
+    });
+  }, []);
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -47,6 +55,9 @@ export default function NewCoursePage() {
   const [isPublished, setIsPublished] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [previewVideoUrl, setPreviewVideoUrl] = useState('');
+  const [isBestseller, setIsBestseller] = useState(false);
+  const [learningOutcomes, setLearningOutcomes] = useState<string[]>([]);
+  const [requirements, setRequirements] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleTitleChange = (val: string) => {
@@ -116,7 +127,8 @@ export default function NewCoursePage() {
     const formData = {
       title, slug, shortDescription, description, language, level, category,
       price, discountPrice, validityDays, estimatedDuration, isPublished,
-      thumbnailUrl, previewVideoUrl,
+      thumbnailUrl, previewVideoUrl, isBestseller,
+      learningOutcomes, requirements,
     };
 
     const result = courseSchema.safeParse(formData);
@@ -150,6 +162,14 @@ export default function NewCoursePage() {
         is_published: isPublished,
         thumbnail_url: thumbnailUrl || null,
         preview_video_url: previewVideoUrl || null,
+        is_bestseller: isBestseller,
+        learning_outcomes: (Array.isArray(learningOutcomes) ? learningOutcomes : [])
+          .map((s) => s.trim())
+          .filter(Boolean),
+        requirements: (Array.isArray(requirements) ? requirements : [])
+          .map((s) => s.trim())
+          .filter(Boolean),
+        created_by: userId,
       };
 
       const { error } = await supabase.from('courses').insert([coursePayload]);
@@ -261,6 +281,20 @@ export default function NewCoursePage() {
                     className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition resize-none"
                   />
                 </div>
+
+                <ListEditor
+                  items={learningOutcomes}
+                  onChange={setLearningOutcomes}
+                  placeholder="e.g. Identify and test mobile ICs"
+                  label="Learning Outcomes"
+                />
+
+                <ListEditor
+                  items={requirements}
+                  onChange={setRequirements}
+                  placeholder="e.g. Basic knowledge of mobile hardware"
+                  label="Requirements"
+                />
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Description</label>

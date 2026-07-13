@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -31,7 +32,16 @@ class ApiClient {
     if (session?.accessToken != null) {
       headers['Authorization'] = 'Bearer ${session!.accessToken}';
     }
+    final fingerprint = await _getDeviceFingerprint();
+    if (fingerprint.isNotEmpty) {
+      headers['X-Device-Fingerprint'] = fingerprint;
+    }
     return headers;
+  }
+
+  Future<String> _getDeviceFingerprint() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('device_fingerprint') ?? '';
   }
 
   Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
@@ -84,13 +94,20 @@ class ApiClient {
   }
 
   dynamic _handleResponse(http.Response response) {
-    final body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+    Object? body;
+    try {
+      body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+    } catch (_) {
+      body = null;
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;
     }
 
     final message = body is Map ? (body['message'] ?? body['error'] ?? response.reasonPhrase) : response.reasonPhrase;
-    throw ApiException(response.statusCode, message ?? 'Request failed');
+    final fullMessage = '[${response.statusCode}] ${message ?? 'Request failed'}';
+    debugPrint('API ERROR: $fullMessage | body: ${response.body} | url: ${response.request?.url}');
+    throw ApiException(response.statusCode, fullMessage);
   }
 }
