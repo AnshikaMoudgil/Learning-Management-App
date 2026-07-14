@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import 'home_dashboard.dart';
 import 'my_courses_screen.dart';
@@ -18,6 +21,179 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   int _selectedTab = 0;
   bool _hasSearched = false;
+  bool _isLoading = false;
+  Timer? _debounce;
+  
+  List<String> _recentSearches = [];
+  
+  List<dynamic> _courseResults = [];
+  List<dynamic> _recordingResults = [];
+  List<dynamic> _teacherResults = [];
+
+  final String _recentSearchesKey = 'mbt_lms_recent_searches';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentSearches();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentSearches = prefs.getStringList(_recentSearchesKey) ?? [];
+    });
+  }
+
+  Future<void> _addRecentSearch(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    
+    final prefs = await SharedPreferences.getInstance();
+    List<String> searches = prefs.getStringList(_recentSearchesKey) ?? [];
+    
+    searches.remove(q); // Remove if exists to move to top
+    searches.insert(0, q);
+    
+    if (searches.length > 10) {
+      searches = searches.sublist(0, 10);
+    }
+    
+    await prefs.setStringList(_recentSearchesKey, searches);
+    setState(() {
+      _recentSearches = searches;
+    });
+  }
+
+  Future<void> _removeRecentSearch(String query) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> searches = prefs.getStringList(_recentSearchesKey) ?? [];
+    searches.remove(query);
+    await prefs.setStringList(_recentSearchesKey, searches);
+    setState(() {
+      _recentSearches = searches;
+    });
+  }
+
+  Future<void> _clearRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_recentSearchesKey);
+    setState(() {
+      _recentSearches = [];
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _hasSearched = query.isNotEmpty;
+    });
+    
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    if (query.isEmpty) {
+      setState(() {
+        _courseResults.clear();
+        _recordingResults.clear();
+        _teacherResults.clear();
+        _isLoading = false;
+      });
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _performSearch(query);
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.trim().isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    _addRecentSearch(query);
+
+    final supabase = Supabase.instance.client;
+    final searchTerm = '%${query.trim()}%';
+
+    try {
+      // 1. Search Courses
+      final courseResponse = await supabase
+          .from('courses')
+          .select('*, profiles!courses_instructor_id_fkey(full_name)')
+          .or('title.ilike.$searchTerm,description.ilike.$searchTerm,category.ilike.$searchTerm')
+          .eq('is_published', true)
+          .limit(20);
+
+      // 2. Search Recordings (Lessons)
+      final recordingResponse = await supabase
+          .from('course_lessons')
+          .select('*, courses!inner(id, title, category, profiles!courses_instructor_id_fkey(full_name))')
+          .ilike('title', searchTerm)
+          .limit(20);
+
+      // 3. Search Teachers
+      final teacherResponse = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'instructor')
+          .ilike('full_name', searchTerm)
+          .limit(20);
+
+      if (mounted) {
+        setState(() {
+          _courseResults = courseResponse as List<dynamic>;
+          _recordingResults = recordingResponse as List<dynamic>;
+          _teacherResults = teacherResponse as List<dynamic>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Search error: $e');
+      // If foreign key relations fail, fallback to simple select
+      try {
+        final courseResponseFallback = await supabase
+            .from('courses')
+            .select('*')
+            .or('title.ilike.$searchTerm,description.ilike.$searchTerm,category.ilike.$searchTerm')
+            .eq('is_published', true)
+            .limit(20);
+
+        final recordingResponseFallback = await supabase
+            .from('course_lessons')
+            .select('*')
+            .ilike('title', searchTerm)
+            .limit(20);
+            
+        final teacherResponseFallback = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'instructor')
+          .ilike('full_name', searchTerm)
+          .limit(20);
+
+        if (mounted) {
+          setState(() {
+            _courseResults = courseResponseFallback as List<dynamic>;
+            _recordingResults = recordingResponseFallback as List<dynamic>;
+            _teacherResults = teacherResponseFallback as List<dynamic>;
+            _isLoading = false;
+          });
+        }
+      } catch (e2) {
+         debugPrint('Fallback Search error: $e2');
+         if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
 
   void _onNavTapped(int index) {
     Widget nextScreen;
@@ -46,7 +222,6 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   @override
   Widget build(BuildContext context) {
     bool isQueryEmpty = _searchController.text.isEmpty;
-    bool isQuantum = _searchController.text.toLowerCase().contains('quantum');
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -61,7 +236,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
               backgroundImage: AssetImage('assets/1.png'),
             ),
             const Spacer(),
-            IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
+            IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () {}),
             Stack(
               children: [
                 IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
@@ -98,11 +273,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     ),
                     child: TextField(
                       controller: _searchController,
-                      onChanged: (val) {
-                        setState(() {
-                          _hasSearched = val.isNotEmpty;
-                        });
-                      },
+                      onChanged: _onSearchChanged,
                       decoration: InputDecoration(
                         icon: const Icon(Icons.search, color: AppColors.textLight),
                         hintText: 'Search for courses, recordings, teachers...',
@@ -113,9 +284,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                                 icon: const Icon(Icons.close, size: 16, color: AppColors.textLight),
                                 onPressed: () {
                                   _searchController.clear();
-                                  setState(() {
-                                    _hasSearched = false;
-                                  });
+                                  _onSearchChanged('');
                                 },
                               )
                             : null,
@@ -135,9 +304,13 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           ),
           
           Expanded(
-            child: !isQueryEmpty 
-                ? (isQuantum ? _buildEmptyState() : _buildResultsState())
-                : _buildRecentSearches(),
+            child: isQueryEmpty 
+                ? _buildRecentSearches()
+                : _isLoading 
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
+                    : (_courseResults.isEmpty && _recordingResults.isEmpty && _teacherResults.isEmpty)
+                        ? _buildEmptyState()
+                        : _buildResultsState(),
           ),
         ],
       ),
@@ -151,25 +324,24 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Recent Searches', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-              TextButton(onPressed: () {}, child: const Text('Clear All', style: TextStyle(color: AppColors.primaryBlue, fontSize: 12, fontWeight: FontWeight.bold))),
-            ],
-          ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildRecentSearchChip('Mobile repairing'),
-              _buildRecentSearchChip('Soldering basics'),
-              _buildRecentSearchChip('Power IC repair'),
-              _buildRecentSearchChip('Android troubleshooting'),
-              _buildRecentSearchChip('Rahul Verma'),
-            ],
-          ),
-          const SizedBox(height: 32),
+          if (_recentSearches.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Recent Searches', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                TextButton(
+                  onPressed: _clearRecentSearches, 
+                  child: const Text('Clear All', style: TextStyle(color: AppColors.primaryBlue, fontSize: 12, fontWeight: FontWeight.bold))
+                ),
+              ],
+            ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _recentSearches.map((s) => _buildRecentSearchChip(s)).toList(),
+            ),
+            const SizedBox(height: 32),
+          ],
           Row(
             children: const [
               Icon(Icons.trending_up, color: AppColors.primaryBlue, size: 20),
@@ -178,53 +350,64 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildTrendingItem('Mobile IC Repair'),
-          _buildTrendingItem('Android Repair'),
-          _buildTrendingItem('Soldering Techniques'),
-          _buildTrendingItem('Laptop Repair'),
-          _buildTrendingItem('Fault Finding'),
-          _buildTrendingItem('Multimeter Basics'),
-          _buildTrendingItem('Power Supply Repair'),
-          _buildTrendingItem('iPhone Repair'),
+          _buildTrendingItem('Flutter Development'),
+          _buildTrendingItem('Dart Basics'),
+          _buildTrendingItem('Advanced UI Design'),
+          _buildTrendingItem('State Management'),
         ],
       ),
     );
   }
 
   Widget _buildRecentSearchChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.access_time, size: 14, color: AppColors.textLight),
-          const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textDark)),
-          const SizedBox(width: 6),
-          const Icon(Icons.close, size: 14, color: AppColors.textLight),
-        ],
+    return GestureDetector(
+      onTap: () {
+        _searchController.text = label;
+        _onSearchChanged(label);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.access_time, size: 14, color: AppColors.textLight),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textDark)),
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: () => _removeRecentSearch(label),
+              child: const Icon(Icons.close, size: 14, color: AppColors.textLight),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTrendingItem(String label) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 14, color: AppColors.primaryBlue, fontWeight: FontWeight.w500)),
-          const Icon(Icons.call_made, size: 16, color: AppColors.primaryBlue),
-        ],
+    return GestureDetector(
+      onTap: () {
+        _searchController.text = label;
+        _onSearchChanged(label);
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 14, color: AppColors.primaryBlue, fontWeight: FontWeight.w500)),
+            const Icon(Icons.call_made, size: 16, color: AppColors.primaryBlue),
+          ],
+        ),
       ),
     );
   }
@@ -232,7 +415,6 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   Widget _buildEmptyState() {
     return Column(
       children: [
-        // Tabs with 0 count
         Row(
           children: [
             _buildTab('Courses (0)', 0),
@@ -254,23 +436,21 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.search_off, size: 100, color: AppColors.primaryBlue),
                   ),
                   const SizedBox(height: 24),
-                  const Text('No results found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  const Text('No courses found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                   const SizedBox(height: 12),
-                  const Text('We couldn\'t find anything for "quantum computing".\nTry a different keyword or check your spelling.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                  const Text('Try searching with another keyword.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textLight)),
                   const SizedBox(height: 24),
                   OutlinedButton(
                     onPressed: () {
                       _searchController.clear();
-                      setState(() {
-                        _hasSearched = false;
-                      });
+                      _onSearchChanged('');
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryBlue,
                       side: const BorderSide(color: AppColors.primaryBlue),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Try Different Keyword'),
+                    child: const Text('Clear Search'),
                   )
                 ],
               ),
@@ -282,57 +462,47 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   }
 
   Widget _buildResultsState() {
+    List<dynamic> currentList = [];
+    if (_selectedTab == 0) currentList = _courseResults;
+    if (_selectedTab == 1) currentList = _recordingResults;
+    if (_selectedTab == 2) currentList = _teacherResults;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            _buildTab('Courses (24)', 0),
-            _buildTab('Recordings (156)', 1),
-            _buildTab('Teachers (12)', 2),
+            _buildTab('Courses (${_courseResults.length})', 0),
+            _buildTab('Recordings (${_recordingResults.length})', 1),
+            _buildTab('Teachers (${_teacherResults.length})', 2),
           ],
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text('Courses', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                  Text('See All', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildCourseResultCard('Mobile Repairing\nComplete Course', 'Mr. Ankit Verma', '4.8 (1.2k)', true),
-              const SizedBox(height: 12),
-              _buildCourseResultCard('Advance Mobile Hardware\nRepair', 'Mr. Rahul Sharma', '4.7 (842)', true),
-              const SizedBox(height: 12),
-              _buildCourseResultCard('Android Phone\nRepair Mastery', 'Mr. Sonu Singh', '4.6 (621)', false),
-              const SizedBox(height: 24),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text('Recordings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                  Text('See All', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildRecordingResultCard(),
-              const SizedBox(height: 24),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text('Teachers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                  Text('See All', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildTeacherResultCard(),
-            ],
-          ),
+          child: currentList.isEmpty 
+              ? const Center(child: Text('No results in this category.', style: TextStyle(color: AppColors.textLight)))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: currentList.length,
+                  itemBuilder: (context, index) {
+                    final item = currentList[index];
+                    if (_selectedTab == 0) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildCourseResultCard(item),
+                      );
+                    } else if (_selectedTab == 1) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildRecordingResultCard(item),
+                      );
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildTeacherResultCard(item),
+                      );
+                    }
+                  },
+                ),
         )
       ],
     );
@@ -359,7 +529,154 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     );
   }
 
-  Widget _buildCourseResultCard(String title, String author, String rating, bool isPremium) {
+  Widget _buildCourseResultCard(Map<String, dynamic> course) {
+    String title = course['title'] ?? 'Course Title';
+    String author = 'Instructor';
+    if (course['profiles'] != null && course['profiles'] is Map) {
+      author = course['profiles']['full_name'] ?? author;
+    }
+    String rating = '${course['average_rating'] ?? '0.0'} (${course['reviews_count'] ?? 0})';
+    bool isPremium = (course['price'] ?? 0) > 0;
+    String? thumb = course['thumbnail_url'];
+    String category = course['category'] ?? '';
+
+    return GestureDetector(
+      onTap: () => context.push('/course?id=${course['id']}'),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: thumb != null ? NetworkImage(thumb) as ImageProvider : const AssetImage('assets/iphone_hardware.png'), 
+                  fit: BoxFit.cover
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  if (category.isNotEmpty)
+                    Text(category, style: const TextStyle(fontSize: 10, color: AppColors.primaryBlue, fontWeight: FontWeight.w600)),
+                  Text('By $author', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.orange, size: 12),
+                      const SizedBox(width: 4),
+                      Text(rating, style: const TextStyle(fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isPremium ? Colors.blue.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(isPremium ? 'Premium' : 'Free', style: TextStyle(color: isPremium ? AppColors.primaryBlue : Colors.green, fontSize: 8, fontWeight: FontWeight.bold)),
+                      )
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecordingResultCard(Map<String, dynamic> lesson) {
+    String title = lesson['title'] ?? 'Lesson';
+    String duration = lesson['video_duration'] ?? 'Live';
+    String author = 'Instructor';
+    
+    if (lesson['courses'] != null && lesson['courses'] is Map) {
+      if (lesson['courses']['profiles'] != null && lesson['courses']['profiles'] is Map) {
+        author = lesson['courses']['profiles']['full_name'] ?? author;
+      }
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (lesson['course_id'] != null) {
+          context.push('/course?id=${lesson['course_id']}');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                Container(
+                  width: 100,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: const DecorationImage(image: AssetImage('assets/iphone_software.png'), fit: BoxFit.cover),
+                  ),
+                ),
+                Positioned(
+                  bottom: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(4)),
+                    child: Text(duration, style: const TextStyle(color: Colors.white, fontSize: 8)),
+                  ),
+                ),
+                const Positioned.fill(child: Center(child: Icon(Icons.play_circle_fill, color: Colors.white, size: 24))),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Text('By $author', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text('Live / Recorded', style: TextStyle(color: Colors.red, fontSize: 8, fontWeight: FontWeight.bold)),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeacherResultCard(Map<String, dynamic> teacher) {
+    String name = teacher['full_name'] ?? 'Instructor';
+    String? avatar = teacher['avatar_url'];
+    String role = teacher['about'] ?? 'Instructor';
+    
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -369,121 +686,23 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              image: const DecorationImage(image: AssetImage('assets/iphone_hardware.png'), fit: BoxFit.cover),
-            ),
+          CircleAvatar(
+            radius: 24, 
+            backgroundImage: avatar != null ? NetworkImage(avatar) as ImageProvider : const AssetImage('assets/1.png')
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                const SizedBox(height: 4),
-                Text('By $author', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.orange, size: 12),
-                    const SizedBox(width: 4),
-                    Text(rating, style: const TextStyle(fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isPremium ? Colors.blue.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(isPremium ? 'Premium' : 'Free', style: TextStyle(color: isPremium ? AppColors.primaryBlue : Colors.green, fontSize: 8, fontWeight: FontWeight.bold)),
-                    )
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecordingResultCard() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 100,
-                height: 70,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: const DecorationImage(image: AssetImage('assets/iphone_software.png'), fit: BoxFit.cover),
-                ),
-              ),
-              Positioned(
-                bottom: 4,
-                right: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(4)),
-                  child: const Text('32:45', style: TextStyle(color: Colors.white, fontSize: 8)),
-                ),
-              ),
-              const Positioned.fill(child: Center(child: Icon(Icons.play_circle_fill, color: Colors.white, size: 24))),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('Mobile Charging Problem - Live Session', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                SizedBox(height: 4),
-                Text('By Mr. Ankit Verma', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
-                SizedBox(height: 4),
-                Text('2 days ago • 1.2K views', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTeacherResultCard() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          const CircleAvatar(radius: 24, backgroundImage: AssetImage('assets/1.png')),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Mr. Ankit Verma', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                const Text('Mobile Repair Expert', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                Text(role, style: const TextStyle(fontSize: 10, color: AppColors.textLight), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Row(
                   children: const [
                     Icon(Icons.star, color: Colors.orange, size: 12),
                     SizedBox(width: 4),
-                    Text('4.9 (2.1k students)', style: TextStyle(fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.bold)),
+                    Text('Expert', style: TextStyle(fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],
