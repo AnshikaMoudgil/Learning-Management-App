@@ -10,7 +10,7 @@ import {
 export class CreateChangeRequestDto {
   @IsString({ message: 'fingerprint must be a string' })
   @IsNotEmpty({ message: 'fingerprint is required' })
-  @Matches(/^[a-f0-9\-]{36}$|^[a-f0-9]{32}$/i, {
+  @Matches(/^[a-f0-9-]{36}$|^[a-f0-9]{32}$/i, {
     message: 'fingerprint must be a valid UUID',
   })
   fingerprint: string;
