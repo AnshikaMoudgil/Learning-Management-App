@@ -16,6 +16,7 @@ export default () => ({
     secret: process.env.JWT_SECRET,
   },
   razorpay: {
+    currency: process.env.PAYMENT_CURRENCY || 'INR',
     hardware: {
       keyId: process.env.RAZORPAY_KEY_ID_A,
       keySecret: process.env.RAZORPAY_KEY_SECRET_A,

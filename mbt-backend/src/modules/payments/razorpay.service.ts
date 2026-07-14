@@ -57,37 +57,77 @@ export class RazorpayService {
     receipt: string;
     notes: Record<string, string>;
   }): Promise<RazorpayOrder> {
-    const response = await fetch(`${this.baseUrl}/orders`, {
-      method: 'POST',
-      headers: {
-        Authorization: this.basicAuth(input.gateway),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount: input.amountSubunits,
-        currency: input.currency,
-        receipt: input.receipt,
-        notes: input.notes,
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
 
-    return this.parseResponse<RazorpayOrder>(response, 'create Razorpay order');
+    try {
+      const response = await fetch(`${this.baseUrl}/orders`, {
+        signal: controller.signal,
+        method: 'POST',
+        headers: {
+          Authorization: this.basicAuth(input.gateway),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: input.amountSubunits,
+          currency: input.currency,
+          receipt: input.receipt,
+          notes: input.notes,
+        }),
+      });
+
+      return this.parseResponse<RazorpayOrder>(response, 'create Razorpay order');
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   async fetchPayment(
     gateway: RazorpayGateway,
     paymentId: string,
   ): Promise<RazorpayPayment> {
-    const response = await fetch(`${this.baseUrl}/payments/${paymentId}`, {
-      headers: {
-        Authorization: this.basicAuth(gateway),
-      },
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
 
-    return this.parseResponse<RazorpayPayment>(
-      response,
-      'fetch Razorpay payment',
-    );
+    try {
+      const response = await fetch(`${this.baseUrl}/payments/${paymentId}`, {
+        signal: controller.signal,
+        headers: {
+          Authorization: this.basicAuth(gateway),
+        },
+      });
+
+      return this.parseResponse<RazorpayPayment>(
+        response,
+        'fetch Razorpay payment',
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async fetchOrder(
+    gateway: RazorpayGateway,
+    orderId: string,
+  ): Promise<RazorpayOrder> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/orders/${orderId}`, {
+        signal: controller.signal,
+        headers: {
+          Authorization: this.basicAuth(gateway),
+        },
+      });
+
+      return this.parseResponse<RazorpayOrder>(
+        response,
+        'fetch Razorpay order',
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   private basicAuth(gateway: RazorpayGateway): string {

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
@@ -21,7 +25,10 @@ export class EnrollmentsService {
     } as never);
 
     if (error) {
-      throw new BadRequestException(error.message);
+      if (error.message?.includes('already enrolled')) {
+        throw new BadRequestException(error.message);
+      }
+      throw new InternalServerErrorException('Failed to complete enrollment');
     }
 
     return data;

@@ -1,7 +1,10 @@
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -36,8 +39,8 @@ interface PaymentRow {
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
   private readonly pendingMinutes = 20;
-  private readonly currency = 'INR';
 
   constructor(
     private readonly supabaseService: SupabaseService,
@@ -49,6 +52,10 @@ export class PaymentsService {
 
   private get db() {
     return this.supabaseService.getClient();
+  }
+
+  private get currency(): string {
+    return this.configService.get<string>('razorpay.currency') ?? 'INR';
   }
 
   async createOrder(
@@ -64,7 +71,14 @@ export class PaymentsService {
 
     const existing = await this.findReusablePendingPayment(userId, courseId);
     if (existing) {
-      return this.toOrderResponse(existing, course);
+      const valid = await this.verifyRazorpayOrderStillValid(
+        existing,
+        course,
+      );
+      if (valid) {
+        return this.toOrderResponse(existing, course);
+      }
+      await this.expirePayment(existing.id);
     }
 
     const coupon = await this.couponsService.validateCouponForCheckout(
@@ -74,7 +88,7 @@ export class PaymentsService {
     const amountSubunits = this.toSubunits(coupon.finalPrice);
 
     if (amountSubunits <= 0) {
-      throw new BadRequestException('Free checkout is not supported yet');
+      return this.handleFreeEnrollment(userId, courseId, coupon);
     }
 
     const gateway = this.razorpayService.getGatewayForCategory(course.category);
@@ -110,10 +124,71 @@ export class PaymentsService {
       .single();
 
     if (error) {
-      throw new BadRequestException(error.message);
+      this.logger.error(`Failed to insert payment: ${error.message}`, { userId, courseId });
+      throw new InternalServerErrorException('Failed to create payment order');
     }
 
     return this.toOrderResponse(data, course);
+  }
+
+  private async handleFreeEnrollment(
+    userId: string,
+    courseId: string,
+    coupon: { baseAmount: number; discountAmount: number; finalPrice: number; couponId?: string; code?: string },
+  ) {
+    this.logger.log(`Free enrollment for user ${userId} course ${courseId}`);
+    const { data, error } = await this.db
+      .from('payments')
+      .insert({
+        user_id: userId,
+        course_id: courseId,
+        coupon_id: coupon.couponId ?? null,
+        base_amount: coupon.baseAmount,
+        discount_amount: coupon.discountAmount,
+        amount_paid: 0,
+        amount_subunits: 0,
+        currency: this.currency,
+        razorpay_order_id: `free_${Date.now()}_${userId.slice(0, 8)}`,
+        status: 'completed',
+        razorpay_payment_id: `free_${Date.now()}`,
+        razorpay_signature: 'free',
+        expires_at: new Date(Date.now() + 3600_000).toISOString(),
+      } as never)
+      .select('*')
+      .single();
+
+    if (error) {
+      this.logger.error(`Free enrollment insert failed: ${error.message}`, { userId, courseId });
+      throw new InternalServerErrorException('Failed to create free enrollment');
+    }
+
+    const payment = data as unknown as PaymentRow;
+    return this.enrollmentsService.enrollFromPayment(
+      payment.razorpay_order_id,
+      payment.razorpay_payment_id ?? `free_${Date.now()}`,
+      'free',
+    );
+  }
+
+  private async verifyRazorpayOrderStillValid(
+    payment: PaymentRow,
+    course: CourseRow,
+  ): Promise<boolean> {
+    try {
+      const gateway = this.razorpayService.getGatewayForCategory(course.category);
+      const order = await this.razorpayService.fetchOrder(gateway, payment.razorpay_order_id);
+      return order.status === 'created';
+    } catch {
+      this.logger.warn(`Razorpay order ${payment.razorpay_order_id} is no longer valid, will create new`);
+      return false;
+    }
+  }
+
+  private async expirePayment(paymentId: string) {
+    await this.db
+      .from('payments')
+      .update({ status: 'expired' } as never)
+      .eq('id', paymentId);
   }
 
   async verifyPayment(input: {
@@ -139,7 +214,19 @@ export class PaymentsService {
 
     this.assertRazorpayPaymentMatchesPendingPayment(payment, razorpayPayment);
 
-    return this.completePayment(input);
+    try {
+      return await this.completePayment(input);
+    } catch (err) {
+      this.logger.error(`Payment verification succeeded but enrollment failed: ${(err as Error).message}`, {
+        razorpayOrderId: input.razorpayOrderId,
+        razorpayPaymentId: input.razorpayPaymentId,
+      });
+      await this.db
+        .from('payments')
+        .update({ status: 'failed' } as never)
+        .eq('razorpay_order_id', input.razorpayOrderId);
+      throw err;
+    }
   }
 
   async handleWebhook(
@@ -152,19 +239,18 @@ export class PaymentsService {
       );
     }
 
-    const payload = JSON.parse(rawBody.toString('utf8')) as Record<
-      string,
-      unknown
-    >;
+    const payload = JSON.parse(rawBody.toString('utf8')) as Record<string, unknown>;
     const eventType = typeof payload.event === 'string' ? payload.event : 'unknown';
     const eventId = typeof payload.id === 'string' ? payload.id : null;
     const paymentEntity = this.getWebhookPaymentEntity(payload);
     const orderId = paymentEntity?.order_id;
     const paymentId = paymentEntity?.id;
 
-    const signatureVerified = this.verifyWebhookSignature(rawBody, signature);
+    const signatureVerified = eventId && orderId
+      ? await this.verifyWebhookSignatureForOrder(rawBody, signature, orderId)
+      : false;
 
-    await this.logWebhook({
+    const logged = await this.logWebhook({
       eventId,
       orderId,
       paymentId,
@@ -174,26 +260,48 @@ export class PaymentsService {
     });
 
     if (!signatureVerified) {
-      throw new BadRequestException('Invalid Razorpay webhook signature');
+      if (!logged) {
+        throw new BadRequestException('Invalid Razorpay webhook signature');
+      }
+      return { received: true, processed: false };
     }
 
     if (eventType !== 'payment.captured' || !orderId || !paymentId) {
       return { received: true, processed: false };
     }
 
-    const payment = await this.getPaymentByOrderId(orderId);
+    let payment: PaymentRow;
+    try {
+      payment = await this.getPaymentByOrderId(orderId);
+    } catch {
+      return { received: true, processed: false };
+    }
+
     if (payment.amount_subunits !== Number(paymentEntity.amount)) {
+      this.logger.warn(`Webhook amount mismatch for order ${orderId}`);
       throw new BadRequestException('Webhook payment amount mismatch');
     }
 
-    const result = await this.completePayment({
-      razorpayOrderId: orderId,
-      razorpayPaymentId: paymentId,
-      razorpaySignature: signature,
-    });
+    try {
+      await this.completePayment({
+        razorpayOrderId: orderId,
+        razorpayPaymentId: paymentId,
+        razorpaySignature: signature,
+      });
+    } catch (err) {
+      this.logger.error(`Webhook enrollment failed for order ${orderId}: ${(err as Error).message}`, {
+        razorpayOrderId: orderId,
+        razorpayPaymentId: paymentId,
+      });
+      await this.db
+        .from('payments')
+        .update({ status: 'failed' } as never)
+        .eq('razorpay_order_id', orderId);
+      throw err;
+    }
 
     await this.markWebhookProcessed(eventId);
-    return { received: true, processed: true, result };
+    return { received: true, processed: true };
   }
 
   private async completePayment(input: {
@@ -216,7 +324,7 @@ export class PaymentsService {
       .maybeSingle();
 
     if (error) {
-      throw new BadRequestException(error.message);
+      throw new InternalServerErrorException('Failed to look up course');
     }
 
     if (!data || !(data as CourseRow).is_published) {
@@ -239,11 +347,11 @@ export class PaymentsService {
       .maybeSingle();
 
     if (error) {
-      throw new BadRequestException(error.message);
+      throw new InternalServerErrorException('Failed to check enrollment status');
     }
 
     if (data) {
-      throw new BadRequestException('User is already enrolled in this course');
+      throw new ConflictException('User is already enrolled in this course');
     }
   }
 
@@ -263,7 +371,7 @@ export class PaymentsService {
       .maybeSingle();
 
     if (error) {
-      throw new BadRequestException(error.message);
+      throw new InternalServerErrorException('Failed to look up existing payment');
     }
 
     return data ?? null;
@@ -277,7 +385,7 @@ export class PaymentsService {
       .maybeSingle();
 
     if (error) {
-      throw new BadRequestException(error.message);
+      throw new InternalServerErrorException('Failed to look up payment');
     }
 
     if (!data) {
@@ -315,34 +423,54 @@ export class PaymentsService {
     }
   }
 
-  private verifyWebhookSignature(rawBody: Buffer, signature: string): boolean {
-    const secrets = [
-      this.configService.get<string>('razorpay.hardware.webhookSecret'),
-      this.configService.get<string>('razorpay.software.webhookSecret'),
-    ].filter((secret): secret is string => Boolean(secret));
+  private async verifyWebhookSignatureForOrder(
+    rawBody: Buffer,
+    signature: string,
+    orderId: string,
+  ): Promise<boolean> {
+    try {
+      const payment = await this.getPaymentByOrderId(orderId);
+      const course = await this.getCourse(payment.course_id);
+      const gateway = this.razorpayService.getGatewayForCategory(course.category);
+      return this.verifyWebhookSecret(rawBody, signature, gateway.name);
+    } catch {
+      const fallback = this.configService.get<string>('razorpay.hardware.webhookSecret')
+        ?? this.configService.get<string>('razorpay.software.webhookSecret');
+      if (fallback) {
+        const expected = createHmac('sha256', fallback)
+          .update(rawBody)
+          .digest('hex');
+        return this.safeCompare(expected, signature);
+      }
+      return false;
+    }
+  }
 
-    if (secrets.length === 0) {
+  private verifyWebhookSecret(
+    rawBody: Buffer,
+    signature: string,
+    gatewayName: 'hardware' | 'software',
+  ): boolean {
+    const secret = this.configService.get<string>(
+      `razorpay.${gatewayName}.webhookSecret`,
+    );
+    if (!secret) {
       throw new BadGatewayException(
-        'Razorpay webhook secret is not configured',
+        `Razorpay ${gatewayName} webhook secret is not configured`,
       );
     }
 
-    return secrets.some((secret) => {
-      const expected = createHmac('sha256', secret)
-        .update(rawBody)
-        .digest('hex');
-      return this.safeCompare(expected, signature);
-    });
+    const expected = createHmac('sha256', secret)
+      .update(rawBody)
+      .digest('hex');
+    return this.safeCompare(expected, signature);
   }
 
   private safeCompare(expected: string, actual: string): boolean {
+    if (expected.length !== actual.length) return false;
     const expectedBuffer = Buffer.from(expected);
     const actualBuffer = Buffer.from(actual);
-
-    return (
-      expectedBuffer.length === actualBuffer.length &&
-      timingSafeEqual(expectedBuffer, actualBuffer)
-    );
+    return timingSafeEqual(expectedBuffer, actualBuffer);
   }
 
   private assertRazorpayPaymentMatchesPendingPayment(
@@ -398,23 +526,7 @@ export class PaymentsService {
     eventType: string;
     payload: Record<string, unknown>;
     signatureVerified: boolean;
-  }) {
-    if (input.eventId) {
-      const { data: existing, error: lookupError } = await this.db
-        .from('webhook_logs')
-        .select('id')
-        .eq('razorpay_event_id', input.eventId)
-        .maybeSingle();
-
-      if (lookupError) {
-        throw new BadRequestException(lookupError.message);
-      }
-
-      if (existing) {
-        return;
-      }
-    }
-
+  }): Promise<boolean> {
     const { error } = await this.db.from('webhook_logs').insert({
       razorpay_event_id: input.eventId,
       razorpay_order_id: input.orderId || null,
@@ -424,9 +536,14 @@ export class PaymentsService {
       signature_verified: input.signatureVerified,
     } as never);
 
-    if (error) {
-      throw new BadRequestException(error.message);
+    if (!error) return true;
+
+    if (error && (error as unknown as Record<string, unknown>).code === '23505') {
+      return false;
     }
+
+    this.logger.warn(`Failed to log webhook: ${error.message}`);
+    return false;
   }
 
   private async markWebhookProcessed(eventId: string | null) {

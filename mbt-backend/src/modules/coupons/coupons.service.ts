@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -62,7 +63,7 @@ export class CouponsService {
       .maybeSingle();
 
     if (error) {
-      throw new BadRequestException(error.message);
+      throw new InternalServerErrorException('Failed to validate coupon');
     }
 
     if (!coupon) {
@@ -104,7 +105,7 @@ export class CouponsService {
       .maybeSingle();
 
     if (error) {
-      throw new BadRequestException(error.message);
+      throw new InternalServerErrorException('Failed to look up course');
     }
 
     if (!data || !(data as CoursePriceRow).is_published) {
