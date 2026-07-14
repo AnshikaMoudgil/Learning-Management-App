@@ -81,16 +81,16 @@ class _MyAppState extends State<MyApp> {
                 await prefs.setBool('is_signup_flow', false);
                 try {
                   await profileService.bindDevice(session.user.id);
-                  await profileService.updateLoginDetails(session.user.id);
-                  _navigateTo(RouteNames.home);
                 } catch (e) {
-                  final msg = e.toString();
-                  if (msg.contains('bound to another device') || msg.contains('device')) {
+                  if (e.toString().contains('bound to another device')) {
                     _navigateTo(RouteNames.deviceBlocked);
-                  } else {
-                    _showErrorAndLogout(msg);
+                    return;
                   }
                 }
+                try {
+                  await profileService.updateLoginDetails(session.user.id);
+                } catch (_) {}
+                _navigateTo(RouteNames.home);
               }
           } catch (e) {
             _showErrorAndLogout(e.toString());

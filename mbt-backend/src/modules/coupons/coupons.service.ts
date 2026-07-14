@@ -5,36 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-
-interface CouponRow {
-  id: string;
-  code: string;
-  discount_type: 'percentage' | 'fixed';
-  discount_value: number | string;
-  max_uses: number | null;
-  uses_count: number;
-  min_purchase_amount: number | string;
-  starts_at: string | null;
-  expires_at: string | null;
-  is_active: boolean;
-}
-
-interface CoursePriceRow {
-  id: string;
-  price: number | string;
-  discount_price: number | string | null;
-  is_published: boolean;
-}
-
-export interface CouponValidationResult {
-  valid: boolean;
-  couponId?: string;
-  code?: string;
-  discountAmount: number;
-  finalPrice: number;
-  baseAmount: number;
-  reason?: string;
-}
+import type {
+  CouponRow,
+  CoursePriceRow,
+  CouponValidationResult,
+} from '../../common/types/coupons.types';
 
 @Injectable()
 export class CouponsService {
@@ -42,6 +17,24 @@ export class CouponsService {
 
   private get db() {
     return this.supabaseService.getClient();
+  }
+
+  async assertUserCouponNotUsed(
+    userId: string,
+    couponId: string,
+  ): Promise<void> {
+    const { data } = await this.db
+      .from('payments')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('coupon_id', couponId)
+      .eq('status', 'completed')
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      throw new BadRequestException('You have already used this coupon');
+    }
   }
 
   async validateCoupon(
@@ -76,6 +69,7 @@ export class CouponsService {
   async validateCouponForCheckout(
     code: string | undefined,
     courseId: string,
+    userId?: string,
   ): Promise<CouponValidationResult> {
     const course = await this.getCoursePrice(courseId);
     const baseAmount = this.getBaseAmount(course);
@@ -94,6 +88,67 @@ export class CouponsService {
       throw new BadRequestException(result.reason || 'Invalid coupon');
     }
 
+    if (userId && result.couponId) {
+      await this.assertUserCouponNotUsed(userId, result.couponId);
+    }
+
+    return result;
+  }
+
+  async validateCouponForCheckoutMulti(
+    code: string | undefined,
+    courses: {
+      id: string;
+      price: number | string;
+      discount_price: number | string | null;
+      is_published: boolean;
+    }[],
+    userId?: string,
+  ): Promise<CouponValidationResult> {
+    const baseAmount = courses.reduce((sum, c) => {
+      return sum + this.getBaseAmount(c);
+    }, 0);
+
+    if (!code?.trim()) {
+      return {
+        valid: true,
+        discountAmount: 0,
+        finalPrice: this.roundMoney(baseAmount),
+        baseAmount: this.roundMoney(baseAmount),
+      };
+    }
+
+    const result = await this.validateCoupon(code, courses[0].id);
+    if (!result.valid) {
+      throw new BadRequestException(result.reason || 'Invalid coupon');
+    }
+
+    if (userId && result.couponId) {
+      await this.assertUserCouponNotUsed(userId, result.couponId);
+    }
+
+    return {
+      ...result,
+      baseAmount: this.roundMoney(baseAmount),
+      finalPrice: this.roundMoney(
+        Math.max(0, baseAmount - result.discountAmount),
+      ),
+    };
+  }
+
+  async validateCouponForCart(
+    code: string,
+    courseIds: string[],
+    userId: string,
+  ): Promise<CouponValidationResult> {
+    const courses = await Promise.all(
+      courseIds.map((id) => this.getCoursePrice(id)),
+    );
+    const result = await this.validateCouponForCheckoutMulti(
+      code,
+      courses,
+      userId,
+    );
     return result;
   }
 

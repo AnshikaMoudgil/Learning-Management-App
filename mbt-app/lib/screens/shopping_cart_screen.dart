@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
-import '../models/course.dart';
 import '../models/payment.dart';
-import '../services/course_service.dart';
+import '../services/cart_service.dart';
 import '../services/payment_service.dart';
 
 class ShoppingCartScreen extends StatefulWidget {
@@ -14,27 +13,31 @@ class ShoppingCartScreen extends StatefulWidget {
 }
 
 class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
-  final _courseService = CourseService();
-  List<Course> _hardwareCourses = [];
-  List<Course> _softwareCourses = [];
+  final _cartService = CartService();
+  CartResponse? _cart;
   bool _isLoading = true;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadCourses();
+    _loadCart();
   }
 
-  Future<void> _loadCourses() async {
+  Future<void> _loadCart() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
-      final courses = await _courseService.getCourses(limit: 50);
+      final cart = await _cartService.getCart();
+      if (!mounted) return;
       setState(() {
-        _hardwareCourses = courses.where((c) => c.category == 'hardware').toList();
-        _softwareCourses = courses.where((c) => c.category == 'software').toList();
+        _cart = cart;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -42,25 +45,44 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
     }
   }
 
-  void _showPaymentBottomSheet(BuildContext context, Course course) {
+  Future<void> _removeItem(String courseId) async {
+    try {
+      await _cartService.removeItem(courseId);
+      await _loadCart();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to remove item: $e')),
+      );
+    }
+  }
+
+  void _showPaymentBottomSheet(BuildContext context, List<CartItem> items, String category) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1F2B), // Dark theme
+      backgroundColor: const Color(0xFF1A1F2B),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        return _PaymentBottomSheet(course: course);
+        return _PaymentBottomSheet(
+          items: items,
+          category: category,
+        );
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalItemsCount = _hardwareCourses.length + _softwareCourses.length;
-    final grandTotal = _hardwareCourses.fold<double>(0, (sum, item) => sum + item.effectivePrice) +
-        _softwareCourses.fold<double>(0, (sum, item) => sum + item.effectivePrice);
+    final hardwareItems = _cart?.hardware ?? [];
+    final softwareItems = _cart?.software ?? [];
+    final totalItemsCount = hardwareItems.length + softwareItems.length;
+    final grandTotal = [
+      ...hardwareItems,
+      ...softwareItems,
+    ].fold<double>(0, (sum, item) => sum + item.effectivePrice);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -83,9 +105,10 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
           style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 22),
         ),
         actions: [
-          _buildIconBadge(Icons.shopping_cart_outlined, '$totalItemsCount', Colors.blue, () {}),
-          const SizedBox(width: 16),
-          _buildIconBadge(Icons.notifications_outlined, '3', Colors.red, () => context.push('/notifications')),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.textDark),
+            onPressed: _loadCart,
+          ),
           const SizedBox(width: 8),
         ],
         bottom: PreferredSize(
@@ -94,9 +117,11 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
             padding: const EdgeInsets.only(left: 56, bottom: 8),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: const Text(
-                'Review your items and proceed to checkout',
-                style: TextStyle(fontSize: 12, color: AppColors.textLight),
+              child: Text(
+                totalItemsCount > 0
+                    ? '$totalItemsCount item(s) in your cart'
+                    : 'Your cart is empty',
+                style: const TextStyle(fontSize: 12, color: AppColors.textLight),
               ),
             ),
           ),
@@ -109,280 +134,256 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'Failed to load cart items: $_errorMessage',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.red),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Failed to load cart: $_errorMessage',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadCart,
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
                     ),
                   )
-                : Column(
+                : totalItemsCount == 0
+                    ? _buildEmptyCart()
+                    : _buildCartContent(hardwareItems, softwareItems, grandTotal, totalItemsCount),
+      ),
+    );
+  }
+
+  Widget _buildEmptyCart() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          const Text(
+            'Your cart is empty',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Browse courses and add them to your cart',
+            style: TextStyle(fontSize: 13, color: AppColors.textLight),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => context.go('/store'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Browse Courses', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCartContent(
+    List<CartItem> hardwareItems,
+    List<CartItem> softwareItems,
+    double grandTotal,
+    int totalItemsCount,
+  ) {
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                // Info Box
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const Icon(Icons.info_outline, color: AppColors.primaryBlue, size: 20),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              // Info Box
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Icon(Icons.info_outline, color: AppColors.primaryBlue, size: 20),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: const [
-                                          Text(
-                                            'Two Separate Checkouts',
-                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
-                                          ),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            'Hardware (skill courses) and Software (skill courses) are sold by different partners. Please checkout them separately.',
-                                            style: TextStyle(fontSize: 11, color: AppColors.textLight, height: 1.4),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Hardware Section
-                              if (_hardwareCourses.isNotEmpty) ...[
-                                _buildSectionHeader(Icons.devices, 'Hardware (Skill Course)', '${_hardwareCourses.length} Item(s)'),
-                                const SizedBox(height: 12),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.grey.shade200),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.02),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      ..._hardwareCourses.map(
-                                        (course) => _buildCartItem(
-                                          course: course,
-                                        ),
-                                      ),
-                                      const Divider(height: 1),
-                                      Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text(
-                                              'Hardware Subtotal',
-                                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
-                                            ),
-                                            Text(
-                                              '₹${_hardwareCourses.fold<double>(0, (sum, c) => sum + c.effectivePrice).toInt()}',
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                        child: SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton(
-                                            onPressed: () => _showPaymentBottomSheet(context, _hardwareCourses.first),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                                              elevation: 0,
-                                              padding: const EdgeInsets.symmetric(vertical: 14),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: const [
-                                                Padding(
-                                                  padding: EdgeInsets.only(left: 16),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(Icons.credit_card, color: AppColors.primaryBlue, size: 18),
-                                                      SizedBox(width: 8),
-                                                      Text(
-                                                        'Checkout Hardware Items',
-                                                        style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: EdgeInsets.only(right: 16),
-                                                  child: Icon(Icons.chevron_right, color: AppColors.primaryBlue, size: 20),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
-                              ],
-
-                              // Software Section
-                              if (_softwareCourses.isNotEmpty) ...[
-                                _buildSectionHeader(Icons.code, 'Software (Skill Course)', '${_softwareCourses.length} Item(s)'),
-                                const SizedBox(height: 12),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.grey.shade200),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.02),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      ..._softwareCourses.map(
-                                        (course) => _buildCartItem(
-                                          course: course,
-                                        ),
-                                      ),
-                                      const Divider(height: 1),
-                                      Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text(
-                                              'Software Subtotal',
-                                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
-                                            ),
-                                            Text(
-                                              '₹${_softwareCourses.fold<double>(0, (sum, c) => sum + c.effectivePrice).toInt()}',
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                        child: SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton(
-                                            onPressed: () => _showPaymentBottomSheet(context, _softwareCourses.first),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppColors.primaryBlue,
-                                              elevation: 0,
-                                              padding: const EdgeInsets.symmetric(vertical: 14),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: const [
-                                                Padding(
-                                                  padding: EdgeInsets.only(left: 16),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(Icons.credit_card, color: Colors.white, size: 18),
-                                                      SizedBox(width: 8),
-                                                      Text(
-                                                        'Checkout Software Items',
-                                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: EdgeInsets.only(right: 16),
-                                                  child: Icon(Icons.chevron_right, color: Colors.white, size: 20),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Bottom Sticky Bar
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border(top: BorderSide(color: Colors.grey.shade200)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Total Items', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
-                                const SizedBox(height: 2),
-                                Text('$totalItemsCount Items', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                              ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Two Separate Checkouts',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text('Grand Total', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
-                                const SizedBox(height: 2),
-                                Text('₹${grandTotal.toInt()}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                              ],
+                            SizedBox(height: 4),
+                            Text(
+                              'Hardware and Software courses are sold by different partners. Please checkout them separately.',
+                              style: TextStyle(fontSize: 11, color: AppColors.textLight, height: 1.4),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-      ),
+                ),
+                const SizedBox(height: 24),
+
+                // Hardware Section
+                if (hardwareItems.isNotEmpty) ...[
+                  _buildSectionHeader(Icons.devices, 'Hardware (Skill Course)', '${hardwareItems.length} Item(s)'),
+                  const SizedBox(height: 12),
+                  _buildItemsCard(
+                    items: hardwareItems,
+                    category: 'Hardware',
+                    onCheckout: () => _showPaymentBottomSheet(context, hardwareItems, 'Hardware'),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+
+                // Software Section
+                if (softwareItems.isNotEmpty) ...[
+                  _buildSectionHeader(Icons.code, 'Software (Skill Course)', '${softwareItems.length} Item(s)'),
+                  const SizedBox(height: 12),
+                  _buildItemsCard(
+                    items: softwareItems,
+                    category: 'Software',
+                    onCheckout: () => _showPaymentBottomSheet(context, softwareItems, 'Software'),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ],
+            ),
+          ),
+        ),
+        // Bottom Sticky Bar
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Colors.grey.shade200)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Total Items', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                  const SizedBox(height: 2),
+                  Text('$totalItemsCount Items', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('Grand Total', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                  const SizedBox(height: 2),
+                  Text('₹${grandTotal.toInt()}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildIconBadge(IconData icon, String count, Color badgeColor, VoidCallback onTap) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        IconButton(icon: Icon(icon, color: AppColors.textDark), onPressed: onTap),
-        Positioned(
-          right: 8,
-          top: 8,
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
-            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-            child: Text(
-              count,
-              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+  Widget _buildItemsCard({
+    required List<CartItem> items,
+    required String category,
+    required VoidCallback onCheckout,
+  }) {
+    final subtotal = items.fold<double>(0, (sum, item) => sum + item.effectivePrice);
+    final isHardware = category == 'Hardware';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          ...items.map((item) => _buildCartItem(item: item)),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '$category Subtotal',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark),
+                ),
+                Text(
+                  '₹${subtotal.toInt()}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                ),
+              ],
             ),
           ),
-        )
-      ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onCheckout,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isHardware ? Colors.blue.withValues(alpha: 0.1) : AppColors.primaryBlue,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.credit_card, color: isHardware ? AppColors.primaryBlue : Colors.white, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Checkout $category Items',
+                            style: TextStyle(
+                              color: isHardware ? AppColors.primaryBlue : Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: isHardware ? AppColors.primaryBlue : Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -414,7 +415,7 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
     );
   }
 
-  Widget _buildCartItem({required Course course}) {
+  Widget _buildCartItem({required CartItem item}) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -426,9 +427,9 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               image: DecorationImage(
-                image: course.thumbnailUrl == null
+                image: item.thumbnailUrl == null
                     ? const AssetImage('assets/iphone_software.png')
-                    : NetworkImage(course.thumbnailUrl!) as ImageProvider,
+                    : NetworkImage(item.thumbnailUrl!) as ImageProvider,
                 fit: BoxFit.cover,
               ),
             ),
@@ -443,61 +444,28 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        course.title,
+                        item.title,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.delete_outline, color: Colors.grey, size: 18),
+                    GestureDetector(
+                      onTap: () => _removeItem(item.courseId),
+                      child: const Icon(Icons.delete_outline, color: Colors.grey, size: 18),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  course.shortDescription ?? course.description ?? '',
+                  item.shortDescription ?? '',
                   style: const TextStyle(fontSize: 10, color: AppColors.textLight),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    course.level.name.toUpperCase(),
-                    style: const TextStyle(color: AppColors.primaryBlue, fontSize: 8, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        children: const [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Icon(Icons.remove, size: 14, color: Colors.grey),
-                          ),
-                          Text('1', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Icon(Icons.add, size: 14, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      '₹${course.effectivePrice.toInt()}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
-                    ),
-                  ],
+                const SizedBox(height: 10),
+                Text(
+                  '₹${item.effectivePrice.toInt()}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
                 ),
               ],
             ),
@@ -509,24 +477,25 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
 }
 
 class _PaymentBottomSheet extends StatefulWidget {
-  final Course course;
+  final List<CartItem> items;
+  final String category;
 
-  const _PaymentBottomSheet({Key? key, required this.course}) : super(key: key);
+  const _PaymentBottomSheet({Key? key, required this.items, required this.category}) : super(key: key);
 
   @override
   State<_PaymentBottomSheet> createState() => _PaymentBottomSheetState();
 }
 
 class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
-  int _selectedMethod = 0; // 0: UPI, 1: Card, 2: NetBanking, 3: Wallet
+  int _selectedMethod = 0;
   final _paymentService = PaymentService();
   final _couponController = TextEditingController();
-  
+
   bool _isValidatingCoupon = false;
   String? _couponError;
   String? _couponSuccess;
   CouponValidation? _couponValidation;
-  
+
   bool _isPaying = false;
   String? _paymentError;
 
@@ -535,6 +504,9 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     _couponController.dispose();
     super.dispose();
   }
+
+  double get _baseTotal => widget.items.fold<double>(0, (sum, item) => sum + item.effectivePrice);
+  double get _finalTotal => _couponValidation != null ? _couponValidation!.finalPrice : _baseTotal;
 
   Future<void> _applyCoupon() async {
     final code = _couponController.text.trim();
@@ -548,10 +520,15 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     });
 
     try {
-      final validation = await _paymentService.validateCoupon(
-        code: code,
-        courseId: widget.course.id,
-      );
+      final validation = widget.items.length == 1
+          ? await _paymentService.validateCoupon(
+              code: code,
+              courseId: widget.items.first.courseId,
+            )
+          : await _paymentService.validateCartCoupon(
+              code: code,
+              courseIds: widget.items.map((i) => i.courseId).toList(),
+            );
 
       setState(() {
         _isValidatingCoupon = false;
@@ -565,7 +542,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     } catch (e) {
       setState(() {
         _isValidatingCoupon = false;
-        _couponError = e.toString();
+        _couponError = e.toString().replaceAll(RegExp(r'^\[\d+\]\s*'), '');
       });
     }
   }
@@ -577,21 +554,21 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     });
 
     try {
-      final result = await _paymentService.checkoutCourse(
-        courseId: widget.course.id,
-        courseTitle: widget.course.title,
+      final result = await _paymentService.checkoutCourses(
+        courseIds: widget.items.map((i) => i.courseId).toList(),
+        checkoutTitle: '${widget.category} Courses (${widget.items.length} items)',
         couponCode: _couponValidation?.code,
       );
       if (!mounted) return;
-      Navigator.pop(context); // Close bottom sheet
+      Navigator.pop(context);
       context.push(
-        '/payment-success?courseTitle=${Uri.encodeComponent(widget.course.title)}&orderId=${Uri.encodeComponent(result.order.orderId)}',
+        '/payment-success?courseTitle=${Uri.encodeComponent('${widget.category} Courses')}&orderId=${Uri.encodeComponent(result.order.orderId)}',
       );
     } on PaymentPendingException catch (error) {
       if (!mounted) return;
-      Navigator.pop(context); // Close bottom sheet
+      Navigator.pop(context);
       context.push(
-        '/payment-success?status=pending&courseTitle=${Uri.encodeComponent(widget.course.title)}&orderId=${Uri.encodeComponent(error.order.orderId)}',
+        '/payment-success?status=pending&courseTitle=${Uri.encodeComponent('${widget.category} Courses')}&orderId=${Uri.encodeComponent(error.order.orderId)}',
       );
     } catch (error) {
       setState(() {
@@ -603,16 +580,14 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final basePrice = widget.course.effectivePrice;
-    final finalPrice = _couponValidation != null ? _couponValidation!.finalPrice : basePrice;
-
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Padding(
               padding: const EdgeInsets.all(24),
               child: Row(
@@ -648,18 +623,19 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                 ],
               ),
             ),
-            
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+
+            // Items list
+            ...widget.items.map((item) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(color: AppColors.primaryBlue, borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+                      child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 16),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -667,27 +643,25 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.course.title,
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
+                            item.title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
-                          const Text('1 Item', style: TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                     ),
                     Text(
-                      '₹${basePrice.toInt()}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
+                      '₹${item.effectivePrice.toInt()}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
                     ),
                   ],
                 ),
               ),
-            ),
-            
+            )),
+
             const SizedBox(height: 16),
-            
+
             // Coupon Field
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -749,7 +723,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Container(
@@ -771,7 +745,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
             if (_paymentError != null) ...[
               Padding(
@@ -793,7 +767,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
               ],
             ),
             const SizedBox(height: 20),
-            
+
             Container(
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
@@ -806,14 +780,9 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                     children: [
                       const Text('Total Amount', style: TextStyle(color: Colors.grey, fontSize: 12)),
                       const SizedBox(height: 4),
-                      Text('₹${finalPrice.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20)),
+                      Text('₹${_finalTotal.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 20)),
                       const SizedBox(height: 4),
-                      Row(
-                        children: const [
-                          Text('View Details', style: TextStyle(color: Colors.grey, fontSize: 10)),
-                          Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 12),
-                        ],
-                      ),
+                      Text('${widget.items.length} item(s)', style: const TextStyle(color: Colors.grey, fontSize: 10)),
                     ],
                   ),
                   const SizedBox(width: 24),
@@ -832,7 +801,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                               children: [
                                 const Icon(Icons.lock_outline, color: Colors.white, size: 16),
                                 const SizedBox(width: 8),
-                                Text('Pay ₹${finalPrice.toInt()}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text('Pay ₹${_finalTotal.toInt()}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                               ],
                             ),
                     ),
@@ -840,7 +809,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
                 ],
               ),
             ),
-            
+
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Row(
@@ -854,6 +823,7 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
             const SizedBox(height: 16),
           ],
         ),
+      ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DevicesRepository } from './devices.repository';
 import { Device } from '../../common/types/device.type';
 import { DeviceChangeRequest } from '../../common/types/device-change-request.type';
@@ -11,7 +12,14 @@ import { sanitizeText } from '../../common/utils/sanitize';
 
 @Injectable()
 export class DevicesService {
-  constructor(private readonly devicesRepository: DevicesRepository) {}
+  constructor(
+    private readonly devicesRepository: DevicesRepository,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private get deviceCheckEnabled(): boolean {
+    return this.configService.get<boolean>('deviceCheckEnabled') ?? true;
+  }
 
   async getUserDevices(userId: string): Promise<Device[]> {
     return this.devicesRepository.findByUserId(userId);
@@ -26,17 +34,17 @@ export class DevicesService {
     fingerprint: string,
     platform?: string,
   ): Promise<Device> {
+    if (!this.deviceCheckEnabled) {
+      return this.devicesRepository.upsertDevice(userId, fingerprint, platform);
+    }
+
     const existing = await this.devicesRepository.findByUserAndFingerprint(
       userId,
       fingerprint,
     );
 
     if (existing) {
-      return this.devicesRepository.upsertDevice(
-        userId,
-        fingerprint,
-        platform,
-      );
+      return this.devicesRepository.upsertDevice(userId, fingerprint, platform);
     }
 
     const anyDevice = await this.devicesRepository.findAnyByUserId(userId);

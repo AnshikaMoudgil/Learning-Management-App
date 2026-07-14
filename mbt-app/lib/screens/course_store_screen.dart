@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../models/course.dart';
 import '../services/course_service.dart';
+import '../services/cart_service.dart';
 
 class CourseStoreScreen extends StatefulWidget {
   const CourseStoreScreen({Key? key}) : super(key: key);
@@ -14,8 +15,10 @@ class CourseStoreScreen extends StatefulWidget {
 class _CourseStoreScreenState extends State<CourseStoreScreen> {
   String? _selectedCategory;
   final _courseService = CourseService();
+  final _cartService = CartService();
   late Future<List<Course>> _popularCoursesFuture;
   late Future<List<Course>> _newlyAddedFuture;
+  int _cartItemCount = 0;
 
   final List<Map<String, dynamic>> _categories = [
     {'icon': Icons.grid_view_rounded, 'name': 'All', 'color': Colors.blue},
@@ -31,6 +34,15 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     super.initState();
     _popularCoursesFuture = _courseService.getCourses(limit: 6);
     _newlyAddedFuture = _courseService.getCourses(limit: 10);
+    _loadCartCount();
+  }
+
+  Future<void> _loadCartCount() async {
+    try {
+      final cart = await _cartService.getCart();
+      if (!mounted) return;
+      setState(() => _cartItemCount = cart.totalItems);
+    } catch (_) {}
   }
 
   void _filterByCategory(String? category) {
@@ -66,7 +78,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                         ],
                       ),
                     ),
-                    _buildIconBadge(Icons.shopping_cart_outlined, '0', Colors.blue, () => context.push('/cart')),
+                    _buildIconBadge(Icons.shopping_cart_outlined, '$_cartItemCount', Colors.blue, () => context.push('/cart')),
                     const SizedBox(width: 16),
                     _buildIconBadge(Icons.notifications_outlined, '0', Colors.red, () => context.push('/notifications')),
                   ],

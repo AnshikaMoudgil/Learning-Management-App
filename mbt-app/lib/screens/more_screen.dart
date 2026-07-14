@@ -184,6 +184,9 @@ class MoreScreen extends StatelessWidget {
               _buildMenuItem(context, Icons.devices_outlined, 'Active Devices', onTap: () {
                 context.push('/active-devices');
               }),
+              _buildMenuItem(context, Icons.receipt_long_outlined, 'Invoices', onTap: () {
+                context.push('/invoices');
+              }),
               _buildMenuItem(context, Icons.notifications_outlined, 'Notification Settings', onTap: () {
                 context.push('/notification-settings');
               }),

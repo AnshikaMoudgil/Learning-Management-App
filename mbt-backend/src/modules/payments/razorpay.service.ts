@@ -1,27 +1,10 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
-export interface RazorpayGateway {
-  keyId: string;
-  keySecret: string;
-  name: 'hardware' | 'software';
-}
-
-export interface RazorpayOrder {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-}
-
-export interface RazorpayPayment {
-  id: string;
-  order_id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  captured: boolean;
-}
+import type {
+  RazorpayGateway,
+  RazorpayOrder,
+  RazorpayPayment,
+} from '../../common/types/razorpay.types';
 
 @Injectable()
 export class RazorpayService {
@@ -76,7 +59,10 @@ export class RazorpayService {
         }),
       });
 
-      return this.parseResponse<RazorpayOrder>(response, 'create Razorpay order');
+      return this.parseResponse<RazorpayOrder>(
+        response,
+        'create Razorpay order',
+      );
     } finally {
       clearTimeout(timeout);
     }
@@ -146,10 +132,11 @@ export class RazorpayService {
         typeof payload.error === 'object' && payload.error !== null
           ? (payload.error as Record<string, unknown>).description
           : undefined;
-      const description = typeof rawDescription === 'string' ? rawDescription : response.statusText;
-      throw new BadGatewayException(
-        `Failed to ${action}: ${description}`,
-      );
+      const description =
+        typeof rawDescription === 'string'
+          ? rawDescription
+          : response.statusText;
+      throw new BadGatewayException(`Failed to ${action}: ${description}`);
     }
 
     return payload as T;

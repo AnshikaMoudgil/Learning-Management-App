@@ -21,13 +21,24 @@ class PaymentService {
     return CouponValidation.fromJson(result as Map<String, dynamic>);
   }
 
+  Future<CouponValidation> validateCartCoupon({
+    required String code,
+    required List<String> courseIds,
+  }) async {
+    final result = await _api.post('/api/v1/coupons/validate-cart', body: {
+      'code': code,
+      'courseIds': courseIds,
+    });
+    return CouponValidation.fromJson(result as Map<String, dynamic>);
+  }
+
   Future<PaymentOrder> createOrder({
-    required String courseId,
+    required List<String> courseIds,
     String? couponCode,
     bool allowRenewal = false,
   }) async {
     final result = await _api.post('/api/v1/payments/create-order', body: {
-      'courseId': courseId,
+      'courseIds': courseIds,
       'allowRenewal': allowRenewal,
       if (couponCode != null && couponCode.trim().isNotEmpty)
         'couponCode': couponCode.trim(),
@@ -47,28 +58,28 @@ class PaymentService {
     });
   }
 
-  Future<PaymentCheckoutResult> checkoutCourse({
-    required String courseId,
-    required String courseTitle,
+  Future<PaymentCheckoutResult> checkoutCourses({
+    required List<String> courseIds,
+    required String checkoutTitle,
     String? couponCode,
     bool allowRenewal = false,
   }) async {
     final order = await createOrder(
-      courseId: courseId,
+      courseIds: courseIds,
       couponCode: couponCode,
       allowRenewal: allowRenewal,
     );
 
     if (kIsWeb) {
-      return _checkoutWeb(order: order, courseTitle: courseTitle);
+      return _checkoutWeb(order: order, checkoutTitle: checkoutTitle);
     }
 
-    return _checkoutMobile(order: order, courseTitle: courseTitle);
+    return _checkoutMobile(order: order, checkoutTitle: checkoutTitle);
   }
 
   Future<PaymentCheckoutResult> _checkoutMobile({
     required PaymentOrder order,
-    required String courseTitle,
+    required String checkoutTitle,
   }) async {
     final completer = Completer<PaymentCheckoutResult>();
     final razorpay = Razorpay();
@@ -107,8 +118,8 @@ class PaymentService {
       'key': order.keyId,
       'amount': order.amount,
       'currency': order.currency,
-      'name': 'MBT LMS',
-      'description': courseTitle,
+      'name': order.storeName,
+      'description': checkoutTitle,
       'order_id': order.orderId,
       'prefill': const {},
       'theme': {'color': '#1E88E5'},
@@ -125,7 +136,7 @@ class PaymentService {
 
   Future<PaymentCheckoutResult> _checkoutWeb({
     required PaymentOrder order,
-    required String courseTitle,
+    required String checkoutTitle,
   }) async {
     final completer = Completer<PaymentCheckoutResult>();
 
@@ -133,8 +144,8 @@ class PaymentService {
       key: order.keyId,
       amount: order.amount,
       currency: order.currency,
-      name: 'MBT LMS',
-      description: courseTitle,
+      name: order.storeName,
+      description: checkoutTitle,
       orderId: order.orderId,
       onSuccess: (paymentId, razorpayOrderId, signature) async {
         try {
