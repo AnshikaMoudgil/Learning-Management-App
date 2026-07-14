@@ -52,4 +52,8 @@ export class SupabaseService implements OnModuleInit {
   getClient() {
     return this.supabaseClient;
   }
+
+  async clearAuthSession(): Promise<void> {
+    await this.supabaseClient.auth.signOut().catch(() => {});
+  }
 }

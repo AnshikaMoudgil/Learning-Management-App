@@ -1,190 +1,105 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
-import 'dashboard_layout.dart';
-import 'package:go_router/go_router.dart'; // Just to link back to home if needed
 
 class PaymentSuccessScreen extends StatelessWidget {
-  const PaymentSuccessScreen({Key? key}) : super(key: key);
+  final String? courseTitle;
+  final String? orderId;
+  final String? status;
+
+  const PaymentSuccessScreen({
+    Key? key,
+    this.courseTitle,
+    this.orderId,
+    this.status,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    const Color darkBg = Color(0xFF0F1116);
-    const Color cardColor = Color(0xFF1A1D24);
-    
+    const darkBg = Color(0xFF0F1116);
+    const cardColor = Color(0xFF1A1D24);
+    final isPending = status == 'pending';
+    final accent = isPending ? const Color(0xFFF59E0B) : const Color(0xFF1EAD56);
+    final title = isPending ? 'Confirmation Pending' : 'Payment Successful!';
+    final message = isPending
+        ? 'The payment gateway returned success, but app verification was interrupted. Webhook confirmation should activate access automatically.'
+        : 'Your payment is confirmed and your course access is active.';
+
     return Scaffold(
       backgroundColor: darkBg,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
-              const SizedBox(height: 40),
-              
-              // Success Icon
+              const SizedBox(height: 44),
               Container(
-                width: 80,
-                height: 80,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1EAD56),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 50),
+                width: 82,
+                height: 82,
+                decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                child: Icon(isPending ? Icons.schedule : Icons.check, color: Colors.white, size: 48),
               ),
               const SizedBox(height: 24),
-              
-              // Texts
-              const Text('Payment Successful!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(title, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              const Text('Thank you for your purchase.\nYour order has been confirmed.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5)),
+              Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.5)),
               const SizedBox(height: 24),
-              
-              // Order ID Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: const Color(0xFF1EAD56).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                      child: const Text('Order ID', style: TextStyle(color: Color(0xFF1EAD56), fontSize: 10, fontWeight: FontWeight.bold)),
+                      decoration: BoxDecoration(color: accent.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(4)),
+                      child: Text(isPending ? 'Pending Order' : 'Order ID', style: TextStyle(color: accent, fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(height: 8),
-                    const Text('ORD-2024-05-24-7843', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(orderId ?? 'Not available', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    const Text('May 24, 2024 • 09:41 AM', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text(DateTime.now().toLocal().toString(), style: const TextStyle(color: Colors.white54, fontSize: 12)),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              
-              // Payment Summary
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                ),
+                decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Payment Summary', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
-                    _buildSummaryRow('Total Items', '3 Items'),
+                    _buildSummaryRow('Course', courseTitle ?? 'Course enrollment'),
                     const SizedBox(height: 12),
-                    _buildSummaryRow('Subtotal', '₹3,387'),
-                    const SizedBox(height: 12),
-                    _buildSummaryRow('Discount', '- ₹590', valueColor: const Color(0xFF1EAD56)),
-                    const SizedBox(height: 12),
-                    _buildSummaryRow('Tax (18% GST)', '₹610'),
+                    _buildSummaryRow('Status', isPending ? 'Awaiting webhook confirmation' : 'Completed', valueColor: accent),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(color: Colors.white24),
                     ),
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Total Paid', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text('₹3,407', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        const Text('Access', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text(isPending ? 'Updating' : 'Active', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],
                 ),
               ),
-              
-              // Purchased Items
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Divider(color: Colors.white24),
-                    ),
-                    const Text('Purchased Items', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    _buildPurchasedItem('assets/iphone_hardware.png', 'Mobile Repair Mastery', 'Hardware (Skill Course)', 'Beginner to Advanced', '₹2,499'),
-                    const SizedBox(height: 16),
-                    _buildPurchasedItem('assets/iphone_software.png', 'React - The Complete Guide', 'Software (Skill Course)', 'Beginner to Advanced', '₹799'),
-                    const SizedBox(height: 16),
-                    _buildPurchasedItem('assets/android_hardware.png', 'Python for Data Science', 'Software (Skill Course)', 'Beginner', '₹699'),
-                    
-                    const SizedBox(height: 24),
-                    // Invoice Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF232832),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(color: AppColors.primaryBlue.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.receipt_long, color: AppColors.primaryBlue, size: 24),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Invoice sent to your email', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                                SizedBox(height: 4),
-                                Text('abhishek@example.com', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white24),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Row(
-                              children: [
-                                Text('View Invoice', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                SizedBox(width: 4),
-                                Icon(Icons.download, color: Colors.white, size: 14),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 24),
-              
-              // Buttons
               SizedBox(
                 width: double.infinity,
                 height: 54,
-                child: ElevatedButton(
-                  onPressed: () {},
+                child: ElevatedButton.icon(
+                  onPressed: () => context.go('/my-learning'),
+                  icon: Icon(isPending ? Icons.refresh : Icons.play_circle_outline, color: Colors.white, size: 20),
+                  label: Text(isPending ? 'Check My Learning' : 'Continue Learning', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.play_circle_outline, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Text('Continue Learning', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                    ],
                   ),
                 ),
               ),
@@ -193,26 +108,22 @@ class PaymentSuccessScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 54,
                 child: OutlinedButton(
-                  onPressed: () => context.go('/home'),
+                  onPressed: () => context.go('/store'),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide.none,
                     backgroundColor: cardColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Go to My Learning', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: const Text('Back to Store', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
-              const SizedBox(height: 24),
-              
-              // Footer
+              const SizedBox(height: 32),
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.shield_outlined, color: Colors.white54, size: 14),
                   SizedBox(width: 4),
-                  Text('Secured by', style: TextStyle(color: Colors.white54, fontSize: 12)),
-                  SizedBox(width: 4),
-                  Text('Razorpay', style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+                  Text('Secured by Razorpay', style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 40),
@@ -226,43 +137,17 @@ class PaymentSuccessScreen extends StatelessWidget {
   Widget _buildSummaryRow(String label, String value, {Color? valueColor}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        Text(value, style: TextStyle(color: valueColor ?? Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _buildPurchasedItem(String imagePath, String title, String subtitle, String level, String price) {
-    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            image: DecorationImage(image: AssetImage(imagePath), fit: BoxFit.cover),
-          ),
-        ),
-        const SizedBox(width: 12),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+        const SizedBox(width: 16),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: AppColors.primaryBlue.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                child: Text(level, style: const TextStyle(color: AppColors.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
-            ],
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(color: valueColor ?? Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
           ),
         ),
-        Text(price, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
       ],
     );
   }

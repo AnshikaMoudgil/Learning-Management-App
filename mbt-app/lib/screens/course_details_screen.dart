@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../widgets/share_bottom_sheet.dart';
-import 'package:go_router/go_router.dart';
+import '../models/course.dart';
+import '../models/payment.dart';
+import '../services/course_service.dart';
+import '../services/payment_service.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
-  const CourseDetailsScreen({Key? key}) : super(key: key);
+  final String? courseId;
+
+  const CourseDetailsScreen({Key? key, this.courseId}) : super(key: key);
 
   @override
   State<CourseDetailsScreen> createState() => _CourseDetailsScreenState();
@@ -13,10 +18,17 @@ class CourseDetailsScreen extends StatefulWidget {
 
 class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final Future<Course>? _courseFuture;
+  final _courseService = CourseService();
+  final _paymentService = PaymentService();
+  final _couponController = TextEditingController();
+  bool _isCheckingOut = false;
+  String? _checkoutMessage;
 
   @override
   void initState() {
     super.initState();
+    _courseFuture = widget.courseId == null ? null : _courseService.getCourseDetails(widget.courseId!);
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       setState(() {});
@@ -26,6 +38,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
   @override
   void dispose() {
     _tabController.dispose();
+    _couponController.dispose();
     super.dispose();
   }
 
@@ -54,10 +67,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: widget.courseId == null
+          ? SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
             // Header Image
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -173,10 +187,199 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
               child: _buildCurrentTabContent(),
             ),
             const SizedBox(height: 40),
+                ],
+              ),
+            )
+          : FutureBuilder<Course>(
+              future: _courseFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(snapshot.error.toString(), textAlign: TextAlign.center),
+                    ),
+                  );
+                }
+                return _buildDynamicCourseBody(snapshot.data!);
+              },
+            ),
+    );
+  }
+
+  Widget _buildDynamicCourseBody(Course course) {
+    final enrolled = course.enrollment?.isEnrolled ?? false;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              image: DecorationImage(
+                image: course.thumbnailUrl == null
+                    ? const AssetImage('assets/iphone_software.png')
+                    : NetworkImage(course.thumbnailUrl!) as ImageProvider,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(course.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          const SizedBox(height: 8),
+          Text(course.shortDescription ?? course.description ?? '', style: const TextStyle(fontSize: 14, color: AppColors.textLight, height: 1.5)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildCourseBadge(Icons.access_time, course.estimatedDuration ?? 'Self paced'),
+              _buildCourseBadge(Icons.play_lesson_outlined, '${course.totalLessons} Lessons'),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (course.learningOutcomes.isNotEmpty) ...[
+            const Text('What you\'ll learn', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            const SizedBox(height: 12),
+            ...course.learningOutcomes.map(_buildCheckListItem),
+            const SizedBox(height: 20),
           ],
-        ),
+          const Text('Course Content', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          const SizedBox(height: 12),
+          ...course.sections.map(_buildSectionExpansion),
+          const SizedBox(height: 24),
+          if (!enrolled) _buildCheckoutPanel(course) else _buildResumePanel(course),
+        ],
       ),
     );
+  }
+
+  Widget _buildSectionExpansion(CourseSection section) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ExpansionTile(
+        title: Text(section.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        children: section.lessons.map((lesson) {
+          final locked = lesson.videoUrl == null && !lesson.isFreePreview;
+          return ListTile(
+            dense: true,
+            leading: Icon(locked ? Icons.lock_outline : Icons.play_circle_outline, color: locked ? Colors.grey : AppColors.primaryBlue),
+            title: Text(lesson.title, style: const TextStyle(fontSize: 13)),
+            subtitle: lesson.videoDuration == null ? null : Text(lesson.videoDuration!, style: const TextStyle(fontSize: 11)),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildCheckoutPanel(Course course) {
+    final price = course.effectivePrice;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Course price', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              Text('₹${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textDark)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _couponController,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              labelText: 'Coupon code',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          if (_checkoutMessage != null) ...[
+            const SizedBox(height: 10),
+            Text(_checkoutMessage!, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+          ],
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isCheckingOut ? null : () => _checkout(course),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBlue,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: _isCheckingOut
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Buy Course', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumePanel(Course course) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => context.push('/course-progress'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryBlue,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: const Text('Resume Learning', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Future<void> _checkout(Course course) async {
+    setState(() {
+      _isCheckingOut = true;
+      _checkoutMessage = null;
+    });
+    try {
+      final result = await _paymentService.checkoutCourse(
+        courseId: course.id,
+        courseTitle: course.title,
+        couponCode: _couponController.text,
+      );
+      if (!mounted) return;
+      context.push(
+        '/payment-success?courseTitle=${Uri.encodeComponent(course.title)}&orderId=${Uri.encodeComponent(result.order.orderId)}',
+      );
+    } on PaymentPendingException catch (error) {
+      if (!mounted) return;
+      context.push(
+        '/payment-success?status=pending&courseTitle=${Uri.encodeComponent(course.title)}&orderId=${Uri.encodeComponent(error.order.orderId)}',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _checkoutMessage = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingOut = false;
+        });
+      }
+    }
   }
 
   Widget _buildCurrentTabContent() {

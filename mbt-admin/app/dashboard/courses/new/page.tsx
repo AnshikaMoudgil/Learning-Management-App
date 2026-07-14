@@ -35,12 +35,6 @@ export default function NewCoursePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.id) setUserId(session.user.id);
-    });
-  }, []);
-
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [shortDescription, setShortDescription] = useState('');
@@ -56,9 +50,29 @@ export default function NewCoursePage() {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [previewVideoUrl, setPreviewVideoUrl] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
+  const [instructorId, setInstructorId] = useState('');
+  const [averageRating, setAverageRating] = useState('');
+  const [reviewsCount, setReviewsCount] = useState('');
+  const [instructors, setInstructors] = useState<{ id: string; full_name: string }[]>([]);
   const [learningOutcomes, setLearningOutcomes] = useState<string[]>([]);
   const [requirements, setRequirements] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) setUserId(session.user.id);
+    });
+  }, []);
+
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('role', 'instructor')
+      .then(({ data, error }) => {
+        if (!error && data) setInstructors(data);
+      });
+  }, []);
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
@@ -126,7 +140,8 @@ export default function NewCoursePage() {
 
     const formData = {
       title, slug, shortDescription, description, language, level, category,
-      price, discountPrice, validityDays, estimatedDuration, isPublished,
+      price, discountPrice, instructorId, averageRating, reviewsCount,
+      validityDays, estimatedDuration, isPublished,
       thumbnailUrl, previewVideoUrl, isBestseller,
       learningOutcomes, requirements,
     };
@@ -157,6 +172,9 @@ export default function NewCoursePage() {
         category,
         price: Number(price),
         discount_price: discountPrice ? Number(discountPrice) : null,
+        instructor_id: instructorId || null,
+        average_rating: averageRating ? parseFloat(averageRating) : 0,
+        reviews_count: reviewsCount ? parseInt(reviewsCount, 10) : 0,
         validity_days: validityDays ? parseInt(validityDays, 10) : null,
         estimated_duration: estimatedDuration || null,
         is_published: isPublished,
@@ -362,6 +380,50 @@ export default function NewCoursePage() {
                     onChange={(e) => setEstimatedDuration(e.target.value)}
                     className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition"
                   />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
+              <h2 className="text-lg font-bold text-white">Instructor & Ratings</h2>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Instructor</label>
+                  <Select
+                    value={instructorId}
+                    onChange={setInstructorId}
+                    options={[
+                      { value: '', label: 'No instructor' },
+                      ...instructors.map((i) => ({ value: i.id, label: i.full_name })),
+                    ]}
+                    placeholder="Select instructor"
+                    error={errors.instructorId}
+                  />
+                  {errors.instructorId && <p className="text-xs text-rose-400">{errors.instructorId}</p>}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Average Rating</label>
+                    <input
+                      type="text"
+                      placeholder="0.0 - 5.0"
+                      value={averageRating}
+                      onChange={(e) => setAverageRating(e.target.value)}
+                      className={inputClass('averageRating')}
+                    />
+                    {errors.averageRating && <p className="text-xs text-rose-400">{errors.averageRating}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Reviews Count</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 150"
+                      value={reviewsCount}
+                      onChange={(e) => setReviewsCount(e.target.value)}
+                      className={inputClass('reviewsCount')}
+                    />
+                    {errors.reviewsCount && <p className="text-xs text-rose-400">{errors.reviewsCount}</p>}
+                  </div>
                 </div>
               </div>
             </div>

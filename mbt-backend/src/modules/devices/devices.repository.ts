@@ -45,6 +45,7 @@ export class DevicesRepository {
       .from('devices')
       .select('*')
       .eq('user_id', userId)
+      .eq('is_active', true)
       .maybeSingle();
 
     if (error) {
@@ -99,6 +100,33 @@ export class DevicesRepository {
       .from('devices')
       .update({ last_seen_at: new Date().toISOString() } as never)
       .eq('id', deviceId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return data;
+  }
+
+  async upsertDevice(
+    userId: string,
+    fingerprint: string,
+    platform?: string,
+  ): Promise<Device> {
+    const { data, error } = await this.db
+      .from('devices')
+      .upsert(
+        {
+          user_id: userId,
+          fingerprint,
+          platform: platform ?? null,
+          is_active: true,
+          last_seen_at: new Date().toISOString(),
+        } as never,
+        { onConflict: 'user_id, fingerprint' },
+      )
       .select()
       .single();
 
@@ -198,7 +226,9 @@ export class DevicesRepository {
     return data ?? [];
   }
 
-  async findLastApprovedRequest(userId: string): Promise<DeviceChangeRequest | null> {
+  async findLastApprovedRequest(
+    userId: string,
+  ): Promise<DeviceChangeRequest | null> {
     const { data, error } = await this.db
       .from('device_change_requests')
       .select('*')
@@ -265,5 +295,4 @@ export class DevicesRepository {
 
     return data;
   }
-
 }

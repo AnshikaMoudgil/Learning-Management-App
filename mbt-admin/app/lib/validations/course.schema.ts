@@ -20,6 +20,21 @@ export const courseSchema = z
         (v) => !v || (!isNaN(Number(v)) && Number(v) >= 0),
         'Discount Price must be a valid positive number.'
       ),
+    instructorId: z.string().optional(),
+    averageRating: z
+      .string()
+      .optional()
+      .refine(
+        (v) => !v || (!isNaN(Number(v)) && Number(v) >= 0 && Number(v) <= 5),
+        'Average Rating must be between 0 and 5.'
+      ),
+    reviewsCount: z
+      .string()
+      .optional()
+      .refine(
+        (v) => !v || (!isNaN(Number(v)) && Number(v) >= 0 && Number.isInteger(Number(v))),
+        'Reviews Count must be a valid positive integer.'
+      ),
     validityDays: z.string().optional(),
     estimatedDuration: z.string().optional(),
     isPublished: z.boolean(),

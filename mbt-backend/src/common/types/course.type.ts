@@ -17,6 +17,7 @@ export interface Course {
   estimated_duration: string | null;
   is_published: boolean;
   instructor_id: string | null;
+  instructor_name: string | null;
   average_rating: number;
   reviews_count: number;
   is_bestseller: boolean;
@@ -25,6 +26,37 @@ export interface Course {
   requirements: string[];
   created_at: string;
   updated_at: string;
+  sections?: CourseSection[];
+  enrollment?: CourseEnrollmentState;
+}
+
+export interface CourseSection {
+  id: string;
+  course_id: string;
+  title: string;
+  description: string | null;
+  sort_order: number;
+  lessons: CourseLesson[];
+}
+
+export interface CourseLesson {
+  id: string;
+  section_id: string;
+  course_id: string;
+  title: string;
+  description: string | null;
+  video_url?: string | null;
+  video_duration: string | null;
+  is_free_preview: boolean;
+  sort_order: number;
+}
+
+export interface CourseEnrollmentState {
+  isEnrolled: boolean;
+  enrollmentId: string | null;
+  status: string | null;
+  progressPercent: number;
+  validityEndAt: string | null;
 }
 
 export interface PaginationMeta {

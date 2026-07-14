@@ -186,6 +186,28 @@ export default function OverviewPage() {
           </Link>
 
           <Link
+            href="/dashboard/coupons"
+            className="flex items-center justify-between p-4 rounded-xl border border-zinc-800 hover:border-teal-500/40 hover:bg-teal-500/5 transition-all duration-200 group"
+          >
+            <div className="space-y-1">
+              <span className="text-sm font-semibold text-white group-hover:text-teal-400 transition-colors">Manage Coupons</span>
+              <p className="text-xs text-zinc-500">Create and manage promotional discount codes</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all" />
+          </Link>
+
+          <Link
+            href="/dashboard/payments"
+            className="flex items-center justify-between p-4 rounded-xl border border-zinc-800 hover:border-teal-500/40 hover:bg-teal-500/5 transition-all duration-200 group"
+          >
+            <div className="space-y-1">
+              <span className="text-sm font-semibold text-white group-hover:text-teal-400 transition-colors">Payments & Orders</span>
+              <p className="text-xs text-zinc-500">View transactions, orders, and Razorpay webhook logs</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-teal-400 group-hover:translate-x-0.5 transition-all" />
+          </Link>
+
+          <Link
             href="/dashboard/change-password"
             className="flex items-center justify-between p-4 rounded-xl border border-zinc-800 hover:border-teal-500/40 hover:bg-teal-500/5 transition-all duration-200 group"
           >

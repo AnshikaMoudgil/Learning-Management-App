@@ -1,16 +1,11 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { DeviceGuard } from '../../common/guards/device.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CoursesService } from './courses.service';
 import type { CourseLevel } from '../../common/types/course.type';
+import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 
 @Controller('api/v1/courses')
 @UseGuards(AuthGuard, RolesGuard, DeviceGuard)
@@ -37,7 +32,10 @@ export class CoursesController {
   }
 
   @Get(':idOrSlug')
-  findOne(@Param('idOrSlug') idOrSlug: string) {
-    return this.coursesService.findByIdOrSlug(idOrSlug);
+  findOne(
+    @Param('idOrSlug') idOrSlug: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.coursesService.findByIdOrSlug(idOrSlug, req.user.id);
   }
 }

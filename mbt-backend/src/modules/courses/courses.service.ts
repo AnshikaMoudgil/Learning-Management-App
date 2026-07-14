@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CoursesRepository } from './courses.repository';
-import type { Course, PaginatedResult, CourseLevel } from '../../common/types/course.type';
+import type {
+  Course,
+  PaginatedResult,
+  CourseLevel,
+} from '../../common/types/course.type';
 
 @Injectable()
 export class CoursesService {
@@ -38,10 +42,11 @@ export class CoursesService {
     };
   }
 
-  async findByIdOrSlug(idOrSlug: string): Promise<Course> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      idOrSlug,
-    );
+  async findByIdOrSlug(idOrSlug: string, userId?: string): Promise<Course> {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        idOrSlug,
+      );
 
     const course = isUuid
       ? await this.coursesRepository.findById(idOrSlug)
@@ -51,6 +56,10 @@ export class CoursesService {
       throw new NotFoundException('Course not found');
     }
 
-    return course;
+    if (!userId) {
+      return course;
+    }
+
+    return this.coursesRepository.findDetailForUser(course, userId);
   }
 }
