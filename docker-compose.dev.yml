@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      target: development
+    container_name: mbt-backend-dev
+    develop:
+      watch:
+        - action: sync
+          path: ./mbt-backend/src
+          target: /app/src
+        - action: sync
+          path: ./mbt-backend/.env
+          target: /app/.env
+    volumes:
+      - ./mbt-backend/src:/app/src
+      - ./mbt-backend/.env:/app/.env
+
+  admin:
+    build:
+      target: development
+    container_name: mbt-admin-dev
+    develop:
+      watch:
+        - action: sync
+          path: ./mbt-admin
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+    volumes:
+      - ./mbt-admin:/app
+      - /app/node_modules
+      - /app/.next

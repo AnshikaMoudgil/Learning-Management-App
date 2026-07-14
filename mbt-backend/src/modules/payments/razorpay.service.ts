@@ -102,12 +102,13 @@ export class RazorpayService {
     const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
 
     if (!response.ok) {
-      const description =
+      const rawDescription =
         typeof payload.error === 'object' && payload.error !== null
           ? (payload.error as Record<string, unknown>).description
           : undefined;
+      const description = typeof rawDescription === 'string' ? rawDescription : response.statusText;
       throw new BadGatewayException(
-        `Failed to ${action}: ${String(description ?? response.statusText)}`,
+        `Failed to ${action}: ${description}`,
       );
     }
 

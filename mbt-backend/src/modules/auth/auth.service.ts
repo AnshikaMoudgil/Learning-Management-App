@@ -23,6 +23,8 @@ export class AuthService {
       throw new BadRequestException(`Failed to send OTP: ${error.message}`);
     }
 
+    await this.supabaseService.clearAuthSession();
+
     return { message: 'OTP sent successfully' };
   }
 
@@ -39,7 +41,11 @@ export class AuthService {
       );
     }
 
-    return this.buildAuthResponse(data.session, data.user!);
+    const response = await this.buildAuthResponse(data.session, data.user!);
+
+    await this.supabaseService.clearAuthSession();
+
+    return response;
   }
 
   async authenticateWithGoogle(
@@ -58,7 +64,11 @@ export class AuthService {
       );
     }
 
-    return this.buildAuthResponse(data.session, data.user);
+    const response = await this.buildAuthResponse(data.session, data.user);
+
+    await this.supabaseService.clearAuthSession();
+
+    return response;
   }
 
   async getSession(userId: string): Promise<AuthResponseDto> {

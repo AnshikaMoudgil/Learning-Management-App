@@ -7,6 +7,7 @@ import {
 import { DevicesRepository } from './devices.repository';
 import { Device } from '../../common/types/device.type';
 import { DeviceChangeRequest } from '../../common/types/device-change-request.type';
+import { sanitizeText } from '../../common/utils/sanitize';
 
 @Injectable()
 export class DevicesService {
@@ -31,7 +32,11 @@ export class DevicesService {
     );
 
     if (existing) {
-      return this.devicesRepository.updateLastSeen(existing.id);
+      return this.devicesRepository.upsertDevice(
+        userId,
+        fingerprint,
+        platform,
+      );
     }
 
     const anyDevice = await this.devicesRepository.findAnyByUserId(userId);
@@ -62,6 +67,8 @@ export class DevicesService {
     newFingerprint: string,
     reason?: string,
   ): Promise<DeviceChangeRequest> {
+    const sanitizedReason = reason ? sanitizeText(reason) : undefined;
+
     const lastApproved =
       await this.devicesRepository.findLastApprovedRequest(userId);
 
@@ -93,7 +100,7 @@ export class DevicesService {
     return this.devicesRepository.createChangeRequest(
       userId,
       newFingerprint,
-      reason,
+      sanitizedReason,
       currentDevice?.fingerprint,
     );
   }

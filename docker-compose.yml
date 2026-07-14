@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ./mbt-backend
+    container_name: mbt-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./mbt-backend/.env
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./mbt-admin
+    container_name: mbt-admin
+    ports:
+      - "3001:3000"
+    env_file:
+      - ./mbt-admin/.env
+    depends_on:
+      - backend
+    restart: unless-stopped
