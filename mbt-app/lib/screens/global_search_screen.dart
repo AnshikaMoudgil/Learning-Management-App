@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import 'home_dashboard.dart';
@@ -121,76 +121,27 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
 
     _addRecentSearch(query);
 
-    final supabase = Supabase.instance.client;
-    final searchTerm = '%${query.trim()}%';
-
     try {
-      // 1. Search Courses
-      final courseResponse = await supabase
-          .from('courses')
-          .select('*, profiles!courses_instructor_id_fkey(full_name)')
-          .or('title.ilike.$searchTerm,description.ilike.$searchTerm,category.ilike.$searchTerm')
-          .eq('is_published', true)
-          .limit(20);
-
-      // 2. Search Recordings (Lessons)
-      final recordingResponse = await supabase
-          .from('course_lessons')
-          .select('*, courses!inner(id, title, category, profiles!courses_instructor_id_fkey(full_name))')
-          .ilike('title', searchTerm)
-          .limit(20);
-
-      // 3. Search Teachers
-      final teacherResponse = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('role', 'instructor')
-          .ilike('full_name', searchTerm)
-          .limit(20);
-
+      final q = Uri.encodeComponent(query.trim());
+      final response = await ApiClient().get('/api/v1/search?q=$q');
+      
       if (mounted) {
         setState(() {
-          _courseResults = courseResponse as List<dynamic>;
-          _recordingResults = recordingResponse as List<dynamic>;
-          _teacherResults = teacherResponse as List<dynamic>;
+          _courseResults = (response['courses'] as List<dynamic>?) ?? [];
+          _recordingResults = (response['recordings'] as List<dynamic>?) ?? [];
+          _teacherResults = (response['teachers'] as List<dynamic>?) ?? [];
           _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('Search error: $e');
-      // If foreign key relations fail, fallback to simple select
-      try {
-        final courseResponseFallback = await supabase
-            .from('courses')
-            .select('*')
-            .or('title.ilike.$searchTerm,description.ilike.$searchTerm,category.ilike.$searchTerm')
-            .eq('is_published', true)
-            .limit(20);
-
-        final recordingResponseFallback = await supabase
-            .from('course_lessons')
-            .select('*')
-            .ilike('title', searchTerm)
-            .limit(20);
-            
-        final teacherResponseFallback = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('role', 'instructor')
-          .ilike('full_name', searchTerm)
-          .limit(20);
-
-        if (mounted) {
-          setState(() {
-            _courseResults = courseResponseFallback as List<dynamic>;
-            _recordingResults = recordingResponseFallback as List<dynamic>;
-            _teacherResults = teacherResponseFallback as List<dynamic>;
-            _isLoading = false;
-          });
-        }
-      } catch (e2) {
-         debugPrint('Fallback Search error: $e2');
-         if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _courseResults = [];
+          _recordingResults = [];
+          _teacherResults = [];
+          _isLoading = false;
+        });
       }
     }
   }

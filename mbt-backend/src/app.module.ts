@@ -16,6 +16,7 @@ import { DevicesModule } from './modules/devices/devices.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
     CertificatesModule,
     NotificationsModule,
     AuditLogsModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
