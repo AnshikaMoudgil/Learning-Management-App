@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../models/course.dart';
 import '../services/course_service.dart';
+import '../widgets/cart_badge.dart';
 
 class CourseStoreScreen extends StatefulWidget {
   const CourseStoreScreen({Key? key}) : super(key: key);
@@ -66,7 +67,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                         ],
                       ),
                     ),
-                    _buildIconBadge(Icons.shopping_cart_outlined, '0', Colors.blue, () => context.push('/cart')),
+                    const CartBadge(),
                     const SizedBox(width: 16),
                     _buildIconBadge(Icons.notifications_outlined, '0', Colors.red, () => context.push('/notifications')),
                   ],
@@ -281,6 +282,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     required String subtitle,
     required String author,
     required String authorRole,
+    String? authorAvatarUrl,
     required String rating,
     required String reviews,
     required String duration,
@@ -359,7 +361,11 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const CircleAvatar(radius: 10, child: Icon(Icons.person, size: 12, color: Colors.grey)),
+                        CircleAvatar(
+                          radius: 10,
+                          backgroundImage: authorAvatarUrl != null ? NetworkImage(authorAvatarUrl) : null,
+                          child: authorAvatarUrl == null ? const Icon(Icons.person, size: 12, color: Colors.grey) : null,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Column(
@@ -415,7 +421,8 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
       title: course.title,
       subtitle: course.shortDescription ?? course.description ?? '',
       author: course.instructorName ?? 'Instructor',
-      authorRole: course.category ?? 'Course',
+      authorRole: course.instructorSpecialization ?? course.category ?? 'Instructor',
+      authorAvatarUrl: course.instructorAvatarUrl,
       rating: course.averageRating.toStringAsFixed(1),
       reviews: '${course.reviewsCount}',
       duration: course.estimatedDuration ?? 'Self paced',
@@ -466,9 +473,21 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.person, size: 12, color: Colors.grey),
+                CircleAvatar(
+                  radius: 8,
+                  backgroundImage: course.instructorAvatarUrl != null ? NetworkImage(course.instructorAvatarUrl!) : null,
+                  child: course.instructorAvatarUrl == null ? const Icon(Icons.person, size: 10, color: Colors.grey) : null,
+                ),
                 const SizedBox(width: 6),
-                Expanded(child: Text(course.instructorName ?? 'Instructor', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark))),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(course.instructorName ?? 'Instructor', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      Text(course.instructorSpecialization ?? course.category ?? '', style: const TextStyle(fontSize: 8, color: AppColors.textLight)),
+                    ],
+                  ),
+                ),
                 Text('₹${course.effectivePrice.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark)),
               ],
             ),

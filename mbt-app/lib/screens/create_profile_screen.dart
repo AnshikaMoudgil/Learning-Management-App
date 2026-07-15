@@ -2,12 +2,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
 import '../services/profile_service.dart';
-import 'home_dashboard.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateProfileScreen extends StatefulWidget {
@@ -20,6 +18,7 @@ class CreateProfileScreen extends StatefulWidget {
 class _CreateProfileScreenState extends State<CreateProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   bool _isLoading = false;
   Uint8List? _avatarBytes;
   String? _avatarPath;
@@ -28,21 +27,31 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   String _countryCode = '+91';
   final List<String> _countryCodes = ['+20', '+91'];
 
+  late final bool _needsPhone;
+  late final bool _needsEmail;
+
   @override
   void initState() {
     super.initState();
-    final phone = Supabase.instance.client.auth.currentUser?.phone ?? '';
-    for (final code in _countryCodes) {
-      if (phone.startsWith(code)) {
-        _countryCode = code;
-        _phoneController.text = phone.substring(code.length);
-        return;
+    final user = Supabase.instance.client.auth.currentUser;
+
+    _needsPhone = user?.phone == null || user!.phone!.isEmpty;
+    _needsEmail = user?.email == null || user!.email!.isEmpty;
+
+    if (!_needsPhone) {
+      final phone = user!.phone!;
+      for (final code in _countryCodes) {
+        if (phone.startsWith(code)) {
+          _countryCode = code;
+          _phoneController.text = phone.substring(code.length);
+          return;
+        }
       }
-    }
-    if (phone.startsWith('+')) {
-      _phoneController.text = phone.substring(3);
-    } else {
-      _phoneController.text = phone;
+      if (phone.startsWith('+')) {
+        _phoneController.text = phone.substring(3);
+      } else {
+        _phoneController.text = phone;
+      }
     }
   }
 
@@ -50,6 +59,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -60,9 +70,25 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       return;
     }
 
+    final phone = _phoneController.text.trim();
+    if (_needsPhone && phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter your phone number')));
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    if (_needsEmail && email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter your email')));
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      await _profileService.createProfile(name);
+      await _profileService.createProfile(
+        name,
+        phone: _needsPhone && phone.isNotEmpty ? '$_countryCode$phone' : null,
+        email: _needsEmail && email.isNotEmpty ? email : null,
+      );
 
       if (_avatarBytes != null && _avatarPath != null) {
         try {
@@ -77,8 +103,6 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         }
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_signup_flow', false);
       await _profileService.bindDevice(Supabase.instance.client.auth.currentUser!.id);
 
       if (mounted) {
@@ -216,64 +240,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             ),
             const SizedBox(height: 24),
 
-            _buildLabel('Mobile Number'),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _countryCode,
-                        items: _countryCodes.map((code) => DropdownMenuItem(
-                          value: code,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(code == '+91' ? '🇮🇳' : '🇪🇬', style: const TextStyle(fontSize: 20)),
-                              const SizedBox(width: 8),
-                              Text(code, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        )).toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _countryCode = val);
-                        },
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                  Container(width: 1, height: 24, color: AppColors.border),
-                  Expanded(
-                    child: TextField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter your mobile number',
-                        hintStyle: TextStyle(color: AppColors.textLight, fontSize: 14),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.verified_user_outlined, size: 16, color: AppColors.primaryBlue),
-                SizedBox(width: 8),
-                Text('We\'ll use this number to keep your account secure', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
-              ],
-            ),
-            const SizedBox(height: 32),
+            if (_needsPhone) ..._buildPhoneSection(),
+            if (_needsEmail) ..._buildEmailSection(),
 
             SizedBox(
               width: double.infinity,
@@ -305,6 +273,98 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       ),
       ),
     );
+  }
+
+  List<Widget> _buildPhoneSection() {
+    return [
+      _buildLabel('Mobile Number'),
+      const SizedBox(height: 8),
+      Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _countryCode,
+                  items: _countryCodes.map((code) => DropdownMenuItem(
+                    value: code,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(code == '+91' ? '🇮🇳' : '🇪🇬', style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Text(code, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  )).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _countryCode = val);
+                  },
+                  isDense: true,
+                ),
+              ),
+            ),
+            Container(width: 1, height: 24, color: AppColors.border),
+            Expanded(
+              child: TextField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  hintText: 'Enter your mobile number',
+                  hintStyle: TextStyle(color: AppColors.textLight, fontSize: 14),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.verified_user_outlined, size: 16, color: AppColors.primaryBlue),
+          SizedBox(width: 8),
+          Text('We\'ll use this number to keep your account secure', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+        ],
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  List<Widget> _buildEmailSection() {
+    return [
+      _buildLabel('Email Address'),
+      const SizedBox(height: 8),
+      TextField(
+        controller: _emailController,
+        decoration: InputDecoration(
+          hintText: 'Enter your email address',
+          hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
+          prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primaryBlue),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryBlue)),
+        ),
+        keyboardType: TextInputType.emailAddress,
+      ),
+      const SizedBox(height: 16),
+      const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.mail_outline, size: 16, color: AppColors.primaryBlue),
+          SizedBox(width: 8),
+          Text('We\'ll use this email for important updates', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+        ],
+      ),
+      const SizedBox(height: 24),
+    ];
   }
 
   Widget _buildLabel(String text) {

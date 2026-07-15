@@ -29,6 +29,7 @@ export class SupabaseService implements OnModuleInit {
     });
 
     await this.ensureStorageBucket('avatars');
+    await this.ensureStorageBucket('invoices');
   }
 
   private async ensureStorageBucket(name: string) {
@@ -51,5 +52,9 @@ export class SupabaseService implements OnModuleInit {
 
   getClient() {
     return this.supabaseClient;
+  }
+
+  async clearAuthSession(): Promise<void> {
+    await this.supabaseClient.auth.signOut().catch(() => {});
   }
 }

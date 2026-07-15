@@ -17,6 +17,7 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   Uint8List? _avatarBytes;
   String? _avatarPath;
@@ -25,6 +26,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   String? _existingAvatarUrl;
+
+  bool _phoneReadOnly = false;
+  bool _emailReadOnly = false;
+  String _countryCode = '+91';
+  final List<String> _countryCodes = ['+20', '+91'];
 
   @override
   void initState() {
@@ -35,10 +41,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _loadProfile() async {
     try {
       final profile = await _profileService.getProfile();
+      final user = Supabase.instance.client.auth.currentUser;
+
       if (mounted) {
         setState(() {
           _nameController.text = profile.fullName ?? '';
-          _phoneController.text = profile.phone ?? Supabase.instance.client.auth.currentUser?.phone ?? '';
+
+          final hasAuthPhone = user?.phone != null && user!.phone!.isNotEmpty;
+          final hasAuthEmail = user?.email != null && user!.email!.isNotEmpty;
+
+          _phoneReadOnly = hasAuthPhone;
+          _emailReadOnly = hasAuthEmail;
+
+          final phoneSource = (profile.phone != null && profile.phone!.isNotEmpty) ? profile.phone! : (user?.phone ?? '');
+          if (phoneSource.isNotEmpty) {
+            for (final code in _countryCodes) {
+              if (phoneSource.startsWith(code)) {
+                _countryCode = code;
+                _phoneController.text = phoneSource.substring(code.length);
+                break;
+              }
+            }
+            if (_phoneController.text.isEmpty) {
+              _phoneController.text = phoneSource;
+            }
+          }
+
+          final emailSource = (profile.email != null && profile.email!.isNotEmpty) ? profile.email! : (user?.email ?? '');
+          _emailController.text = emailSource;
+
+          _bioController.text = profile.about ?? '';
           _existingAvatarUrl = profile.avatarUrl;
           _isLoading = false;
         });
@@ -63,12 +95,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter your name')));
+      return;
+    }
+
+    final phone = _phoneController.text.trim();
+    if (!_phoneReadOnly && phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter your phone number')));
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    if (!_emailReadOnly && email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter your email')));
+      return;
+    }
+
+    if (!_emailReadOnly && email.isNotEmpty && !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid email address')));
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       await _profileService.updateProfile(
-        _nameController.text,
-        phone: _phoneController.text.isNotEmpty ? _phoneController.text : null,
-        about: _bioController.text.isNotEmpty ? _bioController.text : null,
+        name,
+        phone: !_phoneReadOnly && phone.isNotEmpty ? '$_countryCode$phone' : null,
+        email: !_emailReadOnly && email.isNotEmpty ? email : null,
+        about: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
       );
 
       if (_avatarBytes != null && _avatarPath != null) {
@@ -198,8 +254,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             _buildEditableField('Full Name', _nameController, icon: Icons.person_outline),
             const SizedBox(height: 16),
-            _buildEditableField('Phone Number (Optional)', _phoneController, icon: Icons.phone_outlined),
+
+            _buildLabel('Phone Number'),
+            const SizedBox(height: 8),
+            _buildPhoneField(),
             const SizedBox(height: 16),
+
+            _buildEditableField(
+              'Email Address',
+              _emailController,
+              icon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
+              readOnly: _emailReadOnly,
+            ),
+            const SizedBox(height: 16),
+
             _buildEditableField('Bio', _bioController, maxLines: 3),
             const SizedBox(height: 40),
 
@@ -237,7 +306,58 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildEditableField(String label, TextEditingController controller, {IconData? icon, int maxLines = 1}) {
+  Widget _buildPhoneField() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(8),
+        color: _phoneReadOnly ? const Color(0xFFF5F5F5) : null,
+      ),
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _countryCode,
+                items: _countryCodes.map((code) => DropdownMenuItem(
+                  value: code,
+                  child: Text(code, style: const TextStyle(fontWeight: FontWeight.bold)),
+                )).toList(),
+                onChanged: _phoneReadOnly ? null : (val) {
+                  if (val != null) setState(() => _countryCode = val);
+                },
+                isDense: true,
+              ),
+            ),
+          ),
+          Container(width: 1, height: 24, color: AppColors.border),
+          Expanded(
+            child: TextField(
+              controller: _phoneController,
+              readOnly: _phoneReadOnly,
+              decoration: const InputDecoration(
+                hintText: 'Enter your mobile number',
+                hintStyle: TextStyle(color: AppColors.textLight, fontSize: 14),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+    );
+  }
+
+  Widget _buildEditableField(String label, TextEditingController controller, {IconData? icon, int maxLines = 1, TextInputType? keyboardType, bool readOnly = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -246,12 +366,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         TextField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: keyboardType,
+          readOnly: readOnly,
           decoration: InputDecoration(
             prefixIcon: icon != null ? Icon(icon, size: 18, color: AppColors.textLight) : null,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primaryBlue)),
+            filled: readOnly,
+            fillColor: readOnly ? const Color(0xFFF5F5F5) : null,
           ),
         ),
       ],

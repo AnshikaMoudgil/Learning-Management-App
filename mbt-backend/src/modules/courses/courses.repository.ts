@@ -28,13 +28,24 @@ export class CoursesRepository {
     return this.supabaseService.getClient();
   }
 
-  private readonly courseSelect = '*, profiles!instructor_id ( full_name )';
+  private readonly courseSelect =
+    '*, profiles!instructor_id ( full_name, avatar_url, instructor_profiles ( specialization ) )';
 
   private mapCourse(row: Record<string, unknown>): Course {
-    const profiles = row.profiles as { full_name?: string } | null;
+    const profiles = row.profiles as {
+      full_name?: string;
+      avatar_url?: string;
+      instructor_profiles?:
+        { specialization?: string } | { specialization?: string }[];
+    } | null;
+    const instructorProfile = Array.isArray(profiles?.instructor_profiles)
+      ? profiles?.instructor_profiles[0]
+      : profiles?.instructor_profiles;
     return {
       ...(row as unknown as Course),
       instructor_name: profiles?.full_name ?? null,
+      instructor_avatar_url: profiles?.avatar_url ?? null,
+      instructor_specialization: instructorProfile?.specialization ?? null,
     };
   }
 

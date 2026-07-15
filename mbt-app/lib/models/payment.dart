@@ -35,18 +35,20 @@ class PaymentOrder {
   final int amount;
   final String currency;
   final String keyId;
-  final String courseId;
+  final List<String> courseIds;
   final DateTime expiresAt;
   final bool reused;
+  final String storeName;
 
   PaymentOrder({
     required this.orderId,
     required this.amount,
     required this.currency,
     required this.keyId,
-    required this.courseId,
+    required this.courseIds,
     required this.expiresAt,
     required this.reused,
+    required this.storeName,
   });
 
   factory PaymentOrder.fromJson(Map<String, dynamic> json) {
@@ -55,9 +57,10 @@ class PaymentOrder {
       amount: (json['amount'] as num).toInt(),
       currency: json['currency'] as String? ?? 'INR',
       keyId: json['keyId'] as String,
-      courseId: json['courseId'] as String,
+      courseIds: (json['courseIds'] as List).map((e) => e as String).toList(),
       expiresAt: DateTime.parse(json['expiresAt'] as String),
       reused: json['reused'] as bool? ?? false,
+      storeName: json['storeName'] as String? ?? 'MBT LMS',
     );
   }
 }

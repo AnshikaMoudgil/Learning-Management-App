@@ -1,8 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class EnrollmentsService {
+  private readonly logger = new Logger(EnrollmentsService.name);
+
   constructor(private readonly supabaseService: SupabaseService) {}
 
   private get db() {
@@ -21,7 +28,20 @@ export class EnrollmentsService {
     } as never);
 
     if (error) {
-      throw new BadRequestException(error.message);
+      this.logger.error(
+        `RPC complete_payment_and_enroll failed: ${error.message}`,
+        {
+          razorpayOrderId,
+          razorpayPaymentId,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        },
+      );
+      if (error.message?.includes('already enrolled')) {
+        throw new BadRequestException(error.message);
+      }
+      throw new InternalServerErrorException('Failed to complete enrollment');
     }
 
     return data;

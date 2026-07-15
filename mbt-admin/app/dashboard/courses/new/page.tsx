@@ -8,7 +8,7 @@ import { courseSchema } from '@/app/lib/validations/course.schema';
 import Select from '@/components/Select';
 import ListEditor from '@/components/ListEditor';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Loader2, Upload, BookOpen } from 'lucide-react';
+import { ArrowLeft, Loader2, Upload, BookOpen, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 function extractStoragePathFromUrl(url: string): string | null {
@@ -57,10 +57,41 @@ export default function NewCoursePage() {
   const [learningOutcomes, setLearningOutcomes] = useState<string[]>([]);
   const [requirements, setRequirements] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
+  const [checkingProfile, setCheckingProfile] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.id) setUserId(session.user.id);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, full_name, avatar_url')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.role === 'instructor') {
+          const { data: instructorData } = await supabase
+            .from('instructor_profiles')
+            .select('phone, specialization, experience_years, education')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          const missing: string[] = [];
+          if (!profile.full_name?.trim()) missing.push('Full Name');
+          if (!profile.avatar_url) missing.push('Profile Photo');
+          if (!instructorData?.phone?.trim()) missing.push('Phone');
+          if (!instructorData?.specialization?.trim()) missing.push('Specialization');
+          if (!instructorData?.experience_years) missing.push('Years of Experience');
+          if (!instructorData?.education?.trim()) missing.push('Education');
+
+          if (missing.length > 0) {
+            setProfileIncomplete(true);
+          }
+        }
+        setCheckingProfile(false);
+      }
     });
   }, []);
 
@@ -222,6 +253,29 @@ export default function NewCoursePage() {
         <p className="text-zinc-400 text-sm mt-1">Design and publish new curriculums.</p>
       </div>
 
+      {checkingProfile ? (
+        <div className="flex h-48 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        </div>
+      ) : profileIncomplete ? (
+        <div className="rounded-2xl border border-amber-800 bg-amber-950/20 p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-6 w-6 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-lg font-bold text-amber-300">Profile Incomplete</h3>
+              <p className="text-sm text-amber-200/80 mt-1">
+                You must fill all required fields in your instructor profile before creating courses.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/instructor-profile"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition cursor-pointer"
+          >
+            Complete My Profile
+          </Link>
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
@@ -566,6 +620,7 @@ export default function NewCoursePage() {
           </div>
         </div>
       </form>
+      )}
     </div>
   );
 }

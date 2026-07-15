@@ -18,6 +18,8 @@ export interface Course {
   is_published: boolean;
   instructor_id: string | null;
   instructor_name: string | null;
+  instructor_avatar_url: string | null;
+  instructor_specialization: string | null;
   average_rating: number;
   reviews_count: number;
   is_bestseller: boolean;

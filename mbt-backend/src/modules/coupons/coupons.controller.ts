@@ -1,7 +1,9 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { DeviceGuard } from '../../common/guards/device.guard';
+import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { ValidateCouponDto } from './dto/validate-coupon.dto';
+import { ValidateCartCouponDto } from './dto/validate-cart-coupon.dto';
 import { CouponsService } from './coupons.service';
 
 @Controller('api/v1/coupons')
@@ -10,7 +12,32 @@ export class CouponsController {
   constructor(private readonly couponsService: CouponsService) {}
 
   @Post('validate')
-  validate(@Body() body: ValidateCouponDto) {
-    return this.couponsService.validateCoupon(body.code, body.courseId);
+  async validate(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: ValidateCouponDto,
+  ) {
+    const result = await this.couponsService.validateCoupon(
+      body.code,
+      body.courseId,
+    );
+    if (result.valid && result.couponId) {
+      await this.couponsService.assertUserCouponNotUsed(
+        req.user.id,
+        result.couponId,
+      );
+    }
+    return result;
+  }
+
+  @Post('validate-cart')
+  validateCart(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: ValidateCartCouponDto,
+  ) {
+    return this.couponsService.validateCouponForCart(
+      body.code,
+      body.courseIds,
+      req.user.id,
+    );
   }
 }

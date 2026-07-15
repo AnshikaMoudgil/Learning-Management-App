@@ -1,8 +1,15 @@
-import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateOrderDto {
-  @IsUUID()
-  courseId!: string;
+  @IsArray()
+  @IsUUID('4', { each: true })
+  courseIds!: string[];
 
   @IsOptional()
   @IsString()

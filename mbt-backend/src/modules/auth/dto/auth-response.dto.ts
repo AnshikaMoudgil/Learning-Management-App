@@ -14,6 +14,8 @@ export class AuthResponseDto {
     id: string;
     fullName?: string;
     avatarUrl?: string;
+    phone?: string;
+    email?: string;
     role: UserRole;
     status: UserStatus;
     about?: string;
