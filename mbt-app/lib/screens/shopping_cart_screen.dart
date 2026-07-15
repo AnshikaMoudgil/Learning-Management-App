@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../models/payment.dart';
 import '../services/cart_service.dart';
+import '../services/cart_provider.dart';
 import '../services/payment_service.dart';
 
 class ShoppingCartScreen extends StatefulWidget {
@@ -47,7 +48,7 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
 
   Future<void> _removeItem(String courseId) async {
     try {
-      await _cartService.removeItem(courseId);
+      await CartProvider().removeItem(courseId);
       await _loadCart();
     } catch (e) {
       if (!mounted) return;

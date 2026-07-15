@@ -18,6 +18,8 @@ class Course {
   final bool isPublished;
   final String? instructorId;
   final String? instructorName;
+  final String? instructorAvatarUrl;
+  final String? instructorSpecialization;
   final double averageRating;
   final int reviewsCount;
   final bool isBestseller;
@@ -47,6 +49,8 @@ class Course {
     required this.isPublished,
     this.instructorId,
     this.instructorName,
+    this.instructorAvatarUrl,
+    this.instructorSpecialization,
     this.averageRating = 0.0,
     this.reviewsCount = 0,
     this.isBestseller = false,
@@ -100,6 +104,8 @@ class Course {
       isPublished: (json['is_published'] ?? json['isPublished'] ?? true) as bool,
       instructorId: (json['instructor_id'] ?? json['instructorId']) as String?,
       instructorName: (json['instructor_name'] ?? json['instructorName']) as String?,
+      instructorAvatarUrl: (json['instructor_avatar_url'] ?? json['instructorAvatarUrl']) as String?,
+      instructorSpecialization: (json['instructor_specialization'] ?? json['instructorSpecialization']) as String?,
       averageRating: ((json['average_rating'] ?? json['averageRating'] ?? 0) as num).toDouble(),
       reviewsCount: (json['reviews_count'] ?? json['reviewsCount'] ?? 0) as int,
       isBestseller: (json['is_bestseller'] ?? json['isBestseller'] ?? false) as bool,
@@ -140,6 +146,8 @@ class Course {
       'is_published': isPublished,
       'instructor_id': instructorId,
       'instructor_name': instructorName,
+      'instructor_avatar_url': instructorAvatarUrl,
+      'instructor_specialization': instructorSpecialization,
       'average_rating': averageRating,
       'reviews_count': reviewsCount,
       'is_bestseller': isBestseller,

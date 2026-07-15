@@ -4,7 +4,7 @@ import '../theme/app_colors.dart';
 import '../widgets/share_bottom_sheet.dart';
 import '../models/course.dart';
 import '../services/course_service.dart';
-import '../services/cart_service.dart';
+import '../services/cart_provider.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   final String? courseId;
@@ -19,7 +19,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
   late TabController _tabController;
   late final Future<Course>? _courseFuture;
   final _courseService = CourseService();
-  final _cartService = CartService();
+  final _cartProvider = CartProvider();
   bool _isInCart = false;
   bool _isCheckingCart = false;
 
@@ -43,8 +43,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
   Future<void> _checkIfInCart() async {
     if (widget.courseId == null) return;
     try {
-      final cart = await _cartService.getCart();
-      if (!mounted) return;
+      final cart = await _cartProvider.refresh();
+      if (!mounted || cart == null) return;
       setState(() {
         _isInCart = cart.hardware.any((i) => i.courseId == widget.courseId) ||
             cart.software.any((i) => i.courseId == widget.courseId);
@@ -56,9 +56,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
     setState(() => _isCheckingCart = true);
     try {
       if (_isInCart) {
-        await _cartService.removeItem(courseId);
+        await _cartProvider.removeItem(courseId);
       } else {
-        await _cartService.addItem(courseId);
+        await _cartProvider.addItem(courseId);
       }
       if (!mounted) return;
       setState(() => _isInCart = !_isInCart);

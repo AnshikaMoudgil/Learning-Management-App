@@ -5,6 +5,7 @@ import 'my_courses_screen.dart';
 import 'live_classes_screen.dart';
 import 'more_screen.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/cart_badge.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({Key? key}) : super(key: key);
@@ -53,21 +54,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
         title: const Text('Wishlist', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
-          Stack(
-            children: [
-              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () => context.push('/cart')),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
-                ),
-              )
-            ],
-          ),
+          const CartBadge(),
           const SizedBox(width: 8),
         ],
       ),
