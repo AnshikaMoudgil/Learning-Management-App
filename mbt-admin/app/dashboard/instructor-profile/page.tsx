@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
-import Select from '@/components/Select';
 import toast from 'react-hot-toast';
 import { Loader2, Upload, Save, Plus, X } from 'lucide-react';
 
@@ -45,6 +44,7 @@ export default function InstructorProfilePage() {
   const [twitter, setTwitter] = useState('');
   const [youtube, setYoutube] = useState('');
   const [website, setWebsite] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function loadProfile() {
@@ -170,6 +170,20 @@ export default function InstructorProfilePage() {
     e.preventDefault();
     if (!userId) return;
 
+    const errors: Record<string, string> = {};
+    if (!fullName.trim()) errors.fullName = 'Full Name is required.';
+    if (!phone.trim()) errors.phone = 'Phone is required.';
+    if (!specialization.trim()) errors.specialization = 'Specialization is required.';
+    if (!experienceYears.trim()) errors.experienceYears = 'Years of Experience is required.';
+    if (!education.trim()) errors.education = 'Education is required.';
+    if (!avatarUrl) errors.avatarUrl = 'Profile photo is required.';
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      toast.error(errors[Object.keys(errors)[0]]);
+      return;
+    }
+
     setIsSaving(true);
     const savingToast = toast.loading('Saving profile...');
 
@@ -238,41 +252,40 @@ export default function InstructorProfilePage() {
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Full Name</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Full Name <span className="text-rose-400">*</span></label>
                   <input
                     type="text"
                     placeholder="Your full name"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className={inputClass}
+                    onChange={(e) => { setFullName(e.target.value); setFormErrors((prev) => ({ ...prev, fullName: '' })); }}
+                    className={`${inputClass} ${formErrors.fullName ? 'border-rose-500' : ''}`}
                   />
+                  {formErrors.fullName && <p className="text-xs text-rose-400">{formErrors.fullName}</p>}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Phone</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Phone <span className="text-rose-400">*</span></label>
                     <input
                       type="text"
                       placeholder="+1 234 567 8900"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className={inputClass}
+                      onChange={(e) => { setPhone(e.target.value); setFormErrors((prev) => ({ ...prev, phone: '' })); }}
+                      className={`${inputClass} ${formErrors.phone ? 'border-rose-500' : ''}`}
                     />
+                    {formErrors.phone && <p className="text-xs text-rose-400">{formErrors.phone}</p>}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Specialization</label>
-                    <Select
+                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Specialization <span className="text-rose-400">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Hardware, Software, Both"
                       value={specialization}
-                      onChange={setSpecialization}
-                      options={[
-                        { value: '', label: 'Select specialization' },
-                        { value: 'Hardware', label: 'Hardware' },
-                        { value: 'Software', label: 'Software' },
-                        { value: 'Both', label: 'Both Hardware & Software' },
-                      ]}
-                      placeholder="Select specialization"
+                      onChange={(e) => { setSpecialization(e.target.value); setFormErrors((prev) => ({ ...prev, specialization: '' })); }}
+                      className={`${inputClass} ${formErrors.specialization ? 'border-rose-500' : ''}`}
                     />
+                    {formErrors.specialization && <p className="text-xs text-rose-400">{formErrors.specialization}</p>}
                   </div>
                 </div>
 
@@ -295,26 +308,28 @@ export default function InstructorProfilePage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Years of Experience</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Years of Experience <span className="text-rose-400">*</span></label>
                   <input
                     type="number"
                     min="0"
                     placeholder="e.g. 5"
                     value={experienceYears}
-                    onChange={(e) => setExperienceYears(e.target.value)}
-                    className={inputClass}
+                    onChange={(e) => { setExperienceYears(e.target.value); setFormErrors((prev) => ({ ...prev, experienceYears: '' })); }}
+                    className={`${inputClass} ${formErrors.experienceYears ? 'border-rose-500' : ''}`}
                   />
+                  {formErrors.experienceYears && <p className="text-xs text-rose-400">{formErrors.experienceYears}</p>}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Education</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Education <span className="text-rose-400">*</span></label>
                   <input
                     type="text"
                     placeholder="e.g. B.Tech in Electronics"
                     value={education}
-                    onChange={(e) => setEducation(e.target.value)}
-                    className={inputClass}
+                    onChange={(e) => { setEducation(e.target.value); setFormErrors((prev) => ({ ...prev, education: '' })); }}
+                    className={`${inputClass} ${formErrors.education ? 'border-rose-500' : ''}`}
                   />
+                  {formErrors.education && <p className="text-xs text-rose-400">{formErrors.education}</p>}
                 </div>
               </div>
 
@@ -415,7 +430,7 @@ export default function InstructorProfilePage() {
           <div className="space-y-6">
             {/* Avatar Upload */}
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Profile Photo</h2>
+              <h2 className="text-lg font-bold text-white">Profile Photo <span className="text-rose-400">*</span></h2>
 
               <div className="flex flex-col items-center gap-4">
                 <div className="h-32 w-32 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden flex items-center justify-center">
@@ -439,6 +454,7 @@ export default function InstructorProfilePage() {
                     className="hidden"
                   />
                 </label>
+                {formErrors.avatarUrl && <p className="text-xs text-rose-400">{formErrors.avatarUrl}</p>}
               </div>
             </div>
 

@@ -3,9 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../widgets/share_bottom_sheet.dart';
 import '../models/course.dart';
-import '../models/payment.dart';
 import '../services/course_service.dart';
-import '../services/payment_service.dart';
+import '../services/cart_provider.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   final String? courseId;
@@ -20,10 +19,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
   late TabController _tabController;
   late final Future<Course>? _courseFuture;
   final _courseService = CourseService();
-  final _paymentService = PaymentService();
-  final _couponController = TextEditingController();
-  bool _isCheckingOut = false;
-  String? _checkoutMessage;
+  final _cartProvider = CartProvider();
+  bool _isInCart = false;
+  bool _isCheckingCart = false;
 
   @override
   void initState() {
@@ -33,13 +31,45 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
     _tabController.addListener(() {
       setState(() {});
     });
+    _checkIfInCart();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _couponController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkIfInCart() async {
+    if (widget.courseId == null) return;
+    try {
+      final cart = await _cartProvider.refresh();
+      if (!mounted || cart == null) return;
+      setState(() {
+        _isInCart = cart.hardware.any((i) => i.courseId == widget.courseId) ||
+            cart.software.any((i) => i.courseId == widget.courseId);
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _toggleCart(String courseId) async {
+    setState(() => _isCheckingCart = true);
+    try {
+      if (_isInCart) {
+        await _cartProvider.removeItem(courseId);
+      } else {
+        await _cartProvider.addItem(courseId);
+      }
+      if (!mounted) return;
+      setState(() => _isInCart = !_isInCart);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update cart: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isCheckingCart = false);
+    }
   }
 
   @override
@@ -252,7 +282,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
           const SizedBox(height: 12),
           ...course.sections.map(_buildSectionExpansion),
           const SizedBox(height: 24),
-          if (!enrolled) _buildCheckoutPanel(course) else _buildResumePanel(course),
+          if (!enrolled) _buildCartPanel(course) else _buildResumePanel(course),
         ],
       ),
     );
@@ -280,7 +310,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
     );
   }
 
-  Widget _buildCheckoutPanel(Course course) {
+  Widget _buildCartPanel(Course course) {
     final price = course.effectivePrice;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -300,34 +330,35 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
             ],
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _couponController,
-            textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
-              labelText: 'Coupon code',
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-          ),
-          if (_checkoutMessage != null) ...[
-            const SizedBox(height: 10),
-            Text(_checkoutMessage!, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
-          ],
-          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isCheckingOut ? null : () => _checkout(course),
+            child: ElevatedButton.icon(
+              onPressed: _isCheckingCart ? null : () => _toggleCart(course.id),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
+                backgroundColor: _isInCart ? Colors.grey.shade300 : AppColors.primaryBlue,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: _isCheckingOut
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Buy Course', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              icon: _isCheckingCart
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Icon(_isInCart ? Icons.shopping_cart : Icons.add_shopping_cart, color: _isInCart ? AppColors.textDark : Colors.white, size: 20),
+              label: Text(
+                _isInCart ? ' Remove from Cart' : 'Add to Cart',
+                style: TextStyle(color: _isInCart ? AppColors.textDark : Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
+          if (_isInCart)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => context.push('/cart'),
+                  child: const Text('View Cart & Checkout', style: TextStyle(color: AppColors.primaryBlue)),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -348,39 +379,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
     );
   }
 
-  Future<void> _checkout(Course course) async {
-    setState(() {
-      _isCheckingOut = true;
-      _checkoutMessage = null;
-    });
-    try {
-      final result = await _paymentService.checkoutCourse(
-        courseId: course.id,
-        courseTitle: course.title,
-        couponCode: _couponController.text,
-      );
-      if (!mounted) return;
-      context.push(
-        '/payment-success?courseTitle=${Uri.encodeComponent(course.title)}&orderId=${Uri.encodeComponent(result.order.orderId)}',
-      );
-    } on PaymentPendingException catch (error) {
-      if (!mounted) return;
-      context.push(
-        '/payment-success?status=pending&courseTitle=${Uri.encodeComponent(course.title)}&orderId=${Uri.encodeComponent(error.order.orderId)}',
-      );
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _checkoutMessage = error.toString();
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isCheckingOut = false;
-        });
-      }
-    }
-  }
+
 
   Widget _buildCurrentTabContent() {
     switch (_tabController.index) {

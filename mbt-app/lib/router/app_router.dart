@@ -53,6 +53,8 @@ import '../screens/expiring_courses_screen.dart';
 import '../screens/renew_course_screen.dart';
 import '../screens/course_validity_screen.dart';
 import '../screens/daily_schedule_screen.dart';
+import '../screens/invoices_screen.dart';
+import '../screens/invoice_detail_screen.dart';
 import '../screens/class_details_screen.dart';
 import '../screens/about_live_classes_screen.dart';
 
@@ -106,6 +108,8 @@ class RouteNames {
   static const requestDeviceChange = '/request-device-change';
   static const store = '/store';
   static const cart = '/cart';
+  static const invoices = '/invoices';
+  static const invoiceDetail = '/invoices';
 }
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -136,6 +140,7 @@ final appRouter = GoRouter(
       RouteNames.notificationSettings,
       RouteNames.deviceBlocked,
       RouteNames.requestDeviceChange,
+      RouteNames.invoices,
     ];
 
     final isProtected = protectedRoutes.any((route) => state.uri.path.startsWith(route));
@@ -388,6 +393,17 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.requestDeviceChange,
       builder: (context, state) => const RequestDeviceChangeScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.invoices,
+      builder: (context, state) => const InvoicesScreen(),
+    ),
+    GoRoute(
+      path: '${RouteNames.invoiceDetail}/:id',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return InvoiceDetailScreen(invoiceId: id);
+      },
     ),
   ],
 );

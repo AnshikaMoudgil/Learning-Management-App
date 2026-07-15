@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'category_detail_screen.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/cart_badge.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({Key? key}) : super(key: key);
@@ -17,22 +18,7 @@ class CategoriesScreen extends StatelessWidget {
         title: const Text('Categories', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
         actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark), onPressed: () => context.push('/cart')),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  child: const Text('2', style: TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
-                ),
-              )
-            ],
-          ),
+          const CartBadge(),
           IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
         ],
       ),

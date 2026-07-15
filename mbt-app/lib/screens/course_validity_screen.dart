@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'renew_course_screen.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/cart_badge.dart';
 
 class CourseValidityScreen extends StatelessWidget {
   const CourseValidityScreen({Key? key}) : super(key: key);
@@ -25,24 +26,7 @@ class CourseValidityScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          Stack(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.lightBlueBg, borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.shopping_cart_outlined, color: AppColors.textDark, size: 18),
-              ),
-              Positioned(
-                right: 0, top: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: AppColors.primaryBlue, shape: BoxShape.circle),
-                  child: const Text('1', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
+          const CartBadge(),
           const SizedBox(width: 8),
           Stack(
             children: [

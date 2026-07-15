@@ -27,7 +27,7 @@ export class PaymentsController {
   createOrder(@Req() req: AuthenticatedRequest, @Body() body: CreateOrderDto) {
     return this.paymentsService.createOrder(
       req.user.id,
-      body.courseId,
+      body.courseIds,
       body.couponCode,
       body.allowRenewal ?? false,
     );

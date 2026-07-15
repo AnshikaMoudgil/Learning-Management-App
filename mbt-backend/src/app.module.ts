@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SupabaseModule } from './modules/supabase/supabase.module';
@@ -16,6 +17,8 @@ import { DevicesModule } from './modules/devices/devices.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
+import { CartModule } from './modules/cart/cart.module';
 
 @Module({
   imports: [
@@ -23,6 +26,33 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
       envFilePath: '.env',
       load: [configuration],
       isGlobal: true,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: () => {
+        const rawUrl = process.env.REDIS_URL ?? '';
+        const redisUrl = rawUrl.replace(/^["'\s]+|["'\s]+$/g, '').trim();
+        if (!redisUrl) {
+          throw new Error('REDIS_URL environment variable is required');
+        }
+        const parsed = new URL(redisUrl);
+        const connection: {
+          host: string;
+          port: number;
+          password: string | undefined;
+          username: string | undefined;
+          tls?: Record<string, unknown>;
+        } = {
+          host: parsed.hostname,
+          port: parseInt(parsed.port, 10) || 6379,
+          password: parsed.password || undefined,
+          username: parsed.username || undefined,
+        };
+        if (parsed.protocol === 'rediss:') {
+          connection.tls = {};
+        }
+        return { connection };
+      },
     }),
     SupabaseModule,
     AuthModule,
@@ -37,6 +67,8 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
     CertificatesModule,
     NotificationsModule,
     AuditLogsModule,
+    InvoicesModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [AppService],

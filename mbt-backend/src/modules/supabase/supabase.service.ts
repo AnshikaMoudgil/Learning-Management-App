@@ -29,6 +29,7 @@ export class SupabaseService implements OnModuleInit {
     });
 
     await this.ensureStorageBucket('avatars');
+    await this.ensureStorageBucket('invoices');
   }
 
   private async ensureStorageBucket(name: string) {
