@@ -38,17 +38,20 @@ class ProfileService {
     await _api.post('/api/v1/users/me/login-details', body: {});
   }
 
-  Future<Profile> createProfile(String fullName) async {
+  Future<Profile> createProfile(String fullName, {String? phone, String? email}) async {
     final result = await _api.post('/api/v1/users/me/complete', body: {
       'fullName': fullName,
+      if (phone != null) 'phone': phone,
+      if (email != null) 'email': email,
     });
     return Profile.fromJson(result);
   }
 
-  Future<Profile> updateProfile(String fullName, {String? phone, String? about}) async {
+  Future<Profile> updateProfile(String fullName, {String? phone, String? email, String? about}) async {
     final result = await _api.patch('/api/v1/users/me', body: {
       'fullName': fullName,
       if (phone != null) 'phone': phone,
+      if (email != null) 'email': email,
       if (about != null) 'about': about,
     });
     return Profile.fromJson(result);

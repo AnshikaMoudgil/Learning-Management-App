@@ -26,13 +26,7 @@ export class UsersService {
       throw new NotFoundException('Profile not found');
     }
 
-    const { data: userData } = await this.db.auth.admin.getUserById(userId);
-
-    return {
-      ...data,
-      email: userData?.user?.email ?? null,
-      phone: userData?.user?.phone ?? null,
-    };
+    return data;
   }
 
   async updateProfile(userId: string, updateData: UpdateProfileDto) {
@@ -46,8 +40,15 @@ export class UsersService {
     }
 
     if (updateData.phone !== undefined) {
+      dbUpdate.phone = updateData.phone;
       metaUpdate.custom_phone = updateData.phone;
       metaUpdate.phone = updateData.phone;
+    }
+
+    if (updateData.email !== undefined) {
+      dbUpdate.email = updateData.email;
+      metaUpdate.custom_email = updateData.email;
+      metaUpdate.email = updateData.email;
     }
 
     if (updateData.about !== undefined) {
@@ -77,6 +78,21 @@ export class UsersService {
   async completeProfile(userId: string, createData: CreateProfileDto) {
     const existing = await this.usersRepository.findById(userId);
 
+    const metaUpdate: Record<string, unknown> = {
+      custom_full_name: createData.fullName,
+      full_name: createData.fullName,
+    };
+
+    if (createData.phone !== undefined) {
+      metaUpdate.custom_phone = createData.phone;
+      metaUpdate.phone = createData.phone;
+    }
+
+    if (createData.email !== undefined) {
+      metaUpdate.custom_email = createData.email;
+      metaUpdate.email = createData.email;
+    }
+
     if (existing) {
       const dbUpdate: Record<string, unknown> = {
         full_name: createData.fullName,
@@ -84,10 +100,8 @@ export class UsersService {
         last_login_at: new Date().toISOString(),
       };
 
-      const metaUpdate: Record<string, unknown> = {
-        custom_full_name: createData.fullName,
-        full_name: createData.fullName,
-      };
+      if (createData.phone !== undefined) dbUpdate.phone = createData.phone;
+      if (createData.email !== undefined) dbUpdate.email = createData.email;
 
       const data = await this.usersRepository.update(userId, dbUpdate);
 
@@ -105,13 +119,13 @@ export class UsersService {
       full_name: createData.fullName,
     };
 
+    if (createData.phone !== undefined) newProfile.phone = createData.phone;
+    if (createData.email !== undefined) newProfile.email = createData.email;
+
     const data = await this.usersRepository.create(userId, newProfile);
 
     await this.db.auth.admin.updateUserById(userId, {
-      user_metadata: {
-        custom_full_name: createData.fullName,
-        full_name: createData.fullName,
-      },
+      user_metadata: metaUpdate,
     });
 
     return data;

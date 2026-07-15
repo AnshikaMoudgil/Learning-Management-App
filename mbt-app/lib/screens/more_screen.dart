@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
-import 'edit_profile_screen.dart';
-import 'notification_center_screen.dart';
-import 'privacy_policy_screen.dart';
-import 'terms_of_service_screen.dart';
-import 'course_validity_screen.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/cart_badge.dart';
+import '../services/profile_service.dart';
+import '../models/profile.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({Key? key}) : super(key: key);
@@ -65,24 +62,20 @@ class MoreScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 24),
 
               // Profile Card
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: StreamBuilder<AuthState>(
-                    stream: Supabase.instance.client.auth.onAuthStateChange,
+                  child: FutureBuilder<Profile>(
+                    future: ProfileService().getProfile(),
                     builder: (context, snapshot) {
-                      final user = snapshot.data?.session?.user;
-                      final avatarUrl = user?.userMetadata?['custom_avatar_url'] ?? user?.userMetadata?['avatar_url'];
+                      final profile = snapshot.data;
+                      final user = Supabase.instance.client.auth.currentUser;
 
                       return InkWell(
-                        onTap: () {
-                          context.push('/edit-profile');
-                        },
+                        onTap: () => context.push('/edit-profile'),
                         borderRadius: BorderRadius.circular(16),
                         child: Container(
                           padding: const EdgeInsets.all(16),
@@ -96,8 +89,8 @@ class MoreScreen extends StatelessWidget {
                               CircleAvatar(
                                 radius: 28,
                                 backgroundColor: const Color(0xFF0038FF),
-                                backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                                child: avatarUrl == null ? const Icon(Icons.person, color: Colors.white, size: 28) : null,
+                                backgroundImage: profile?.avatarUrl != null ? NetworkImage(profile!.avatarUrl!) : null,
+                                child: profile?.avatarUrl == null ? const Icon(Icons.person, color: Colors.white, size: 28) : null,
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -105,7 +98,7 @@ class MoreScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      user?.userMetadata?['custom_full_name'] ?? user?.userMetadata?['full_name'] ?? 'Learner',
+                                      profile?.fullName ?? user?.userMetadata?['custom_full_name'] ?? 'Learner',
                                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
                                     ),
                                     const SizedBox(height: 2),

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/splash_screen.dart'; // keeping for fallback if needed, but not necessary
+import 'screens/splash_screen.dart';
 import 'router/app_router.dart';
 
 import 'services/profile_service.dart';
@@ -66,19 +65,10 @@ class _MyAppState extends State<MyApp> {
             final profile = await profileService.validateSession(session);
 
               if (profile == null) {
-                final prefs = await SharedPreferences.getInstance();
-                final isSignupFlow = prefs.getBool('is_signup_flow') ?? false;
-
-                if (!isSignupFlow) {
-                  _showErrorAndLogout('No account is linked with this app. Please sign up first.');
-                  return;
-                }
                 _navigateTo(RouteNames.createProfile);
               } else if (!profile.onboardingCompleted) {
                 _navigateTo(RouteNames.createProfile);
               } else {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool('is_signup_flow', false);
                 try {
                   await profileService.bindDevice(session.user.id);
                 } catch (e) {
