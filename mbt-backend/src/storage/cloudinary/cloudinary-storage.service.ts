@@ -1,0 +1,107 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { v2 as cloudinary } from 'cloudinary';
+import { StorageProvider } from '../interfaces/storage-provider.interface';
+import { UploadResult } from '../interfaces/upload-result.interface';
+
+@Injectable()
+export class CloudinaryStorageService implements StorageProvider {
+  private readonly logger = new Logger(CloudinaryStorageService.name);
+
+  constructor(private readonly configService: ConfigService) {
+    cloudinary.config({
+      cloud_name: this.configService.get<string>('cloudinary.cloudName'),
+      api_key: this.configService.get<string>('cloudinary.apiKey'),
+      api_secret: this.configService.get<string>('cloudinary.apiSecret'),
+    });
+  }
+
+  async upload(
+    file: Buffer,
+    fileName: string,
+    mimeType: string,
+  ): Promise<UploadResult> {
+    this.logger.log(`Uploading file ${fileName} to Cloudinary`);
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          public_id: fileName.split('.')[0] || fileName,
+          resource_type: 'video',
+        },
+        (error, result) => {
+          if (error) {
+            const errMsg = error.message || 'Unknown upload error';
+            this.logger.error(`Cloudinary upload failed: ${errMsg}`);
+            return reject(new Error(errMsg));
+          }
+          if (!result) {
+            return reject(new Error('Cloudinary upload result was empty'));
+          }
+
+          resolve({
+            provider: 'cloudinary',
+            key: result.public_id,
+            url: result.secure_url,
+            size: result.bytes || file.length,
+            mimeType,
+          });
+        },
+      );
+
+      uploadStream.end(file);
+    });
+  }
+
+  async delete(fileKey: string): Promise<void> {
+    this.logger.log(`Deleting file ${fileKey} from Cloudinary`);
+    return new Promise((resolve, reject) => {
+      void cloudinary.uploader.destroy(
+        fileKey,
+        { resource_type: 'video' },
+        (error: unknown, result: unknown) => {
+          if (error) {
+            const err = error as Record<string, unknown>;
+            const errMsg =
+              typeof err.message === 'string'
+                ? err.message
+                : 'Unknown delete error';
+            this.logger.error(`Cloudinary delete failed: ${errMsg}`);
+            return reject(new Error(errMsg));
+          }
+          this.logger.log(
+            `Cloudinary delete result: ${JSON.stringify(result)}`,
+          );
+          resolve();
+        },
+      );
+    });
+  }
+
+  async exists(fileKey: string): Promise<boolean> {
+    this.logger.log(`Checking existence of file ${fileKey} in Cloudinary`);
+    try {
+      const result = (await cloudinary.api.resource(fileKey, {
+        resource_type: 'video',
+      })) as Record<string, unknown>;
+      return !!result;
+    } catch (error: unknown) {
+      const err = error as Record<string, unknown>;
+      if (err && typeof err.http_code === 'number' && err.http_code === 404) {
+        return false;
+      }
+      const errMsg =
+        err && typeof err.message === 'string' ? err.message : 'Unknown error';
+      this.logger.error(`Cloudinary existence check failed: ${errMsg}`);
+      throw new Error(errMsg);
+    }
+  }
+
+  getSignedUrl(fileKey: string): Promise<string> {
+    const url = cloudinary.url(fileKey, {
+      secure: true,
+      resource_type: 'video',
+      sign_url: true,
+    });
+    return Promise.resolve(url);
+  }
+}
