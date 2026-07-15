@@ -1,86 +1,16 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { SearchRepository } from './search.repository';
 
 @Injectable()
 export class SearchService {
-  constructor(private readonly supabaseService: SupabaseService) {}
-
-  private get db() {
-    return this.supabaseService.getClient();
-  }
+  constructor(private readonly searchRepository: SearchRepository) {}
 
   async globalSearch(query: string) {
     const searchTerm = `%${query.trim()}%`;
-    
+
     try {
-      const [coursesResult, recordingsResult, teachersResult] = await Promise.all([
-        // 1. Search Courses
-        this.db
-          .from('courses')
-          .select('*, profiles!courses_instructor_id_fkey(full_name)')
-          .or(`title.ilike.${searchTerm},description.ilike.${searchTerm},category.ilike.${searchTerm}`)
-          .eq('is_published', true)
-          .limit(20),
-        
-        // 2. Search Recordings (Lessons)
-        this.db
-          .from('course_lessons')
-          .select('*, courses!inner(id, title, category, profiles!courses_instructor_id_fkey(full_name))')
-          .ilike('title', searchTerm)
-          .limit(20),
-        
-        // 3. Search Teachers
-        this.db
-          .from('profiles')
-          .select('*')
-          .eq('role', 'instructor')
-          .ilike('full_name', searchTerm)
-          .limit(20)
-      ]);
-
-      let courses = coursesResult.data || [];
-      let recordings = recordingsResult.data || [];
-      let teachers = teachersResult.data || [];
-
-      // If foreign key relations fail, fallback to simple select (similar to frontend fallback)
-      if (coursesResult.error) {
-        console.error('Courses search error:', coursesResult.error);
-        const fallback = await this.db
-          .from('courses')
-          .select('*')
-          .or(`title.ilike.${searchTerm},description.ilike.${searchTerm},category.ilike.${searchTerm}`)
-          .eq('is_published', true)
-          .limit(20);
-        courses = fallback.data || [];
-      }
-
-      if (recordingsResult.error) {
-        console.error('Recordings search error:', recordingsResult.error);
-        const fallback = await this.db
-          .from('course_lessons')
-          .select('*')
-          .ilike('title', searchTerm)
-          .limit(20);
-        recordings = fallback.data || [];
-      }
-
-      if (teachersResult.error) {
-        console.error('Teachers search error:', teachersResult.error);
-        const fallback = await this.db
-          .from('profiles')
-          .select('*')
-          .eq('role', 'instructor')
-          .ilike('full_name', searchTerm)
-          .limit(20);
-        teachers = fallback.data || [];
-      }
-
-      return {
-        courses,
-        recordings,
-        teachers
-      };
-    } catch (error) {
+      return await this.searchRepository.globalSearch(searchTerm);
+    } catch {
       throw new BadRequestException('Search failed');
     }
   }
