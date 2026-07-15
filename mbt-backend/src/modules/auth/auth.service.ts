@@ -153,6 +153,8 @@ export class AuthService {
       id: data.id,
       fullName: data.full_name ?? undefined,
       avatarUrl: data.avatar_url ?? undefined,
+      phone: data.phone ?? undefined,
+      email: data.email ?? undefined,
       role: data.role,
       status: data.status,
       about: data.about ?? undefined,

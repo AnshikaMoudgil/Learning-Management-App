@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
-import 'create_profile_screen.dart';
-import 'dashboard_layout.dart';
-import 'otp_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,29 +12,14 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool _isLoading = false;
   String _countryCode = '+91';
   final List<String> _countryCodes = ['+20', '+91'];
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() {}); // Trigger rebuild to update text dynamically
-      }
-    });
-    
-    // onAuthStateChange listener is now handled globally in main.dart
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -50,9 +29,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_signup_flow', _tabController.index == 1);
-      
       await _authService.signInWithGoogle();
     } catch (e) {
       if (mounted) {
@@ -71,9 +47,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_signup_flow', _tabController.index == 1);
-
       await _authService.sendOtp('$_countryCode$phone');
       if (mounted) {
         context.push('/otp?phone=$_countryCode$phone');
@@ -87,11 +60,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final isLogin = _tabController.index == 0;
-    
     return Scaffold(
       backgroundColor: AppColors.background,
       body: WaveBackground(
@@ -121,36 +91,19 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               const SizedBox(height: 8),
               const Text('Learn Today, Lead Tomorrow', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
               const SizedBox(height: 40),
-              
-              // Dynamic Text based on Tab
-              Text(isLogin ? 'Welcome back!' : 'Create an Account', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+
+              const Text('Get Started', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
               const SizedBox(height: 8),
-              Text(isLogin ? 'Login to continue your learning journey' : 'Sign up to start your learning journey', style: const TextStyle(color: AppColors.textLight, fontSize: 14)),
+              const Text('Enter your phone to start learning', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
               const SizedBox(height: 32),
-              
-              TabBar(
-                controller: _tabController,
-                labelColor: AppColors.primaryBlue,
-                unselectedLabelColor: AppColors.textLight,
-                indicatorColor: AppColors.primaryBlue,
-                indicatorWeight: 3,
-                onTap: (index) {
-                  setState(() {}); // Ensure it updates on tap too
-                },
-                tabs: const [
-                  Tab(text: 'Login'),
-                  Tab(text: 'Sign Up'),
-                ],
-              ),
-              const SizedBox(height: 32),
-              
+
               _buildOutlinedButton(
                 iconWidget: Image.asset('assets/google.png', width: 24, height: 24),
                 text: 'Continue with Google',
                 onPressed: _isLoading ? () {} : _signInWithGoogle,
               ),
               const SizedBox(height: 24),
-              
+
               const Row(
                 children: [
                   Expanded(child: Divider(color: AppColors.border)),
@@ -162,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.border),

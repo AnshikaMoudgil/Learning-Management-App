@@ -4,6 +4,7 @@ import {
   MinLength,
   MaxLength,
   IsOptional,
+  IsEmail,
 } from 'class-validator';
 
 export class CreateProfileDto {
@@ -16,4 +17,8 @@ export class CreateProfileDto {
   @IsString()
   @IsOptional()
   phone?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
 }
