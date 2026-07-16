@@ -7,8 +7,11 @@ export class ZoomRecordingService {
 
   constructor(private readonly zoomAuth: ZoomAuthService) {}
 
-  async downloadRecording(instructorId: string, downloadUrl: string): Promise<Buffer> {
-    const token = await this.zoomAuth.getAccessToken(instructorId);
+  async downloadRecording(
+    instructorId: string,
+    downloadUrl: string,
+  ): Promise<Buffer> {
+    const token = await this.zoomAuth.getAccessToken();
 
     this.logger.log(`Downloading Zoom recording from: ${downloadUrl}`);
 

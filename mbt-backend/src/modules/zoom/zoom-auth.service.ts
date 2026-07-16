@@ -1,4 +1,8 @@
-﻿import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+﻿import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ZoomOAuthService, ProviderAccount } from './zoom-oauth.service';
 
 @Injectable()
@@ -7,8 +11,8 @@ export class ZoomAuthService {
 
   constructor(private readonly zoomOAuthService: ZoomOAuthService) {}
 
-  async getAccessToken(instructorId: string): Promise<string> {
-    const account = await this.zoomOAuthService.getConnection(instructorId);
+  async getAccessToken(): Promise<string> {
+    const account = await this.zoomOAuthService.getConnection();
     if (!account) {
       throw new InternalServerErrorException(
         'Zoom account not connected. Please connect your Zoom account first.',
@@ -22,8 +26,8 @@ export class ZoomAuthService {
     return account.access_token;
   }
 
-  async getProviderAccount(instructorId: string): Promise<ProviderAccount | null> {
-    return this.zoomOAuthService.getConnection(instructorId);
+  async getProviderAccount(): Promise<ProviderAccount | null> {
+    return this.zoomOAuthService.getConnection();
   }
 
   private isTokenExpired(account: ProviderAccount): boolean {

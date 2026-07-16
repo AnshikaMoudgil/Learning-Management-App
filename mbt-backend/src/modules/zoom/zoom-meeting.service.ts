@@ -23,7 +23,7 @@ export class ZoomMeetingService {
     instructorId: string,
     body?: unknown,
   ): Promise<T> {
-    const token = await this.zoomAuth.getAccessToken(instructorId);
+    const token = await this.zoomAuth.getAccessToken();
 
     const response = await fetch(`${this.BASE_URL}${path}`, {
       method,
@@ -96,11 +96,7 @@ export class ZoomMeetingService {
 
   async deleteMeeting(instructorId: string, meetingId: string): Promise<void> {
     this.logger.log(`Deleting Zoom meeting: ${meetingId}`);
-    await this.request<void>(
-      'DELETE',
-      `/meetings/${meetingId}`,
-      instructorId,
-    );
+    await this.request<void>('DELETE', `/meetings/${meetingId}`, instructorId);
   }
 
   async getRecordings(
@@ -115,7 +111,9 @@ export class ZoomMeetingService {
     );
   }
 
-  async getZoomStatus(instructorId: string): Promise<{ connected: boolean; email: string | null }> {
+  async getZoomStatus(
+    instructorId: string,
+  ): Promise<{ connected: boolean; email: string | null }> {
     try {
       const me = await this.request<{ email: string }>(
         'GET',

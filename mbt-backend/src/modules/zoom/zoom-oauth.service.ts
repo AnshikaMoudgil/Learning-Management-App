@@ -1,4 +1,10 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
 import * as crypto from 'crypto';
@@ -17,7 +23,6 @@ export interface ProviderAccount {
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
-const TAG_LENGTH = 16;
 
 @Injectable()
 export class ZoomOAuthService {
@@ -42,7 +47,7 @@ export class ZoomOAuthService {
     return this.supabaseService.getClient();
   }
 
-  getAuthorizationUrl(instructorId: string, state: string): string {
+  getAuthorizationUrl(state: string): string {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: this.clientId,
@@ -52,8 +57,10 @@ export class ZoomOAuthService {
     return `https://zoom.us/oauth/authorize?${params.toString()}`;
   }
 
-  async handleCallback(code: string, instructorId: string): Promise<void> {
-    this.logger.log(`Exchanging authorization code for system-wide Zoom account`);
+  async handleCallback(code: string): Promise<void> {
+    this.logger.log(
+      'Exchanging authorization code for system-wide Zoom account',
+    );
 
     const tokenResponse = await this.exchangeCodeForTokens(code);
 
@@ -66,7 +73,9 @@ export class ZoomOAuthService {
 
     const zoomUser = await this.getZoomUser(tokenResponse.access_token);
 
-    const { data: existing } = await (this.db.from('meeting_provider_accounts') as any)
+    const { data: existing } = await (
+      this.db.from('meeting_provider_accounts') as any
+    )
       .select('id')
       .eq('provider', 'zoom')
       .maybeSingle();
@@ -84,16 +93,15 @@ export class ZoomOAuthService {
         })
         .eq('id', existing.id);
     } else {
-      query = (this.db.from('meeting_provider_accounts') as any)
-        .insert({
-          provider: 'zoom',
-          access_token: encryptedAccess,
-          refresh_token: encryptedRefresh,
-          expires_at: expiresAt,
-          status: 'connected',
-          provider_user_id: zoomUser.id,
-          email: zoomUser.email,
-        });
+      query = (this.db.from('meeting_provider_accounts') as any).insert({
+        provider: 'zoom',
+        access_token: encryptedAccess,
+        refresh_token: encryptedRefresh,
+        expires_at: expiresAt,
+        status: 'connected',
+        provider_user_id: zoomUser.id,
+        email: zoomUser.email,
+      });
     }
 
     const { error } = await query;
@@ -103,16 +111,18 @@ export class ZoomOAuthService {
       throw new InternalServerErrorException('Failed to store Zoom connection');
     }
 
-    this.logger.log(`System-wide Zoom account connected (user: ${zoomUser.email})`);
+    this.logger.log(
+      `System-wide Zoom account connected (user: ${zoomUser.email})`,
+    );
   }
 
-  async disconnect(instructorId: string): Promise<void> {
+  async disconnect(): Promise<void> {
     await (this.db.from('meeting_provider_accounts') as any)
       .update({ status: 'disconnected' })
       .eq('provider', 'zoom');
   }
 
-  async getConnection(instructorId?: string): Promise<ProviderAccount | null> {
+  async getConnection(): Promise<ProviderAccount | null> {
     const { data } = await (this.db.from('meeting_provider_accounts') as any)
       .select('*')
       .eq('provider', 'zoom')
@@ -129,9 +139,11 @@ export class ZoomOAuthService {
   }
 
   async refreshAccessToken(account: ProviderAccount): Promise<string> {
-    this.logger.log(`Refreshing Zoom token`);
+    this.logger.log('Refreshing Zoom token');
 
-    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`,
+    ).toString('base64');
 
     const response = await fetch('https://zoom.us/oauth/token', {
       method: 'POST',
@@ -147,13 +159,17 @@ export class ZoomOAuthService {
 
     if (!response.ok) {
       const text = await response.text();
-      this.logger.error(`Failed to refresh Zoom token: ${response.status} ${text}`);
+      this.logger.error(
+        `Failed to refresh Zoom token: ${response.status} ${text}`,
+      );
 
       await (this.db.from('meeting_provider_accounts') as any)
         .update({ status: 'expired' })
         .eq('id', account.id);
 
-      throw new InternalServerErrorException('Zoom token expired. Please reconnect your Zoom account.');
+      throw new InternalServerErrorException(
+        'Zoom token expired. Please reconnect your Zoom account.',
+      );
     }
 
     const data = (await response.json()) as {
@@ -164,7 +180,9 @@ export class ZoomOAuthService {
 
     const encryptedAccess = this.encrypt(data.access_token);
     const encryptedRefresh = this.encrypt(data.refresh_token);
-    const expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString();
+    const expiresAt = new Date(
+      Date.now() + data.expires_in * 1000,
+    ).toISOString();
 
     await (this.db.from('meeting_provider_accounts') as any)
       .update({
@@ -175,7 +193,7 @@ export class ZoomOAuthService {
       })
       .eq('id', account.id);
 
-    this.logger.log(`Zoom token refreshed`);
+    this.logger.log('Zoom token refreshed');
     return data.access_token;
   }
 
@@ -184,7 +202,9 @@ export class ZoomOAuthService {
     refresh_token: string;
     expires_in: number;
   }> {
-    const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(
+      `${this.clientId}:${this.clientSecret}`,
+    ).toString('base64');
 
     const response = await fetch('https://zoom.us/oauth/token', {
       method: 'POST',
@@ -201,8 +221,12 @@ export class ZoomOAuthService {
 
     if (!response.ok) {
       const text = await response.text();
-      this.logger.error(`Zoom OAuth token exchange failed: ${response.status} ${text}`);
-      throw new InternalServerErrorException('Failed to exchange authorization code');
+      this.logger.error(
+        `Zoom OAuth token exchange failed: ${response.status} ${text}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to exchange authorization code',
+      );
     }
 
     return response.json() as Promise<{
@@ -212,15 +236,21 @@ export class ZoomOAuthService {
     }>;
   }
 
-  private async getZoomUser(accessToken: string): Promise<{ id: string; email: string }> {
+  private async getZoomUser(
+    accessToken: string,
+  ): Promise<{ id: string; email: string }> {
     const response = await fetch('https://api.zoom.us/v2/users/me', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!response.ok) {
       const text = await response.text();
-      this.logger.error(`Failed to fetch Zoom user info: ${response.status} ${text}`);
-      throw new InternalServerErrorException('Failed to fetch Zoom user details');
+      this.logger.error(
+        `Failed to fetch Zoom user info: ${response.status} ${text}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to fetch Zoom user details',
+      );
     }
 
     const data = (await response.json()) as { id: string; email: string };
