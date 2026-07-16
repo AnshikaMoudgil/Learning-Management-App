@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../services/api_client.dart';
+import '../models/session.dart';
 import 'home_dashboard.dart';
 import 'my_learning_screen.dart';
 import 'recent_recordings_screen.dart';
 import 'profile_screen.dart';
-import 'daily_schedule_screen.dart';
-import 'class_details_screen.dart';
+import 'meeting_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class LiveClassesScreen extends StatefulWidget {
@@ -16,10 +17,58 @@ class LiveClassesScreen extends StatefulWidget {
 }
 
 class _LiveClassesScreenState extends State<LiveClassesScreen> {
-  int _selectedTab = 0; // 0 for Upcoming, 1 for Calendar
+  int _selectedTab = 0;
+  final ApiClient _api = ApiClient();
+  List<LiveSession> _sessions = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSessions();
+  }
+
+  Future<void> _fetchSessions() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final data = await _api.get('/sessions/upcoming');
+      final list = (data as List<dynamic>)
+          .map((e) => LiveSession.fromJson(e as Map<String, dynamic>))
+          .toList();
+      setState(() { _sessions = list; _loading = false; });
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  Future<void> _joinSession(LiveSession session) async {
+    try {
+      final joinData = await _api.post('/sessions/${session.id}/join');
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MeetingScreen(
+            meetingNumber: joinData['meeting_number'],
+            password: joinData['password'] ?? '',
+            joinUrl: joinData['join_url'],
+            signature: joinData['signature'],
+            displayName: joinData['display_name'],
+            zoomAppKey: joinData['zoom_app_key'],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    }
+  }
 
   void _onNavTapped(int index) {
-    if (index == 2) return; // Already on Live Classes
+    if (index == 2) return;
     Widget nextScreen;
     switch (index) {
       case 0:
@@ -98,7 +147,6 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
           )
         ],
       ),
-      
     );
   }
 
@@ -130,7 +178,43 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
     );
   }
 
+  String _formatDuration(Duration d) {
+    if (d.inDays > 0) return '${d.inDays}d ${d.inHours % 24}h';
+    if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes % 60}m';
+    return '${d.inMinutes}m';
+  }
+
+  Color _startsInColor(Duration d) {
+    if (d.isNegative) return Colors.grey;
+    if (d.inMinutes < 60) return Colors.green;
+    if (d.inHours < 24) return AppColors.primaryBlue;
+    return AppColors.textDark;
+  }
+
   Widget _buildUpcomingView() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Error: $_error', textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            ElevatedButton(onPressed: _fetchSessions, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    final todaySessions = _sessions.where((s) =>
+        s.startTime.day == DateTime.now().day &&
+        s.startTime.month == DateTime.now().month &&
+        s.startTime.year == DateTime.now().year).toList();
+    final upcomingSessions = _sessions.where((s) =>
+        s.startTime.isAfter(DateTime.now())).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -141,7 +225,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
             children: [
               const Text('Upcoming Live Classes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
               GestureDetector(
-                onTap: () => setState(() => _selectedTab = 1), // switch to calendar
+                onTap: () => setState(() => _selectedTab = 1),
                 child: Row(
                   children: const [
                     Icon(Icons.calendar_month, size: 14, color: AppColors.primaryBlue),
@@ -154,78 +238,43 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 60,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            children: [
-              _buildDateSelector('Today', '2 May', true),
-              _buildDateSelector('Sat', '3 May', false),
-              _buildDateSelector('Sun', '4 May', false),
-              _buildDateSelector('Mon', '5 May', false),
-              _buildDateSelector('Tue', '6 May', false),
-              _buildDateSelector('Wed', '7 May', false),
-              _buildDateSelector('Thu', '8 May', false),
-            ],
+        if (todaySessions.isNotEmpty)
+          SizedBox(
+            height: 60,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                _buildDateSelector('Today', '${DateTime.now().day} ${_monthAbbr(DateTime.now().month)}', true),
+              ],
+            ),
           ),
-        ),
         const SizedBox(height: 16),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            children: [
-              _buildUpcomingClassCard(
-                image: 'assets/iphone_hardware.png',
-                courseName: 'iPhone Hardware Course',
-                title: 'Display Light Problem Diagnosis',
-                author: 'Rahul Verma',
-                date: 'Today, 07:00 PM',
-                duration: '60 min',
-                enrolled: '25',
-                startsIn: 'Starts in\n1h 18m',
-                startsInColor: Colors.green,
-                isLiveNow: true,
-              ),
-              _buildUpcomingClassCard(
-                image: 'assets/iphone_software.png',
-                courseName: 'iPhone Hardware Course',
-                title: 'Face ID Not Working - Deep Dive',
-                author: 'Amit Sharma',
-                date: 'Tomorrow, 11:00 AM',
-                duration: '90 min',
-                enrolled: '18',
-                startsIn: 'Starts in\n15h 18m',
-                startsInColor: AppColors.primaryBlue,
-                isLiveNow: true, // actually it's upcoming, but we show LIVE badge in screenshot? Screenshot shows LIVE badge on all 4 cards! Let's put LIVE badge.
-              ),
-              _buildUpcomingClassCard(
-                image: 'assets/android_hardware.png',
-                courseName: 'Advanced Repair Course',
-                title: 'Board Level Shorting Explained',
-                author: 'Pankaj Singh',
-                date: '3 May, 04:00 PM',
-                duration: '75 min',
-                enrolled: '32',
-                startsIn: 'Starts in\n2d 6h',
-                startsInColor: AppColors.textDark,
-                isLiveNow: true,
-              ),
-              _buildUpcomingClassCard(
-                image: 'assets/android_hardware.png',
-                courseName: 'Android Hardware Course',
-                title: 'Battery Replacement Best Practice',
-                author: 'Neeraj Patel',
-                date: '4 May, 07:00 PM',
-                duration: '60 min',
-                enrolled: '32',
-                startsIn: 'Starts in\n3d 6h',
-                startsInColor: AppColors.textDark,
-                isLiveNow: true,
-              ),
-            ],
+          if (upcomingSessions.isEmpty)
+          const Expanded(
+            child: Center(child: Text('No upcoming live classes.', style: TextStyle(color: AppColors.textLight))),
+          )
+        else
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: upcomingSessions.map((session) {
+                final diff = session.startTime.difference(DateTime.now());
+                final isLive = session.status == 'live';
+                final startsIn = isLive
+                    ? 'LIVE'
+                    : 'Starts in\n${_formatDuration(diff)}';
+                final startsInColor = isLive ? Colors.red : _startsInColor(diff);
+
+                return _buildUpcomingClassCard(
+                  session: session,
+                  startsIn: startsIn,
+                  startsInColor: startsInColor,
+                  isLiveNow: isLive,
+                );
+              }).toList(),
+            ),
           ),
-        ),
         Container(
           margin: const EdgeInsets.all(20),
           padding: const EdgeInsets.all(12),
@@ -273,6 +322,11 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
     );
   }
 
+  String _monthAbbr(int m) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[m - 1];
+  }
+
   Widget _buildDateSelector(String dayStr, String dateStr, bool isSelected) {
     return Container(
       width: 50,
@@ -294,13 +348,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
   }
 
   Widget _buildUpcomingClassCard({
-    required String image,
-    required String courseName,
-    required String title,
-    required String author,
-    required String date,
-    required String duration,
-    required String enrolled,
+    required LiveSession session,
     required String startsIn,
     required Color startsInColor,
     required bool isLiveNow,
@@ -327,8 +375,14 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
                   height: 120,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
+                    color: AppColors.lightBlueBg,
+                    image: session.courseImageUrl != null
+                        ? DecorationImage(image: NetworkImage(session.courseImageUrl!), fit: BoxFit.cover)
+                        : null,
                   ),
+                  child: session.courseImageUrl == null
+                      ? const Center(child: Icon(Icons.videocam, color: AppColors.primaryBlue, size: 28))
+                      : null,
                 ),
                 if (isLiveNow)
                   Positioned(
@@ -347,20 +401,22 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(courseName, style: const TextStyle(fontSize: 9, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                  Text(session.courseName ?? 'Course', style: const TextStyle(fontSize: 9, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                  Text(session.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
+                      CircleAvatar(radius: 8, backgroundImage: session.instructorAvatar != null
+                          ? NetworkImage(session.instructorAvatar!)
+                          : const AssetImage('assets/1.png') as ImageProvider),
                       const SizedBox(width: 4),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Text(author, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                              Text(session.instructorName ?? 'Instructor', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                               const SizedBox(width: 2),
                               const Icon(Icons.verified, color: AppColors.primaryBlue, size: 10),
                             ],
@@ -375,11 +431,12 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
                     children: [
                       const Icon(Icons.calendar_today, size: 10, color: AppColors.textLight),
                       const SizedBox(width: 4),
-                      Text(date, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
+                      Text('${session.startTime.day} ${_monthAbbr(session.startTime.month)}, ${session.startTime.hour.toString().padLeft(2, '0')}:${session.startTime.minute.toString().padLeft(2, '0')}',
+                          style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
                       const SizedBox(width: 12),
                       const Icon(Icons.access_time, size: 10, color: AppColors.textLight),
                       const SizedBox(width: 4),
-                      Text(duration, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
+                      Text('${session.duration} min', style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
                     ],
                   )
                 ],
@@ -388,11 +445,11 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(enrolled, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                const Text('Enrolled', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
+                Text('${session.duration}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                const Text('min', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => _joinSession(session),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,
@@ -414,6 +471,43 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
   }
 
   Widget _buildCalendarView() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final sessionsByDay = <int, List<LiveSession>>{};
+    for (final s in _sessions) {
+      final d = s.startTime.day;
+      sessionsByDay.putIfAbsent(d, () => []).add(s);
+    }
+
+    final now = DateTime.now();
+    final monthStr = '${_monthAbbr(now.month)} ${now.year}';
+    final firstDay = DateTime(now.year, now.month, 1);
+    final lastDay = DateTime(now.year, now.month + 1, 0);
+    final startWeekday = firstDay.weekday % 7;
+
+    final weeks = <List<String?>>[];
+    var row = List<String?>.filled(7, null);
+    var day = 1;
+    var col = startWeekday;
+    while (day <= lastDay.day) {
+      row[col] = day.toString();
+      col++;
+      if (col == 7) {
+        weeks.add(row);
+        row = List<String?>.filled(7, null);
+        col = 0;
+      }
+      day++;
+    }
+    if (row.any((d) => d != null)) {
+      weeks.add(row);
+    }
+
+    final todayStr = now.day.toString();
+    final todaySessions = sessionsByDay[now.day] ?? [];
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -421,20 +515,23 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             IconButton(icon: const Icon(Icons.chevron_left), onPressed: () {}),
-            const Text('May 2025', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            Text(monthStr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
             IconButton(icon: const Icon(Icons.chevron_right), onPressed: () {}),
           ],
         ),
         const SizedBox(height: 16),
-        // Mock Calendar Grid
         Table(
           children: [
             _buildCalendarRow(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'], isHeader: true),
-            _buildCalendarRow(['27', '28', '29', '30', '1', '2', '3'], selectedDay: '2', dots: {'1': 1, '2': 2, '3': 3}),
-            _buildCalendarRow(['4', '5', '6', '7', '8', '9', '10'], dots: {'4': 1, '5': 1, '6': 1, '7': 2, '8': 1, '9': 1, '10': 3}),
-            _buildCalendarRow(['11', '12', '13', '14', '15', '16', '17'], dots: {'11': 1, '14': 2, '15': 1, '16': 1, '17': 2}),
-            _buildCalendarRow(['18', '19', '20', '21', '22', '23', '24'], dots: {'22': 2, '23': 3}),
-            _buildCalendarRow(['25', '26', '27', '28', '29', '30', '31'], dots: {'26': 1, '28': 2, '29': 1, '31': 3}),
+            ...weeks.map((w) => _buildCalendarRow(
+              w.map((d) => d ?? '').toList(),
+              selectedDay: todayStr,
+              dots: Map.fromEntries(
+                sessionsByDay.entries.where((e) =>
+                    w.any((d) => d == e.key.toString())).map((e) =>
+                    MapEntry(e.key.toString(), e.value.length)),
+              ),
+            )),
           ],
         ),
         const SizedBox(height: 16),
@@ -450,20 +547,27 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Friday, 2 May 2025', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-            const Text('2 Classes', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+            Text('${_weekdayName(now.weekday)}, ${now.day} ${monthStr}',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            Text('${todaySessions.length} Classes', style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
           ],
         ),
         const SizedBox(height: 16),
-        _buildCalendarClassItem('07:00 PM', '08:00 PM', 'assets/iphone_hardware.png', 'iPhone Hardware Course', 'Display Light Problem Diagnosis', 'Rahul Verma'),
-        _buildCalendarClassItem('11:00 PM', '12:30 PM', 'assets/android_hardware.png', 'Android Hardware Course', 'Face ID Not Working - Deep Dive', 'Amit Sharma', isBlue: true),
+        if (todaySessions.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: Text('No classes today.', style: TextStyle(color: AppColors.textLight))),
+          )
+        else
+          ...todaySessions.map((s) => _buildCalendarClassItem(s)),
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: () {
             context.push('/daily-schedule');
           },
           icon: const Icon(Icons.calendar_today, size: 16, color: AppColors.primaryBlue),
-          label: const Text('View Full Schedule for 2 May', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+          label: Text('View Full Schedule for ${now.day} ${monthStr}',
+              style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: AppColors.primaryBlue),
             minimumSize: const Size(double.infinity, 48),
@@ -474,12 +578,16 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
     );
   }
 
+  String _weekdayName(int w) {
+    const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return names[w - 1];
+  }
+
   TableRow _buildCalendarRow(List<String> days, {bool isHeader = false, String? selectedDay, Map<String, int>? dots}) {
     return TableRow(
       children: days.map((day) {
         bool isSelected = day == selectedDay;
-        bool isFaded = isHeader ? false : (int.tryParse(day) == null || (day == '27' || day == '28' || day == '29' || day == '30') && !dots!.containsKey('30')); // simplistic check for prev month
-        
+        bool isFaded = isHeader ? false : day.isEmpty;
         int numDots = dots != null && dots.containsKey(day) ? dots[day]! : 0;
 
         return Padding(
@@ -535,7 +643,12 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
     );
   }
 
-  Widget _buildCalendarClassItem(String startTime, String endTime, String image, String courseName, String title, String author, {bool isBlue = false}) {
+  Widget _buildCalendarClassItem(LiveSession session) {
+    final startStr = '${session.startTime.hour.toString().padLeft(2, '0')}:${session.startTime.minute.toString().padLeft(2, '0')}';
+    final endStr = '${session.startTime.add(Duration(minutes: session.duration)).hour.toString().padLeft(2, '0')}:${session.startTime.add(Duration(minutes: session.duration)).minute.toString().padLeft(2, '0')}';
+    final diff = session.startTime.difference(DateTime.now());
+    final isWithin5h = diff.inHours < 5 && !diff.isNegative;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       child: Row(
@@ -546,9 +659,9 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(startTime, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                Text(startStr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                 const SizedBox(height: 4),
-                Text(endTime, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                Text(endStr, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
               ],
             ),
           ),
@@ -562,23 +675,31 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
                   height: 80,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
+                    color: AppColors.lightBlueBg,
+                    image: session.courseImageUrl != null
+                        ? DecorationImage(image: NetworkImage(session.courseImageUrl!), fit: BoxFit.cover)
+                        : null,
                   ),
+                  child: session.courseImageUrl == null
+                      ? const Center(child: Icon(Icons.videocam, color: AppColors.primaryBlue, size: 20))
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(courseName, style: const TextStyle(fontSize: 9, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                      Text(session.courseName ?? 'Course', style: const TextStyle(fontSize: 9, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
-                      Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                      Text(session.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
+                          CircleAvatar(radius: 8, backgroundImage: session.instructorAvatar != null
+                              ? NetworkImage(session.instructorAvatar!)
+                              : const AssetImage('assets/1.png') as ImageProvider),
                           const SizedBox(width: 4),
-                          Text(author, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                          Text(session.instructorName ?? 'Instructor', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                           const SizedBox(width: 2),
                           const Icon(Icons.verified, color: AppColors.primaryBlue, size: 10),
                         ],
@@ -590,10 +711,10 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text('Starts in', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
-                    Text(isBlue ? '15:18:45' : '01:18:45', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isBlue ? AppColors.primaryBlue : Colors.green)),
+                    Text(_formatDuration(diff), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isWithin5h ? AppColors.primaryBlue : Colors.green)),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () => _joinSession(session),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         foregroundColor: Colors.white,

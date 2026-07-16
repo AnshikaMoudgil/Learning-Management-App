@@ -85,7 +85,7 @@ Optional variables (uncomment and configure as needed):
 | `JWT_SECRET` | Secret key for JWT token generation |
 | `RAZORPAY_KEY_ID_A` / `RAZORPAY_KEY_SECRET_A` | Razorpay payment gateway — Hardware integration |
 | `RAZORPAY_KEY_ID_B` / `RAZORPAY_KEY_SECRET_B` | Razorpay payment gateway — Software integration |
-| `ZOOM_CLIENT_ID` / `ZOOM_CLIENT_SECRET` / `ZOOM_ACCOUNT_ID` / `ZOOM_WEBHOOK_SECRET` | Zoom Server-to-Server OAuth credentials |
+| `ZOOM_CLIENT_ID` / `ZOOM_CLIENT_SECRET` / `ZOOM_REDIRECT_URI` / `ZOOM_TOKEN_ENCRYPTION_KEY` / `ZOOM_WEBHOOK_SECRET_TOKEN` | Zoom OAuth (General App) credentials |
 | `FCM_SERVICE_ACCOUNT_JSON` | Firebase Cloud Messaging service account JSON |
 | `SENDGRID_API_KEY` / `EMAIL_FROM` | SendGrid email integration |
 | `SMS_PROVIDER_API_KEY` | SMS provider API key (Twilio / MSG91) |

@@ -24,11 +24,12 @@ class ApiClient {
     return dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000';
   }
 
-  Future<Map<String, String>> _headers() async {
+  Future<Map<String, String>> _headers({bool withBody = false}) async {
     final session = Supabase.instance.client.auth.currentSession;
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{};
+    if (withBody) {
+      headers['Content-Type'] = 'application/json';
+    }
     if (session?.accessToken != null) {
       headers['Authorization'] = 'Bearer ${session!.accessToken}';
     }
@@ -57,7 +58,7 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final response = await http.post(
       uri,
-      headers: await _headers(),
+      headers: await _headers(withBody: true),
       body: body != null ? jsonEncode(body) : null,
     );
     return _handleResponse(response);
@@ -67,7 +68,7 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final response = await http.patch(
       uri,
-      headers: await _headers(),
+      headers: await _headers(withBody: true),
       body: body != null ? jsonEncode(body) : null,
     );
     return _handleResponse(response);
@@ -83,7 +84,7 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
     final request = http.MultipartRequest('POST', uri);
 
-    final headers = await _headers();
+    final headers = await _headers(withBody: true);
     headers.remove('Content-Type');
     request.headers.addAll(headers);
     request.files.add(http.MultipartFile.fromBytes(fieldName, bytes, filename: fileName));

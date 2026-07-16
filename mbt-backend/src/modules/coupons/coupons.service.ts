@@ -63,7 +63,7 @@ export class CouponsService {
       return this.invalid(baseAmount, 'Coupon not found');
     }
 
-    return this.evaluateCoupon(coupon, baseAmount);
+    return this.evaluateCoupon(coupon as CouponRow, baseAmount);
   }
 
   async validateCouponForCheckout(
@@ -167,7 +167,7 @@ export class CouponsService {
       throw new NotFoundException('Course not found');
     }
 
-    return data;
+    return data as CoursePriceRow;
   }
 
   private getBaseAmount(course: CoursePriceRow): number {

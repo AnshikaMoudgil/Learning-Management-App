@@ -18,7 +18,9 @@ import {
   UserCheck,
   Smartphone,
   Tag,
-  CreditCard
+  CreditCard,
+  Video,
+  Settings,
 } from 'lucide-react';
 
 interface Profile {
@@ -114,10 +116,12 @@ export default function DashboardLayout({
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'superadmin'] },
     { name: 'My Profile', href: '/dashboard/instructor-profile', icon: UserCheck, roles: ['instructor'] },
     { name: 'Courses', href: '/dashboard/courses', icon: BookOpen, roles: ['admin', 'superadmin', 'instructor'] },
+    { name: 'Live Classes', href: '/dashboard/live-classes', icon: Video, roles: ['admin', 'superadmin', 'instructor'] },
     { name: 'Manage Coupons', href: '/dashboard/coupons', icon: Tag, roles: ['admin', 'superadmin'] },
     { name: 'Payments & Orders', href: '/dashboard/payments', icon: CreditCard, roles: ['admin', 'superadmin'] },
     { name: 'Manage Admins', href: '/dashboard/admins', icon: Users, roles: ['admin', 'superadmin'] },
     { name: 'Device Requests', href: '/dashboard/device-requests', icon: Smartphone, roles: ['admin', 'superadmin'] },
+    { name: 'Integrations', href: '/dashboard/integrations', icon: Settings, roles: ['superadmin'] },
     { name: 'Change Password', href: '/dashboard/change-password', icon: KeyRound, roles: ['admin', 'superadmin'] },
   ];
 

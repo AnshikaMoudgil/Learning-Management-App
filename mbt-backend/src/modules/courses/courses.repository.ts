@@ -164,7 +164,7 @@ export class CoursesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data ?? [];
+    return (data ?? []) as CourseSection[];
   }
 
   private async findLessons(courseId: string): Promise<CourseLesson[]> {
@@ -180,7 +180,7 @@ export class CoursesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data ?? [];
+    return (data ?? []) as CourseLesson[];
   }
 
   private async findActiveEnrollment(courseId: string, userId: string) {

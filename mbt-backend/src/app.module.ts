@@ -19,6 +19,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { CartModule } from './modules/cart/cart.module';
+import { ZoomModule } from './modules/zoom/zoom.module';
+import { ZoomQueuesModule } from './modules/queues/zoom-queues.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -69,6 +72,9 @@ import { CartModule } from './modules/cart/cart.module';
     AuditLogsModule,
     InvoicesModule,
     CartModule,
+    ZoomModule,
+    ZoomQueuesModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
