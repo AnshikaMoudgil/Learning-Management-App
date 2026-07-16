@@ -113,26 +113,6 @@ export default function LiveClassesPage() {
     fetchSessions();
   }, []);
 
-  const fetchZoomStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) return;
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/zoom/oauth-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setZoomConnected(data.connected);
-    } catch {
-      setZoomConnected(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchZoomStatus();
-  }, []);
-
   const handleDelete = async () => {
     if (!deleteTarget) return;
 
@@ -166,25 +146,6 @@ export default function LiveClassesPage() {
     }
   };
 
-  const handleConnectZoom = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/zoom/connect`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error('Failed to get Zoom authorization URL');
-      }
-    } catch {
-      toast.error('Failed to connect to Zoom');
-    }
-  };
-
   const filtered = sessions.filter((s) =>
     s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.courses?.[0]?.title && s.courses[0].title.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -205,44 +166,6 @@ export default function LiveClassesPage() {
           Create Session
         </Link>
       </div>
-
-      {zoomConnected === false && (
-        <div className="rounded-2xl border border-amber-800 bg-amber-950/20 p-5 flex items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <Unlink className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-bold text-amber-300">Zoom not connected</h3>
-              <p className="text-xs text-amber-200/70 mt-0.5">Connect your Zoom account to create live meetings.</p>
-            </div>
-          </div>
-          <button
-            onClick={handleConnectZoom}
-            className="flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition cursor-pointer shrink-0"
-          >
-            <LinkIcon className="h-4 w-4" />
-            Connect Zoom
-          </button>
-        </div>
-      )}
-
-      {zoomConnected === true && (
-        <div className="rounded-2xl border border-teal-800 bg-teal-950/20 p-5 flex items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <LinkIcon className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-bold text-teal-300">Zoom connected</h3>
-              <p className="text-xs text-teal-200/70 mt-0.5">Sessions will create Zoom meetings on your account.</p>
-            </div>
-          </div>
-          <button
-            onClick={handleConnectZoom}
-            className="flex items-center gap-2 rounded-xl border border-teal-800 px-5 py-2.5 text-sm font-semibold text-teal-400 hover:bg-teal-950/30 transition cursor-pointer shrink-0"
-          >
-            <LinkIcon className="h-4 w-4" />
-            Reconnect
-          </button>
-        </div>
-      )}
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />

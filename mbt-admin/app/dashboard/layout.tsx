@@ -20,6 +20,7 @@ import {
   Tag,
   CreditCard,
   Video,
+  Settings,
 } from 'lucide-react';
 
 interface Profile {
@@ -120,6 +121,7 @@ export default function DashboardLayout({
     { name: 'Payments & Orders', href: '/dashboard/payments', icon: CreditCard, roles: ['admin', 'superadmin'] },
     { name: 'Manage Admins', href: '/dashboard/admins', icon: Users, roles: ['admin', 'superadmin'] },
     { name: 'Device Requests', href: '/dashboard/device-requests', icon: Smartphone, roles: ['admin', 'superadmin'] },
+    { name: 'Integrations', href: '/dashboard/integrations', icon: Settings, roles: ['superadmin'] },
     { name: 'Change Password', href: '/dashboard/change-password', icon: KeyRound, roles: ['admin', 'superadmin'] },
   ];
 

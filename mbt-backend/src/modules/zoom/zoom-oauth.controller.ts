@@ -9,17 +9,24 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ZoomOAuthService } from './zoom-oauth.service';
 import { randomBytes } from 'crypto';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Controller('zoom')
 export class ZoomOAuthController {
   private readonly logger = new Logger(ZoomOAuthController.name);
 
-  constructor(private readonly zoomOAuthService: ZoomOAuthService) {}
+  constructor(
+    private readonly zoomOAuthService: ZoomOAuthService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   @Get('connect')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('superadmin')
   async connect(@Request() req: any) {
     const instructorId = req.user?.id;
     if (!instructorId) {
@@ -52,12 +59,39 @@ export class ZoomOAuthController {
       };
     }
 
+    // Verify that the user who initiated this is indeed a superadmin
+    const { data: profile } = await this.supabaseService
+      .getClient()
+      .from('profiles')
+      .select('role')
+      .eq('id', instructorId)
+      .single() as any;
+
+    if (!profile || (profile as any).role !== 'superadmin') {
+      return {
+        error: 'unauthorized',
+        message: 'Only superadmins can connect the system Zoom account',
+      };
+    }
+
     await this.zoomOAuthService.handleCallback(code, instructorId);
 
     return {
       connected: true,
       message: 'Zoom account connected successfully. You can close this tab.',
     };
+  }
+
+  @Get('disconnect')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('superadmin')
+  async disconnect(@Request() req: any) {
+    const instructorId = req.user?.id;
+    if (!instructorId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+    await this.zoomOAuthService.disconnect(instructorId);
+    return { success: true, message: 'Zoom account disconnected' };
   }
 
   @Get('oauth-status')

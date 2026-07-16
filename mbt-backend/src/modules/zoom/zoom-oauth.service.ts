@@ -5,7 +5,6 @@ import * as crypto from 'crypto';
 
 export interface ProviderAccount {
   id: string;
-  instructor_id: string;
   provider: string;
   provider_user_id: string | null;
   email: string | null;
@@ -54,7 +53,7 @@ export class ZoomOAuthService {
   }
 
   async handleCallback(code: string, instructorId: string): Promise<void> {
-    this.logger.log(`Exchanging authorization code for instructor ${instructorId}`);
+    this.logger.log(`Exchanging authorization code for system-wide Zoom account`);
 
     const tokenResponse = await this.exchangeCodeForTokens(code);
 
@@ -65,37 +64,57 @@ export class ZoomOAuthService {
       Date.now() + tokenResponse.expires_in * 1000,
     ).toISOString();
 
-    const { error } = await (this.db.from('meeting_provider_accounts') as any).upsert(
-      {
-        instructor_id: instructorId,
-        provider: 'zoom',
-        access_token: encryptedAccess,
-        refresh_token: encryptedRefresh,
-        expires_at: expiresAt,
-        status: 'connected',
-      },
-      { onConflict: 'instructor_id,provider' },
-    );
+    const zoomUser = await this.getZoomUser(tokenResponse.access_token);
+
+    const { data: existing } = await (this.db.from('meeting_provider_accounts') as any)
+      .select('id')
+      .eq('provider', 'zoom')
+      .maybeSingle();
+
+    let query;
+    if (existing) {
+      query = (this.db.from('meeting_provider_accounts') as any)
+        .update({
+          access_token: encryptedAccess,
+          refresh_token: encryptedRefresh,
+          expires_at: expiresAt,
+          status: 'connected',
+          provider_user_id: zoomUser.id,
+          email: zoomUser.email,
+        })
+        .eq('id', existing.id);
+    } else {
+      query = (this.db.from('meeting_provider_accounts') as any)
+        .insert({
+          provider: 'zoom',
+          access_token: encryptedAccess,
+          refresh_token: encryptedRefresh,
+          expires_at: expiresAt,
+          status: 'connected',
+          provider_user_id: zoomUser.id,
+          email: zoomUser.email,
+        });
+    }
+
+    const { error } = await query;
 
     if (error) {
       this.logger.error(`Failed to store Zoom tokens: ${error.message}`);
       throw new InternalServerErrorException('Failed to store Zoom connection');
     }
 
-    this.logger.log(`Zoom account connected for instructor ${instructorId}`);
+    this.logger.log(`System-wide Zoom account connected (user: ${zoomUser.email})`);
   }
 
   async disconnect(instructorId: string): Promise<void> {
     await (this.db.from('meeting_provider_accounts') as any)
       .update({ status: 'disconnected' })
-      .eq('instructor_id', instructorId)
       .eq('provider', 'zoom');
   }
 
-  async getConnection(instructorId: string): Promise<ProviderAccount | null> {
+  async getConnection(instructorId?: string): Promise<ProviderAccount | null> {
     const { data } = await (this.db.from('meeting_provider_accounts') as any)
       .select('*')
-      .eq('instructor_id', instructorId)
       .eq('provider', 'zoom')
       .eq('status', 'connected')
       .maybeSingle();
@@ -110,7 +129,7 @@ export class ZoomOAuthService {
   }
 
   async refreshAccessToken(account: ProviderAccount): Promise<string> {
-    this.logger.log(`Refreshing Zoom token for instructor ${account.instructor_id}`);
+    this.logger.log(`Refreshing Zoom token`);
 
     const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
 
@@ -156,7 +175,7 @@ export class ZoomOAuthService {
       })
       .eq('id', account.id);
 
-    this.logger.log(`Zoom token refreshed for instructor ${account.instructor_id}`);
+    this.logger.log(`Zoom token refreshed`);
     return data.access_token;
   }
 
@@ -191,6 +210,21 @@ export class ZoomOAuthService {
       refresh_token: string;
       expires_in: number;
     }>;
+  }
+
+  private async getZoomUser(accessToken: string): Promise<{ id: string; email: string }> {
+    const response = await fetch('https://api.zoom.us/v2/users/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      this.logger.error(`Failed to fetch Zoom user info: ${response.status} ${text}`);
+      throw new InternalServerErrorException('Failed to fetch Zoom user details');
+    }
+
+    const data = (await response.json()) as { id: string; email: string };
+    return { id: data.id, email: data.email };
   }
 
   private encrypt(text: string): string {

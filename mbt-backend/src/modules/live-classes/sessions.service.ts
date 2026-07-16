@@ -70,6 +70,18 @@ export class SessionsService {
       throw new ForbiddenException('Not authorized to update this session');
     }
 
+    // Handle status transition side effects
+    if (dto.status === 'cancelled' && session.status !== 'cancelled') {
+      const meeting = await this.sessionsRepository.findMeetingBySessionId(id);
+      if (meeting) {
+        await this.deleteMeetingQueue.add('delete', {
+          instructorId,
+          meetingId: meeting.meeting_id,
+        });
+      }
+      await this.cancelReminders(id);
+    }
+
     const updated = await this.sessionsRepository.update(id, dto);
 
     // If start_time or duration changed, sync with Zoom and reschedule reminders

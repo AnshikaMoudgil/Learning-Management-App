@@ -4,7 +4,18 @@
   IsDateString,
   IsInt,
   Min,
+  IsIn,
 } from 'class-validator';
+
+const VALID_STATUSES = [
+  'draft',
+  'scheduled',
+  'live',
+  'finished',
+  'recording_processing',
+  'recording_ready',
+  'cancelled',
+] as const;
 
 export class UpdateSessionDto {
   @IsOptional()
@@ -23,4 +34,9 @@ export class UpdateSessionDto {
   @IsInt()
   @Min(1)
   duration?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(VALID_STATUSES)
+  status?: string;
 }
