@@ -17,6 +17,7 @@ import { DevicesModule } from './modules/devices/devices.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { SearchModule } from './modules/search/search.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { CartModule } from './modules/cart/cart.module';
 import { ZoomModule } from './modules/zoom/zoom.module';
@@ -70,6 +71,7 @@ import { StorageModule } from './storage/storage.module';
     CertificatesModule,
     NotificationsModule,
     AuditLogsModule,
+    SearchModule,
     InvoicesModule,
     CartModule,
     ZoomModule,
