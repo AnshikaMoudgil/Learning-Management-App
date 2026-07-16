@@ -22,7 +22,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data ?? [];
+    return (data ?? []) as Device[];
   }
 
   async findActiveByUserId(userId: string): Promise<Device | null> {
@@ -37,7 +37,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Device | null;
   }
 
   async findAnyByUserId(userId: string): Promise<Device | null> {
@@ -52,7 +52,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Device | null;
   }
 
   async findByUserAndFingerprint(
@@ -70,7 +70,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Device | null;
   }
 
   async create(
@@ -92,7 +92,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Device;
   }
 
   async updateLastSeen(deviceId: string): Promise<Device> {
@@ -107,7 +107,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Device;
   }
 
   async upsertDevice(
@@ -134,7 +134,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Device;
   }
 
   async deactivateDevice(deviceId: string): Promise<void> {
@@ -171,7 +171,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as DeviceChangeRequest;
   }
 
   async findPendingByUserAndFingerprint(
@@ -190,7 +190,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as DeviceChangeRequest | null;
   }
 
   async findApprovedByUserAndFingerprint(
@@ -209,7 +209,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as DeviceChangeRequest | null;
   }
 
   async findUserChangeRequests(userId: string): Promise<DeviceChangeRequest[]> {
@@ -223,7 +223,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data ?? [];
+    return (data ?? []) as DeviceChangeRequest[];
   }
 
   async findLastApprovedRequest(
@@ -242,7 +242,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as DeviceChangeRequest | null;
   }
 
   async findChangeRequestById(id: string): Promise<DeviceChangeRequest | null> {
@@ -256,7 +256,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as DeviceChangeRequest | null;
   }
 
   async findAllPendingRequests(): Promise<DeviceChangeRequest[]> {
@@ -270,7 +270,7 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data ?? [];
+    return (data ?? []) as DeviceChangeRequest[];
   }
 
   async updateChangeRequestStatus(
@@ -293,6 +293,6 @@ export class DevicesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as DeviceChangeRequest;
   }
 }

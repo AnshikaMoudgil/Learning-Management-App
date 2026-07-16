@@ -38,21 +38,21 @@ export class ZoomCreateMeetingProcessor extends WorkerHost {
       duration,
     );
 
-    const { error } = await (
-      this.db.from('live_session_meetings') as any
-    ).insert({
-      session_id: sessionId,
-      provider: 'zoom',
-      meeting_id: String(meeting.id),
-      meeting_uuid: meeting.uuid,
-      password: meeting.password,
-      join_url: meeting.join_url,
-      start_url: meeting.start_url,
-      host_user_id: meeting.host_id,
-      waiting_room: true,
-      auto_recording: true,
-      provider_metadata: meeting,
-    });
+    const { error } = await this.db
+      .from('live_session_meetings')
+      .insert({
+        session_id: sessionId,
+        provider: 'zoom',
+        meeting_id: String(meeting.id),
+        meeting_uuid: meeting.uuid,
+        password: meeting.password,
+        join_url: meeting.join_url,
+        start_url: meeting.start_url,
+        host_user_id: meeting.host_id,
+        waiting_room: true,
+        auto_recording: true,
+        provider_metadata: meeting,
+      });
 
     if (error) {
       this.logger.error(

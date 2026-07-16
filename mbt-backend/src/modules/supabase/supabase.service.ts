@@ -1,10 +1,13 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '../../database.types';
+
+type TypedSupabaseClient = SupabaseClient<Database>;
 
 @Injectable()
 export class SupabaseService implements OnModuleInit {
-  private supabaseClient!: ReturnType<typeof createClient>;
+  private supabaseClient!: TypedSupabaseClient;
   private readonly logger = new Logger(SupabaseService.name);
 
   constructor(private configService: ConfigService) {}
@@ -21,7 +24,7 @@ export class SupabaseService implements OnModuleInit {
       );
     }
 
-    this.supabaseClient = createClient(supabaseUrl, supabaseKey, {
+    this.supabaseClient = createClient<Database>(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,

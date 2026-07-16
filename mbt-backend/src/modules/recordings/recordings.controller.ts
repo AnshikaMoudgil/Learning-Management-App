@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Param, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Controller('recordings')
@@ -21,7 +15,8 @@ export class RecordingsController {
       throw new BadRequestException('courseId is required');
     }
 
-    const { data, error } = await (this.db.from('session_recordings') as any)
+    const { data, error } = await this.db
+      .from('session_recordings')
       .select('*, sessions!inner(*)')
       .eq('sessions.course_id', courseId)
       .eq('status', 'ready');
@@ -35,7 +30,8 @@ export class RecordingsController {
 
   @Get(':id')
   async getRecordingDetail(@Param('id') id: string) {
-    const { data, error } = await (this.db.from('session_recordings') as any)
+    const { data, error } = await this.db
+      .from('session_recordings')
       .select('*, sessions(*)')
       .eq('id', id)
       .maybeSingle();

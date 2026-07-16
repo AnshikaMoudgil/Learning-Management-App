@@ -4,7 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { SessionsRepository, Session } from './sessions.repository';
+import { SessionsRepository } from './sessions.repository';
 import { ZoomSdkService } from '../zoom/zoom-sdk.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -188,9 +188,8 @@ export class SessionsService {
     }
 
     // Fetch user profile
-    const { data: userProfile, error: profileError } = await (
-      this.db.from('profiles') as any
-    )
+    const { data: userProfile, error: profileError } = await this.db
+      .from('profiles')
       .select('full_name, role')
       .eq('id', userId)
       .single();
@@ -207,9 +206,8 @@ export class SessionsService {
 
     // If student, verify enrollment
     if (!isInstructor && !isAdmin) {
-      const { data: enrollment, error: enrollError } = await (
-        this.db.from('enrollments') as any
-      )
+      const { data: enrollment, error: enrollError } = await this.db
+        .from('enrollments')
         .select('id')
         .eq('course_id', session.course_id)
         .eq('user_id', userId)

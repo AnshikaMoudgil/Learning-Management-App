@@ -44,7 +44,7 @@ export class NotificationsService {
       data: payload.data ?? null,
     };
 
-    const { error } = await (this.db.from('notifications') as any).insert(row);
+    const { error } = await this.db.from('notifications').insert(row as never);
 
     if (error) {
       this.logger.error(
@@ -67,7 +67,7 @@ export class NotificationsService {
       data: payload.data ?? null,
     }));
 
-    const { error } = await (this.db.from('notifications') as any).insert(rows);
+    const { error } = await this.db.from('notifications').insert(rows as never);
 
     if (error) {
       this.logger.error(
@@ -80,11 +80,12 @@ export class NotificationsService {
     }
   }
 
-  async getNotifications(userId: string, page = 1, limit = 20) {
+  async getNotifications(userId: string, page = 1, limit = 20): Promise<{ data: Record<string, unknown>[]; total: number }> {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const { data, error, count } = await (this.db.from('notifications') as any)
+    const { data, error, count } = await this.db
+      .from('notifications')
       .select('*', { count: 'exact' })
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
@@ -98,7 +99,8 @@ export class NotificationsService {
   }
 
   async getUnreadCount(userId: string): Promise<number> {
-    const { count, error } = await (this.db.from('notifications') as any)
+    const { count, error } = await this.db
+      .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('is_read', false);
@@ -108,14 +110,16 @@ export class NotificationsService {
   }
 
   async markRead(notificationId: string, userId: string): Promise<void> {
-    await (this.db.from('notifications') as any)
+    await this.db
+      .from('notifications')
       .update({ is_read: true })
       .eq('id', notificationId)
       .eq('user_id', userId);
   }
 
   async markAllRead(userId: string): Promise<void> {
-    await (this.db.from('notifications') as any)
+    await this.db
+      .from('notifications')
       .update({ is_read: true })
       .eq('user_id', userId)
       .eq('is_read', false);

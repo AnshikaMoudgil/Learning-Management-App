@@ -21,7 +21,7 @@ export class UsersRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Profile | null;
   }
 
   async update(
@@ -39,7 +39,7 @@ export class UsersRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Profile;
   }
 
   async create(
@@ -56,7 +56,7 @@ export class UsersRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Profile;
   }
 
   async upsert(
@@ -73,7 +73,7 @@ export class UsersRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Profile;
   }
 
   async upsertAvatarUrl(userId: string, url: string): Promise<Profile> {
@@ -88,7 +88,7 @@ export class UsersRepository {
       throw new BadRequestException(error.message);
     }
 
-    return data;
+    return data as Profile;
   }
 
   async clearAvatarUrl(userId: string): Promise<void> {

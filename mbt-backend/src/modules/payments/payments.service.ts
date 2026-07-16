@@ -410,7 +410,7 @@ export class PaymentsService {
       throw new NotFoundException('Course not found');
     }
 
-    return data;
+    return data as CourseRow;
   }
 
   private async assertNotEnrolled(userId: string, courseId: string) {
@@ -451,7 +451,7 @@ export class PaymentsService {
       throw new NotFoundException('Payment order not found');
     }
 
-    return data;
+    return data as PaymentRow;
   }
 
   private async getGatewayForPayment(payment: PaymentRow) {

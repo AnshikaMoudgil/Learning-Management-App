@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unnecessary-type-assertion */
-
 import {
   Controller,
   Get,
@@ -12,6 +10,7 @@ import {
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { ZoomOAuthService } from './zoom-oauth.service';
 import { randomBytes } from 'crypto';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -28,7 +27,7 @@ export class ZoomOAuthController {
   @Get('connect')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('superadmin')
-  connect(@Request() req: any) {
+  connect(@Request() req: AuthenticatedRequest) {
     const instructorId = req.user?.id;
     if (!instructorId) {
       throw new UnauthorizedException('Authentication required');
@@ -57,14 +56,14 @@ export class ZoomOAuthController {
       };
     }
 
-    const { data: profile } = await (
-      this.supabaseService.getClient().from('profiles') as any
-    )
+    const { data: profile } = await this.supabaseService
+      .getClient()
+      .from('profiles')
       .select('role')
       .eq('id', instructorId)
       .single();
 
-    if (!profile || (profile as any).role !== 'superadmin') {
+    if (!profile || (profile as Record<string, unknown>).role !== 'superadmin') {
       return {
         error: 'unauthorized',
         message: 'Only superadmins can connect the system Zoom account',
@@ -82,7 +81,7 @@ export class ZoomOAuthController {
   @Get('disconnect')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('superadmin')
-  async disconnect(@Request() req: any) {
+  async disconnect(@Request() req: AuthenticatedRequest) {
     const instructorId = req.user?.id;
     if (!instructorId) {
       throw new UnauthorizedException('Authentication required');
@@ -94,7 +93,7 @@ export class ZoomOAuthController {
 
   @Get('oauth-status')
   @UseGuards(AuthGuard)
-  async oauthStatus(@Request() req: any) {
+  async oauthStatus(@Request() req: AuthenticatedRequest) {
     const instructorId = req.user?.id;
     if (!instructorId) {
       throw new UnauthorizedException('Authentication required');

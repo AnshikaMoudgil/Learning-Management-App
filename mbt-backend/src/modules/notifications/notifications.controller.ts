@@ -7,6 +7,7 @@
   Query,
   HttpCode,
 } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { NotificationsService } from './notifications.service';
 
 @Controller('notifications')
@@ -16,7 +17,7 @@ export class NotificationsController {
   /** GET /notifications?page=1&limit=20 */
   @Get()
   async getAll(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -31,7 +32,7 @@ export class NotificationsController {
 
   /** GET /notifications/unread-count */
   @Get('unread-count')
-  async unreadCount(@Request() req: any) {
+  async unreadCount(@Request() req: AuthenticatedRequest) {
     const userId = req.user?.id as string;
     const count = await this.notificationsService.getUnreadCount(userId);
     return { unread: count };
@@ -40,7 +41,7 @@ export class NotificationsController {
   /** PATCH /notifications/:id/read */
   @Patch(':id/read')
   @HttpCode(200)
-  async markOne(@Param('id') id: string, @Request() req: any) {
+  async markOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     const userId = req.user?.id as string;
     await this.notificationsService.markRead(id, userId);
     return { success: true };
@@ -49,7 +50,7 @@ export class NotificationsController {
   /** PATCH /notifications/read-all */
   @Patch('read-all')
   @HttpCode(200)
-  async markAll(@Request() req: any) {
+  async markAll(@Request() req: AuthenticatedRequest) {
     const userId = req.user?.id as string;
     await this.notificationsService.markAllRead(userId);
     return { success: true };

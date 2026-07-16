@@ -4,6 +4,16 @@ import { Job } from 'bullmq';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 
+interface SessionRow {
+  title: string;
+  course_id: string;
+  status: string;
+}
+
+interface EnrollmentRow {
+  user_id: string;
+}
+
 type ReminderType = 'reminder_24h' | 'reminder_1h' | 'reminder_10min';
 
 interface SendReminderJob {
@@ -60,7 +70,7 @@ export class ZoomSendRemindersProcessor extends WorkerHost {
     }
 
     // Don't send reminders for cancelled sessions
-    if ((session as any).status === 'cancelled') {
+    if ((session as SessionRow).status === 'cancelled') {
       this.logger.log(`Session ${sessionId} is cancelled — skipping reminder`);
       return;
     }
@@ -68,19 +78,19 @@ export class ZoomSendRemindersProcessor extends WorkerHost {
     const { data: enrollments } = await this.db
       .from('enrollments')
       .select('user_id')
-      .eq('course_id', (session as any).course_id)
+      .eq('course_id', (session as SessionRow).course_id)
       .eq('status', 'active');
 
     if (!enrollments?.length) return;
 
-    const userIds = (enrollments as any[]).map((e) => e.user_id);
+    const userIds = (enrollments as EnrollmentRow[]).map((e) => e.user_id);
     const template = REMINDER_MESSAGES[type];
 
     await this.notificationsService.notifyMany(userIds, {
       type,
       title: template.title,
-      body: template.body((session as any).title),
-      data: { session_id: sessionId, course_id: (session as any).course_id },
+      body: template.body((session as SessionRow).title),
+      data: { session_id: sessionId, course_id: (session as SessionRow).course_id },
     });
 
     this.logger.log(

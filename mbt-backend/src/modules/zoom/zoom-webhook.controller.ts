@@ -13,7 +13,11 @@ import { Queue } from 'bullmq';
 import * as crypto from 'crypto';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ZoomAttendanceService } from './zoom-attendance.service';
-import type { ZoomWebhookEvent } from './interfaces/zoom.interfaces';
+import type {
+  ZoomWebhookEvent,
+  ZoomWebhookObject,
+  ZoomRecordingFile,
+} from './interfaces/zoom.interfaces';
 
 @Controller('zoom')
 export class ZoomWebhookController {
@@ -39,8 +43,8 @@ export class ZoomWebhookController {
     @Body() rawEvent: ZoomWebhookEvent,
   ) {
     // ── Zoom URL validation challenge ──────────────────────────
-    if ((rawEvent as any).event === 'endpoint.url_validation') {
-      const plainToken = (rawEvent as any).payload?.plainToken as string;
+    if (rawEvent.event === 'endpoint.url_validation') {
+      const plainToken = (rawEvent.payload as Record<string, unknown>)?.plainToken as string;
       const secret = this.configService.get<string>('zoom.webhookSecretToken')!;
       const hash = crypto
         .createHmac('sha256', secret)
@@ -112,7 +116,8 @@ export class ZoomWebhookController {
     const sessionId = await this.getSessionIdByMeetingId(meetingId);
     if (!sessionId) return;
 
-    await (this.db.from('sessions') as any)
+    await this.db
+      .from('sessions')
       .update({ status: 'live' })
       .eq('id', sessionId);
 
@@ -124,10 +129,12 @@ export class ZoomWebhookController {
     if (!sessionId) return;
 
     await Promise.all([
-      (this.db.from('sessions') as any)
+      this.db
+        .from('sessions')
         .update({ status: 'finished' })
         .eq('id', sessionId),
-      (this.db.from('live_session_meetings') as any)
+      this.db
+        .from('live_session_meetings')
         .update({ recording_status: 'processing' })
         .eq('session_id', sessionId),
     ]);
@@ -136,41 +143,46 @@ export class ZoomWebhookController {
   }
 
   private async onRecordingCompleted(event: ZoomWebhookEvent): Promise<void> {
-    const obj = event.payload?.object as any;
+    const obj = event.payload?.object as ZoomWebhookObject & {
+      recording_files?: ZoomRecordingFile[];
+    };
     const meetingId = String(obj.id);
     const sessionId = await this.getSessionIdByMeetingId(meetingId);
     if (!sessionId) return;
 
-    const { data: session } = await (this.db.from('sessions') as any)
+    const { data: session } = await this.db
+      .from('sessions')
       .select('instructor_id')
       .eq('id', sessionId)
       .single();
-    const instructorId = (session as any)?.instructor_id as string | undefined;
+    const instructorId = (session as Record<string, unknown>)?.instructor_id as string | undefined;
     if (!instructorId) {
       this.logger.warn(`No instructor found for session ${sessionId}`);
       return;
     }
 
-    const recordingFiles: any[] = obj.recording_files ?? [];
+    const recordingFiles = obj.recording_files ?? [];
     const mp4Files = recordingFiles.filter(
-      (f: any) => f.file_type === 'MP4' && f.status === 'completed',
+      (f: ZoomRecordingFile) => f.file_type === 'MP4' && f.status === 'completed',
     );
 
     for (const file of mp4Files) {
-      await (this.db.from('session_recordings') as any).insert({
-        session_id: sessionId,
-        provider_recording_id: file.id,
-        download_url: file.download_url,
-        duration: file.recording_end
-          ? Math.round(
-              (new Date(file.recording_end).getTime() -
-                new Date(file.recording_start).getTime()) /
-                1000,
-            )
-          : null,
-        size: file.file_size ?? null,
-        status: 'processing',
-      });
+      await this.db
+        .from('session_recordings')
+        .insert({
+          session_id: sessionId,
+          provider_recording_id: file.id,
+          download_url: file.download_url,
+          duration: file.recording_end
+            ? Math.round(
+                (new Date(file.recording_end).getTime() -
+                  new Date(file.recording_start).getTime()) /
+                  1000,
+              )
+            : null,
+          size: file.file_size ?? null,
+          status: 'processing',
+        });
 
       await this.downloadQueue.add(
         'download',
@@ -198,7 +210,8 @@ export class ZoomWebhookController {
   private async getSessionIdByMeetingId(
     meetingId: string,
   ): Promise<string | null> {
-    const { data } = await (this.db.from('live_session_meetings') as any)
+    const { data } = await this.db
+      .from('live_session_meetings')
       .select('session_id')
       .eq('meeting_id', meetingId)
       .maybeSingle();
@@ -208,7 +221,7 @@ export class ZoomWebhookController {
       return null;
     }
 
-    return data.session_id as string;
+    return (data as Record<string, unknown>).session_id as string;
   }
 
   private verifySignature(

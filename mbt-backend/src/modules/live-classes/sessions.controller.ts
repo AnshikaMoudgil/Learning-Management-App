@@ -11,6 +11,7 @@
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
@@ -21,7 +22,7 @@ export class SessionsController {
 
   @Post()
   @UseGuards(AuthGuard)
-  async create(@Request() req: any, @Body() dto: CreateSessionDto) {
+  async create(@Request() req: AuthenticatedRequest, @Body() dto: CreateSessionDto) {
     return this.sessionsService.createSession(req.user?.id as string, dto);
   }
 
@@ -29,7 +30,7 @@ export class SessionsController {
   @UseGuards(AuthGuard)
   async update(
     @Param('id') id: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: UpdateSessionDto,
   ) {
     return this.sessionsService.updateSession(id, req.user?.id as string, dto);
@@ -37,7 +38,7 @@ export class SessionsController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  async cancel(@Param('id') id: string, @Request() req: any) {
+  async cancel(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.sessionsService.cancelSession(id, req.user?.id as string);
   }
 
@@ -64,21 +65,21 @@ export class SessionsController {
   @Post(':id/join')
   @HttpCode(200)
   @UseGuards(AuthGuard)
-  async join(@Param('id') id: string, @Request() req: any) {
+  async join(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.sessionsService.joinSession(id, req.user?.id as string);
   }
 
   @Post(':id/start')
   @HttpCode(200)
   @UseGuards(AuthGuard)
-  async start(@Param('id') id: string, @Request() req: any) {
+  async start(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.sessionsService.startSession(id, req.user?.id as string);
   }
 
   @Post(':id/end')
   @HttpCode(200)
   @UseGuards(AuthGuard)
-  async end(@Param('id') id: string, @Request() req: any) {
+  async end(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.sessionsService.endSession(id, req.user?.id as string);
   }
 }
