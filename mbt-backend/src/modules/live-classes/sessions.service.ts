@@ -151,9 +151,12 @@ export class SessionsService {
       .select('course_id')
       .eq('user_id', userId)
       .eq('status', 'active')
-      .or(`validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`);
+      .or(
+        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
+      );
 
-    const courseIds = (enrollments || []).map((e: any) => e.course_id);
+    const rows = (enrollments || []) as { course_id: string }[];
+    const courseIds = rows.map((e) => e.course_id);
     if (courseIds.length === 0) return [];
 
     return this.sessionsRepository.findUpcomingByCourseIds(courseIds);
@@ -164,12 +167,14 @@ export class SessionsService {
   }
 
   private async isAdminOrSuperadmin(userId: string): Promise<boolean> {
-    const { data: profile } = await this.db
+    const { data: profile } = (await this.db
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .single() as unknown as { data: { role: string } | null };
-    return profile?.role ? ['admin', 'superadmin'].includes(profile.role) : false;
+      .single()) as unknown as { data: { role: string } | null };
+    return profile?.role
+      ? ['admin', 'superadmin'].includes(profile.role)
+      : false;
   }
 
   async startSession(id: string, userId: string) {
@@ -179,7 +184,9 @@ export class SessionsService {
     }
     const isAdmin = await this.isAdminOrSuperadmin(userId);
     if (!isAdmin && session.instructor_id !== userId) {
-      throw new ForbiddenException('Only the instructor or an admin can start the session');
+      throw new ForbiddenException(
+        'Only the instructor or an admin can start the session',
+      );
     }
     return this.sessionsRepository.update(id, { status: 'live' });
   }
@@ -191,7 +198,9 @@ export class SessionsService {
     }
     const isAdmin = await this.isAdminOrSuperadmin(userId);
     if (!isAdmin && session.instructor_id !== userId) {
-      throw new ForbiddenException('Only the instructor or an admin can end the session');
+      throw new ForbiddenException(
+        'Only the instructor or an admin can end the session',
+      );
     }
     return this.sessionsRepository.update(id, { status: 'finished' });
   }
@@ -246,7 +255,9 @@ export class SessionsService {
 
     // Students can only join when the session is live
     if (!isInstructor && !isAdmin && session.status !== 'live') {
-      throw new BadRequestException('This session has not started yet. Please wait for the instructor to start it.');
+      throw new BadRequestException(
+        'This session has not started yet. Please wait for the instructor to start it.',
+      );
     }
 
     // Instructors/admins can join 15 minutes early to set up
@@ -279,7 +290,10 @@ export class SessionsService {
     return {
       meeting_number: meeting.meeting_id,
       password: meeting.password ?? undefined,
-      join_url: (role === 1 ? (meeting.start_url ?? meeting.join_url) : meeting.join_url) ?? undefined,
+      join_url:
+        (role === 1
+          ? (meeting.start_url ?? meeting.join_url)
+          : meeting.join_url) ?? undefined,
       signature,
       display_name: profile.full_name ?? 'User',
       role,
@@ -318,9 +332,7 @@ export class SessionsService {
     const jobTypes = ['reminder_24h', 'reminder_1h', 'reminder_10min'];
     for (const type of jobTypes) {
       try {
-        const job = await this.zoomTaskQueue.getJob(
-          `${sessionId}-${type}`,
-        );
+        const job = await this.zoomTaskQueue.getJob(`${sessionId}-${type}`);
         if (job) {
           await job.remove();
         }

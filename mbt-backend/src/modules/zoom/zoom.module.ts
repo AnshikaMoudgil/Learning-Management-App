@@ -12,10 +12,7 @@ import { ZoomController } from './zoom.controller';
 import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-  imports: [
-    SupabaseModule,
-    BullModule.registerQueue({ name: 'zoom-task' }),
-  ],
+  imports: [SupabaseModule, BullModule.registerQueue({ name: 'zoom-task' })],
   controllers: [ZoomWebhookController, ZoomOAuthController, ZoomController],
   providers: [
     ZoomAuthService,

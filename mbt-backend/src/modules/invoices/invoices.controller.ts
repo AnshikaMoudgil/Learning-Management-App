@@ -4,11 +4,9 @@ import {
   Param,
   Req,
   UseGuards,
-  Res,
   NotFoundException,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { InvoicesService } from './invoices.service';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';

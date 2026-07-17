@@ -54,7 +54,8 @@ export class InvoicesService {
       .order('invoice_number', { ascending: false })
       .limit(1);
 
-    const seq = data?.length ? parseInt((data[0] as any).invoice_number.slice(-6), 10) + 1 : 1;
+    const row = data?.[0] as { invoice_number: string } | undefined;
+    const seq = row ? parseInt(row.invoice_number.slice(-6), 10) + 1 : 1;
     return `${prefix}${String(seq).padStart(6, '0')}`;
   }
 

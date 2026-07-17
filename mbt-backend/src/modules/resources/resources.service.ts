@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 export interface CourseResource {
@@ -21,7 +25,10 @@ export class ResourcesService {
     return this.supabaseService.getClient();
   }
 
-  async getCourseResources(courseId: string, userId: string): Promise<CourseResource[]> {
+  async getCourseResources(
+    courseId: string,
+    userId: string,
+  ): Promise<CourseResource[]> {
     // Verify active enrollment
     const { data: enrollment } = await this.db
       .from('enrollments')
@@ -32,12 +39,16 @@ export class ResourcesService {
       .maybeSingle();
 
     if (!enrollment) {
-      throw new ForbiddenException('You must be enrolled in this course to access resources');
+      throw new ForbiddenException(
+        'You must be enrolled in this course to access resources',
+      );
     }
 
     const { data, error } = await this.db
       .from('course_resources')
-      .select('id, course_id, section_id, title, file_url, file_size, file_type, created_at, course_sections(title)')
+      .select(
+        'id, course_id, section_id, title, file_url, file_size, file_type, created_at, course_sections(title)',
+      )
       .eq('course_id', courseId)
       .order('created_at', { ascending: true });
 
@@ -47,7 +58,8 @@ export class ResourcesService {
       id: row.id as string,
       course_id: row.course_id as string,
       section_id: row.section_id as string | null,
-      section_title: (row.course_sections as { title?: string } | null)?.title ?? null,
+      section_title:
+        (row.course_sections as { title?: string } | null)?.title ?? null,
       title: row.title as string,
       file_url: row.file_url as string,
       file_size: row.file_size as string | null,

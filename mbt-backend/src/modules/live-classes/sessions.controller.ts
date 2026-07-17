@@ -22,8 +22,11 @@ export class SessionsController {
 
   @Post()
   @UseGuards(AuthGuard)
-  async create(@Request() req: AuthenticatedRequest, @Body() dto: CreateSessionDto) {
-    return this.sessionsService.createSession(req.user?.id as string, dto);
+  async create(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: CreateSessionDto,
+  ) {
+    return this.sessionsService.createSession(req.user?.id, dto);
   }
 
   @Patch(':id')
@@ -33,13 +36,13 @@ export class SessionsController {
     @Request() req: AuthenticatedRequest,
     @Body() dto: UpdateSessionDto,
   ) {
-    return this.sessionsService.updateSession(id, req.user?.id as string, dto);
+    return this.sessionsService.updateSession(id, req.user?.id, dto);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
   async cancel(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    return this.sessionsService.cancelSession(id, req.user?.id as string);
+    return this.sessionsService.cancelSession(id, req.user?.id);
   }
 
   @Get()
@@ -50,7 +53,7 @@ export class SessionsController {
   @Get('upcoming')
   @UseGuards(AuthGuard)
   async getUpcoming(@Request() req: AuthenticatedRequest) {
-    return this.sessionsService.getUpcomingSessions(req.user?.id as string);
+    return this.sessionsService.getUpcomingSessions(req.user?.id);
   }
 
   @Get('course/:courseId')
@@ -67,20 +70,20 @@ export class SessionsController {
   @HttpCode(200)
   @UseGuards(AuthGuard)
   async join(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    return this.sessionsService.joinSession(id, req.user?.id as string);
+    return this.sessionsService.joinSession(id, req.user?.id);
   }
 
   @Post(':id/start')
   @HttpCode(200)
   @UseGuards(AuthGuard)
   async start(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    return this.sessionsService.startSession(id, req.user?.id as string);
+    return this.sessionsService.startSession(id, req.user?.id);
   }
 
   @Post(':id/end')
   @HttpCode(200)
   @UseGuards(AuthGuard)
   async end(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    return this.sessionsService.endSession(id, req.user?.id as string);
+    return this.sessionsService.endSession(id, req.user?.id);
   }
 }

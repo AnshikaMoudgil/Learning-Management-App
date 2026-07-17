@@ -6,6 +6,27 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
+interface EnrolledCourse {
+  title: string;
+  thumbnail_url: string | null;
+  estimated_duration: string | null;
+  profiles: { full_name: string | null } | null;
+}
+
+interface EnrollmentRow {
+  id: string;
+  course_id: string;
+  status: string;
+  progress_percent: number;
+  validity_end_at: string | null;
+  enrolled_at: string;
+  courses: EnrolledCourse | null;
+}
+
+interface LessonCountRow {
+  course_id: string;
+}
+
 @Injectable()
 export class EnrollmentsService {
   private readonly logger = new Logger(EnrollmentsService.name);
@@ -50,7 +71,8 @@ export class EnrollmentsService {
   async getMyEnrollments(userId: string) {
     const { data, error } = await this.db
       .from('enrollments')
-      .select(`
+      .select(
+        `
         id,
         course_id,
         status,
@@ -65,17 +87,18 @@ export class EnrollmentsService {
             full_name
           )
         )
-      `)
+      `,
+      )
       .eq('user_id', userId);
 
     if (error) {
       throw new BadRequestException(error.message);
     }
 
-    const rows = (data as Record<string, any>[]) ?? [];
+    const rows = (data as unknown as EnrollmentRow[]) ?? [];
     if (rows.length === 0) return [];
 
-    const courseIds = rows.map((r) => r.course_id as string);
+    const courseIds = rows.map((r) => r.course_id);
 
     const { data: lessonCounts, error: countError } = await this.db
       .from('course_lessons')
@@ -87,7 +110,7 @@ export class EnrollmentsService {
     }
 
     const countMap = new Map<string, number>();
-    for (const lesson of (lessonCounts as { course_id: string }[] ?? [])) {
+    for (const lesson of (lessonCounts as unknown as LessonCountRow[]) ?? []) {
       countMap.set(lesson.course_id, (countMap.get(lesson.course_id) ?? 0) + 1);
     }
 
@@ -104,7 +127,7 @@ export class EnrollmentsService {
         progress_percent: row.progress_percent,
         status: row.status,
         validity_end_at: row.validity_end_at,
-        total_lessons: countMap.get(row.course_id as string) ?? 0,
+        total_lessons: countMap.get(row.course_id) ?? 0,
         estimated_duration: course?.estimated_duration ?? null,
         enrolled_at: row.enrolled_at,
       };

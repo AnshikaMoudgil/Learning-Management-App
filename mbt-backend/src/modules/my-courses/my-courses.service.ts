@@ -105,7 +105,10 @@ export class MyCoursesService {
 
   // ─── Get full course content (post-purchase) ───────────────────────────────
 
-  async getCourseContent(courseId: string, userId: string): Promise<CourseContent> {
+  async getCourseContent(
+    courseId: string,
+    userId: string,
+  ): Promise<CourseContent> {
     // 1. Verify active enrollment
     const { data: enrollment, error: enrollError } = await this.db
       .from('enrollments')
@@ -117,7 +120,9 @@ export class MyCoursesService {
 
     if (enrollError) throw new BadRequestException(enrollError.message);
     if (!enrollment) {
-      throw new ForbiddenException('You must be enrolled in this course to access its content');
+      throw new ForbiddenException(
+        'You must be enrolled in this course to access its content',
+      );
     }
 
     // 2. Fetch course basics
@@ -131,20 +136,32 @@ export class MyCoursesService {
     if (!course) throw new NotFoundException('Course not found');
 
     // 3. Fetch all data in parallel
-    const [sectionsData, lessonsData, progressData, sessionsData, recordingsData, resourcesData] =
-      await Promise.all([
-        this.fetchSections(courseId),
-        this.fetchLessons(courseId),
-        this.fetchLessonProgress(courseId, userId),
-        this.fetchSessions(courseId),
-        this.fetchRecordings(courseId),
-        this.fetchResources(courseId),
-      ]);
+    const [
+      sectionsData,
+      lessonsData,
+      progressData,
+      sessionsData,
+      recordingsData,
+      resourcesData,
+    ] = await Promise.all([
+      this.fetchSections(courseId),
+      this.fetchLessons(courseId),
+      this.fetchLessonProgress(courseId, userId),
+      this.fetchSessions(courseId),
+      this.fetchRecordings(courseId),
+      this.fetchResources(courseId),
+    ]);
 
     // 4. Build progress lookup
-    const progressMap = new Map<string, { is_completed: boolean; watched_seconds: number }>();
+    const progressMap = new Map<
+      string,
+      { is_completed: boolean; watched_seconds: number }
+    >();
     for (const p of progressData) {
-      progressMap.set(p.lesson_id, { is_completed: p.is_completed, watched_seconds: p.watched_seconds });
+      progressMap.set(p.lesson_id, {
+        is_completed: p.is_completed,
+        watched_seconds: p.watched_seconds,
+      });
     }
 
     // 5. Build session lookup by section
@@ -176,35 +193,41 @@ export class MyCoursesService {
     }
 
     // 8. Assemble sections with unlock gating
-    const sections: SectionWithContent[] = sectionsData.map((section, index) => {
-      const lessons = lessonsBySection.get(section.id) ?? [];
-      const completed = lessons.filter((l) => l.is_completed).length;
-      const total = lessons.length;
-      const prevCompleted =
-        index === 0
-          ? true
-          : sectionsData[index - 1]
-            ? (() => {
-                const prevLessons = lessonsBySection.get(sectionsData[index - 1].id) ?? [];
-                const prevTotal = prevLessons.length;
-                const prevCompleted = prevLessons.filter((l) => l.is_completed).length;
-                return prevTotal === 0 || prevCompleted >= prevTotal;
-              })()
-            : true;
-      return {
-        id: section.id,
-        title: section.title,
-        description: section.description,
-        sort_order: section.sort_order,
-        total_lessons: total,
-        completed_lessons: completed,
-        progress_percent: total > 0 ? Math.round((completed / total) * 100) : 0,
-        is_unlocked: prevCompleted,
-        lessons,
-        live_classes: sessionsBySection.get(section.id) ?? [],
-        resources: resourcesBySection.get(section.id) ?? [],
-      };
-    });
+    const sections: SectionWithContent[] = sectionsData.map(
+      (section, index) => {
+        const lessons = lessonsBySection.get(section.id) ?? [];
+        const completed = lessons.filter((l) => l.is_completed).length;
+        const total = lessons.length;
+        const prevCompleted =
+          index === 0
+            ? true
+            : sectionsData[index - 1]
+              ? (() => {
+                  const prevLessons =
+                    lessonsBySection.get(sectionsData[index - 1].id) ?? [];
+                  const prevTotal = prevLessons.length;
+                  const prevCompleted = prevLessons.filter(
+                    (l) => l.is_completed,
+                  ).length;
+                  return prevTotal === 0 || prevCompleted >= prevTotal;
+                })()
+              : true;
+        return {
+          id: section.id,
+          title: section.title,
+          description: section.description,
+          sort_order: section.sort_order,
+          total_lessons: total,
+          completed_lessons: completed,
+          progress_percent:
+            total > 0 ? Math.round((completed / total) * 100) : 0,
+          is_unlocked: prevCompleted,
+          lessons,
+          live_classes: sessionsBySection.get(section.id) ?? [],
+          resources: resourcesBySection.get(section.id) ?? [],
+        };
+      },
+    );
 
     return {
       course_id: course.id as string,
@@ -231,7 +254,11 @@ export class MyCoursesService {
     userId: string,
     isCompleted: boolean,
     watchedSeconds?: number,
-  ): Promise<{ lesson_id: string; is_completed: boolean; course_progress_percent: number }> {
+  ): Promise<{
+    lesson_id: string;
+    is_completed: boolean;
+    course_progress_percent: number;
+  }> {
     // Verify active enrollment
     const { data: enrollment } = await this.db
       .from('enrollments')
@@ -246,20 +273,18 @@ export class MyCoursesService {
     }
 
     // Upsert lesson progress
-    const { error } = await this.db
-      .from('user_lesson_progress')
-      .upsert(
-        {
-          user_id: userId,
-          course_id: courseId,
-          lesson_id: lessonId,
-          is_completed: isCompleted,
-          watched_seconds: watchedSeconds ?? 0,
-          last_watched_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id,lesson_id' },
-      );
+    const { error } = await this.db.from('user_lesson_progress').upsert(
+      {
+        user_id: userId,
+        course_id: courseId,
+        lesson_id: lessonId,
+        is_completed: isCompleted,
+        watched_seconds: watchedSeconds ?? 0,
+        last_watched_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,lesson_id' },
+    );
 
     if (error) throw new BadRequestException(error.message);
 
@@ -274,7 +299,8 @@ export class MyCoursesService {
     return {
       lesson_id: lessonId,
       is_completed: isCompleted,
-      course_progress_percent: (updatedEnrollment?.progress_percent as number) ?? 0,
+      course_progress_percent:
+        (updatedEnrollment?.progress_percent as number) ?? 0,
     };
   }
 
@@ -287,13 +313,20 @@ export class MyCoursesService {
       .eq('course_id', courseId)
       .order('sort_order', { ascending: true });
     if (error) throw new BadRequestException(error.message);
-    return (data ?? []) as { id: string; title: string; description: string | null; sort_order: number }[];
+    return (data ?? []) as {
+      id: string;
+      title: string;
+      description: string | null;
+      sort_order: number;
+    }[];
   }
 
   private async fetchLessons(courseId: string) {
     const { data, error } = await this.db
       .from('course_lessons')
-      .select('id, section_id, title, description, video_url, video_duration, is_free_preview, sort_order')
+      .select(
+        'id, section_id, title, description, video_url, video_duration, is_free_preview, sort_order',
+      )
       .eq('course_id', courseId)
       .order('sort_order', { ascending: true });
     if (error) throw new BadRequestException(error.message);
@@ -316,7 +349,11 @@ export class MyCoursesService {
       .eq('course_id', courseId)
       .eq('user_id', userId);
     if (error) throw new BadRequestException(error.message);
-    return (data ?? []) as { lesson_id: string; is_completed: boolean; watched_seconds: number }[];
+    return (data ?? []) as {
+      lesson_id: string;
+      is_completed: boolean;
+      watched_seconds: number;
+    }[];
   }
 
   private async fetchSessions(courseId: string): Promise<LiveClassItem[]> {
@@ -331,7 +368,8 @@ export class MyCoursesService {
     if (error) throw new BadRequestException(error.message);
 
     return ((data as Record<string, unknown>[]) ?? []).map((row) => {
-      const meetings = row.live_session_meetings as { join_url?: string }[] | null;
+      const meetings = row.live_session_meetings as
+        { join_url?: string }[] | null;
       const profiles = row.profiles as { full_name?: string } | null;
       const section = row.course_sections as { title?: string } | null;
       return {
@@ -344,7 +382,9 @@ export class MyCoursesService {
         section_id: row.section_id as string | null,
         section_title: section?.title ?? null,
         instructor_name: profiles?.full_name ?? null,
-        join_url: Array.isArray(meetings) ? (meetings[0]?.join_url ?? null) : null,
+        join_url: Array.isArray(meetings)
+          ? (meetings[0]?.join_url ?? null)
+          : null,
       };
     });
   }
@@ -361,7 +401,10 @@ export class MyCoursesService {
     if (error) throw new BadRequestException(error.message);
 
     return ((data as Record<string, unknown>[]) ?? []).map((row) => {
-      const session = row.sessions as { section_id?: string | null; course_sections?: { title?: string } | null } | null;
+      const session = row.sessions as {
+        section_id?: string | null;
+        course_sections?: { title?: string } | null;
+      } | null;
       return {
         id: row.id as string,
         title: row.title as string | null,
@@ -379,7 +422,9 @@ export class MyCoursesService {
   private async fetchResources(courseId: string): Promise<ResourceItem[]> {
     const { data, error } = await this.db
       .from('course_resources')
-      .select('id, section_id, title, file_url, file_size, file_type, created_at')
+      .select(
+        'id, section_id, title, file_url, file_size, file_type, created_at',
+      )
       .eq('course_id', courseId)
       .order('created_at', { ascending: true });
     if (error) throw new BadRequestException(error.message);
