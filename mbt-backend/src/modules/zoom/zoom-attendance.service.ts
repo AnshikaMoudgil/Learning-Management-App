@@ -21,18 +21,16 @@ export class ZoomAttendanceService {
     displayName: string,
     joinTime: string,
   ): Promise<void> {
-    const { error } = await this.db
-      .from('session_attendance')
-      .upsert(
-        {
-          session_id: sessionId,
-          zoom_participant_id: zoomParticipantId,
-          display_name: displayName,
-          join_time: joinTime,
-          attendance_status: 'attended',
-        },
-        { onConflict: 'session_id,zoom_participant_id' },
-      );
+    const { error } = await this.db.from('session_attendance').upsert(
+      {
+        session_id: sessionId,
+        zoom_participant_id: zoomParticipantId,
+        display_name: displayName,
+        join_time: joinTime,
+        attendance_status: 'attended',
+      },
+      { onConflict: 'session_id,zoom_participant_id' },
+    );
 
     if (error) {
       this.logger.error(
@@ -64,7 +62,9 @@ export class ZoomAttendanceService {
       return;
     }
 
-    const joinMs = new Date((data as Record<string, unknown>).join_time as string).getTime();
+    const joinMs = new Date(
+      (data as Record<string, unknown>).join_time as string,
+    ).getTime();
     const leaveMs = new Date(leaveTime).getTime();
     const durationMinutes = Math.round((leaveMs - joinMs) / 60000);
 

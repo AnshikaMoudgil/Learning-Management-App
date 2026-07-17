@@ -1,13 +1,14 @@
 'use strict';
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import { apiPost, apiDelete } from '@/app/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Plus, Search, Video, Trash2, Edit3, Play, StopCircle, Link as LinkIcon, Unlink } from 'lucide-react';
+import { Plus, Search, Video, Trash2, Edit3, Play, StopCircle, MoreVertical, Link as LinkIcon, Unlink } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import Pagination from '@/components/Pagination';
 
 interface Session {
   id: string;
@@ -18,8 +19,10 @@ interface Session {
   start_time: string;
   duration: number;
   status: string;
-  courses?: { title: string }[] | null;
+  created_at: string;
+  courses?: { title: string; instructor_id: string | null }[] | null;
   profiles?: { full_name: string }[] | null;
+  course_instructor_name?: string;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -38,7 +41,12 @@ export default function LiveClassesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState('');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [zoomConnected, setZoomConnected] = useState<boolean | null>(null);
+
+  const PAGE_SIZE = 10;
 
   const fetchSessions = async () => {
     try {
@@ -78,28 +86,45 @@ export default function LiveClassesPage() {
       const raw = sessionsData as any[];
 
       const courseIds = [...new Set(raw.map((s) => s.course_id).filter(Boolean))];
-      const instructorIds = [...new Set(raw.map((s) => s.instructor_id).filter(Boolean))];
+      const creatorIds = [...new Set(raw.map((s) => s.instructor_id).filter(Boolean))];
 
-      const [coursesResult, profilesResult] = await Promise.all([
-        supabase.from('courses').select('id, title').in('id', courseIds),
-        supabase.from('profiles').select('id, full_name').in('id', instructorIds),
+      const [coursesResult, creatorsResult] = await Promise.all([
+        supabase.from('courses').select('id, title, instructor_id').in('id', courseIds),
+        supabase.from('profiles').select('id, full_name').in('id', creatorIds),
       ]);
 
-      const courseMap = new Map((coursesResult.data || []).map((c: any) => [c.id, c.title]));
-      const profileMap = new Map((profilesResult.data || []).map((p: any) => [p.id, p.full_name]));
+      const courseMap = new Map((coursesResult.data || []).map((c: any) => [c.id, c]));
+      const creatorMap = new Map((creatorsResult.data || []).map((p: any) => [p.id, p.full_name]));
 
-      const enriched: Session[] = raw.map((s: any) => ({
-        id: s.id,
-        course_id: s.course_id,
-        instructor_id: s.instructor_id,
-        title: s.title,
-        description: s.description,
-        start_time: s.start_time,
-        duration: s.duration,
-        status: s.status,
-        courses: courseMap.has(s.course_id) ? [{ title: courseMap.get(s.course_id) }] : [],
-        profiles: profileMap.has(s.instructor_id) ? [{ full_name: profileMap.get(s.instructor_id) }] : [],
-      }));
+      const courseInstructorIds = [
+        ...new Set((coursesResult.data || []).map((c: any) => c.instructor_id).filter(Boolean)),
+      ];
+      let courseInstructorMap = new Map<string, string>();
+      if (courseInstructorIds.length > 0) {
+        const { data: instructors } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', courseInstructorIds);
+        courseInstructorMap = new Map((instructors || []).map((p: any) => [p.id, p.full_name]));
+      }
+
+      const enriched: Session[] = raw.map((s: any) => {
+        const course = courseMap.get(s.course_id);
+        return {
+          id: s.id,
+          course_id: s.course_id,
+          instructor_id: s.instructor_id,
+          title: s.title,
+          description: s.description,
+          start_time: s.start_time,
+          duration: s.duration,
+          status: s.status,
+          created_at: s.created_at,
+          courses: course ? [{ title: course.title, instructor_id: course.instructor_id }] : [],
+          profiles: creatorMap.has(s.instructor_id) ? [{ full_name: creatorMap.get(s.instructor_id) }] : [],
+          course_instructor_name: course?.instructor_id ? courseInstructorMap.get(course.instructor_id) : undefined,
+        };
+      });
 
       setSessions(enriched);
     } catch {
@@ -112,6 +137,13 @@ export default function LiveClassesPage() {
   useEffect(() => {
     fetchSessions();
   }, []);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const close = () => setOpenMenuId(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [openMenuId]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -132,6 +164,19 @@ export default function LiveClassesPage() {
     }
   };
 
+  const handleJoin = async (id: string) => {
+    try {
+      const data = await apiPost(`/sessions/${id}/join`, {}) as { join_url?: string };
+      if (data.join_url) {
+        window.open(data.join_url, '_blank');
+      } else {
+        toast.error('Meeting URL not available yet.');
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to join session.');
+    }
+  };
+
   const handleStatusChange = async (id: string, newStatus: string) => {
     const loadingToast = toast.loading(`Setting session to ${newStatus}...`);
     try {
@@ -146,10 +191,22 @@ export default function LiveClassesPage() {
     }
   };
 
-  const filtered = sessions.filter((s) =>
-    s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (s.courses?.[0]?.title && s.courses[0].title.toLowerCase().includes(searchTerm.toLowerCase())),
-  );
+  const statusFilters = ['all', 'scheduled', 'live', 'finished', 'cancelled'] as const;
+
+  const filtered = useMemo(() => {
+    let list = sessions;
+    if (statusFilter !== 'all') {
+      list = list.filter((s) => s.status === statusFilter);
+    }
+    return list.filter((s) =>
+      s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.courses?.[0]?.title && s.courses[0].title.toLowerCase().includes(searchTerm.toLowerCase())),
+    );
+  }, [sessions, statusFilter, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -167,15 +224,32 @@ export default function LiveClassesPage() {
         </Link>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-        <input
-          type="text"
-          placeholder="Search by session title or course..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-xl border border-zinc-800 bg-zinc-900/40 py-3 pl-10 pr-4 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-all duration-200 focus:border-teal-500 focus:bg-zinc-900/50"
-        />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative max-w-md w-full sm:w-auto sm:flex-1">
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+          <input
+            type="text"
+            placeholder="Search by session title or course..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-xl border border-zinc-800 bg-zinc-900/40 py-3 pl-10 pr-4 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-all duration-200 focus:border-teal-500 focus:bg-zinc-900/50"
+          />
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+          {statusFilters.map((f) => (
+            <button
+              key={f}
+              onClick={() => { setStatusFilter(f); setCurrentPage(1); }}
+              className={`text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border transition cursor-pointer ${
+                statusFilter === f
+                  ? 'bg-teal-500/15 text-teal-400 border-teal-500/20'
+                  : 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
+              }`}
+            >
+              {f === 'all' ? 'All' : f}
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading ? (
@@ -195,15 +269,17 @@ export default function LiveClassesPage() {
               <tr className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                 <th className="px-6 py-4 text-left">Session</th>
                 <th className="px-6 py-4 text-left">Course</th>
-                <th className="px-6 py-4 text-left">Instructor</th>
+                <th className="px-6 py-4 text-left">Course Instructor</th>
+                <th className="px-6 py-4 text-left">Created By</th>
                 <th className="px-6 py-4 text-left">Start Time</th>
                 <th className="px-6 py-4 text-left">Duration</th>
                 <th className="px-6 py-4 text-left">Status</th>
+                <th className="px-6 py-4 text-left">Created At</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/50">
-              {filtered.map((session) => (
+              {paginated.map((session) => (
                 <tr key={session.id} className="group hover:bg-zinc-900/40 transition-colors">
                   <td className="px-6 py-4">
                     <p className="font-semibold text-white text-sm">{session.title}</p>
@@ -213,6 +289,9 @@ export default function LiveClassesPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-zinc-400">
                     {session.courses?.[0]?.title || '—'}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-zinc-400">
+                    {session.course_instructor_name || '—'}
                   </td>
                   <td className="px-6 py-4 text-sm text-zinc-400">
                     {session.profiles?.[0]?.full_name || '—'}
@@ -228,43 +307,46 @@ export default function LiveClassesPage() {
                       {session.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-xs text-zinc-500">
+                    {session.created_at ? new Date(session.created_at).toLocaleString() : '—'}
+                  </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {session.status === 'scheduled' && (
-                        <button
-                          onClick={() => handleStatusChange(session.id, 'live')}
-                          className="rounded-lg border border-green-800/30 hover:bg-green-950/20 p-2 text-green-400 transition cursor-pointer"
-                          title="Start"
-                        >
-                          <Play className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      {session.status === 'live' && (
-                        <button
-                          onClick={() => handleStatusChange(session.id, 'finished')}
-                          className="rounded-lg border border-zinc-800 hover:bg-zinc-800 p-2 text-zinc-400 transition cursor-pointer"
-                          title="End"
-                        >
-                          <StopCircle className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      {(session.status === 'scheduled' || session.status === 'draft') && (
-                        <Link
-                          href={`/dashboard/live-classes/${session.id}/edit`}
-                          className="rounded-lg border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 p-2 text-zinc-400 transition cursor-pointer"
-                          title="Edit"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                        </Link>
-                      )}
-                      {session.status !== 'cancelled' && session.status !== 'finished' && (
-                        <button
-                          onClick={() => setDeleteTarget(session)}
-                          className="rounded-lg border border-zinc-800 hover:border-rose-900/30 hover:bg-rose-950/20 p-2 text-rose-400 transition cursor-pointer"
-                          title="Cancel"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                    <div className="relative flex items-center justify-end">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === session.id ? null : session.id); }}
+                        className="rounded-lg border border-zinc-800 hover:bg-zinc-800 p-2 text-zinc-400 transition cursor-pointer"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+
+                      {openMenuId === session.id && (
+                        <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-xl border border-zinc-800 bg-zinc-900 py-1.5 shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()}>
+                          {session.status !== 'cancelled' && session.status !== 'finished' && (
+                            <button onClick={() => { handleJoin(session.id); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer">
+                              <Video className="h-4 w-4 text-teal-400" /> Join
+                            </button>
+                          )}
+                          {session.status === 'scheduled' && (
+                            <button onClick={() => { handleStatusChange(session.id, 'live'); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer">
+                              <Play className="h-4 w-4 text-green-400" /> Start
+                            </button>
+                          )}
+                          {session.status === 'live' && (
+                            <button onClick={() => { handleStatusChange(session.id, 'finished'); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer">
+                              <StopCircle className="h-4 w-4 text-zinc-400" /> End
+                            </button>
+                          )}
+                          {(session.status === 'scheduled' || session.status === 'draft') && (
+                            <Link href={`/dashboard/live-classes/${session.id}/edit`} onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition">
+                              <Edit3 className="h-4 w-4 text-blue-400" /> Edit
+                            </Link>
+                          )}
+                          {session.status !== 'cancelled' && session.status !== 'finished' && (
+                            <button onClick={() => { setDeleteTarget(session); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-rose-400 hover:bg-zinc-800 transition cursor-pointer">
+                              <Trash2 className="h-4 w-4" /> Cancel
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </td>
@@ -273,6 +355,10 @@ export default function LiveClassesPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {filtered.length > PAGE_SIZE && (
+        <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
       )}
 
       <ConfirmDialog

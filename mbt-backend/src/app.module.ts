@@ -23,6 +23,8 @@ import { CartModule } from './modules/cart/cart.module';
 import { ZoomModule } from './modules/zoom/zoom.module';
 import { ZoomQueuesModule } from './modules/queues/zoom-queues.module';
 import { StorageModule } from './storage/storage.module';
+import { ResourcesModule } from './modules/resources/resources.module';
+import { MyCoursesModule } from './modules/my-courses/my-courses.module';
 
 @Module({
   imports: [
@@ -55,7 +57,16 @@ import { StorageModule } from './storage/storage.module';
         if (parsed.protocol === 'rediss:') {
           connection.tls = {};
         }
-        return { connection };
+        return {
+          connection,
+          defaultJobOptions: {
+            removeOnComplete: true,
+            removeOnFail: false,
+          },
+          defaultWorkerOptions: {
+            stalledInterval: 60000,
+          },
+        };
       },
     }),
     SupabaseModule,
@@ -77,6 +88,8 @@ import { StorageModule } from './storage/storage.module';
     ZoomModule,
     ZoomQueuesModule,
     StorageModule,
+    ResourcesModule,
+    MyCoursesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

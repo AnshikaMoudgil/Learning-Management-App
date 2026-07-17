@@ -41,9 +41,9 @@ export class SearchRepository {
       ],
     );
 
-    let courses = coursesResult.data || [];
-    let recordings = recordingsResult.data || [];
-    let teachers = teachersResult.data || [];
+    let courses: any[] = coursesResult.data || [];
+    let recordings: any[] = recordingsResult.data || [];
+    let teachers: any[] = teachersResult.data || [];
 
     // If foreign key relations fail, fallback to simple select (similar to frontend fallback)
     if (coursesResult.error) {

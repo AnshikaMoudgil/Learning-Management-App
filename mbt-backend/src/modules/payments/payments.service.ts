@@ -298,7 +298,8 @@ export class PaymentsService {
       string,
       unknown
     >;
-    const eventType = typeof payload.event === 'string' ? payload.event : 'unknown';
+    const eventType =
+      typeof payload.event === 'string' ? payload.event : 'unknown';
     const eventId = typeof payload.id === 'string' ? payload.id : null;
     const paymentEntity = this.getWebhookPaymentEntity(payload);
     const orderId = paymentEntity?.order_id;

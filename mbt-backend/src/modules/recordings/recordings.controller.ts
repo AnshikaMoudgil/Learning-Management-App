@@ -19,7 +19,7 @@ export class RecordingsController {
       .from('session_recordings')
       .select('*, sessions!inner(*)')
       .eq('sessions.course_id', courseId)
-      .eq('status', 'ready');
+      .eq('processing_status', 'ready');
 
     if (error) {
       throw new BadRequestException(error.message);

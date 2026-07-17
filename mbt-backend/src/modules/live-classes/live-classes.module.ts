@@ -10,12 +10,7 @@ import { BullModule } from '@nestjs/bullmq';
   imports: [
     SupabaseModule,
     ZoomModule,
-    BullModule.registerQueue(
-      { name: 'zoom-create-meeting' },
-      { name: 'zoom-update-meeting' },
-      { name: 'zoom-delete-meeting' },
-      { name: 'zoom-send-reminders' },
-    ),
+    BullModule.registerQueue({ name: 'zoom-task' }),
   ],
   controllers: [SessionsController],
   providers: [SessionsService, SessionsRepository],

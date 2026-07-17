@@ -21,7 +21,7 @@ export class NotificationsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    const userId = req.user?.id as string;
+    const userId = req.user?.id;
     const { data, total } = await this.notificationsService.getNotifications(
       userId,
       page ? parseInt(page, 10) : 1,
@@ -33,7 +33,7 @@ export class NotificationsController {
   /** GET /notifications/unread-count */
   @Get('unread-count')
   async unreadCount(@Request() req: AuthenticatedRequest) {
-    const userId = req.user?.id as string;
+    const userId = req.user?.id;
     const count = await this.notificationsService.getUnreadCount(userId);
     return { unread: count };
   }
@@ -42,7 +42,7 @@ export class NotificationsController {
   @Patch(':id/read')
   @HttpCode(200)
   async markOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    const userId = req.user?.id as string;
+    const userId = req.user?.id;
     await this.notificationsService.markRead(id, userId);
     return { success: true };
   }
@@ -51,7 +51,7 @@ export class NotificationsController {
   @Patch('read-all')
   @HttpCode(200)
   async markAll(@Request() req: AuthenticatedRequest) {
-    const userId = req.user?.id as string;
+    const userId = req.user?.id;
     await this.notificationsService.markAllRead(userId);
     return { success: true };
   }

@@ -80,7 +80,11 @@ export class NotificationsService {
     }
   }
 
-  async getNotifications(userId: string, page = 1, limit = 20): Promise<{ data: Record<string, unknown>[]; total: number }> {
+  async getNotifications(
+    userId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: Record<string, unknown>[]; total: number }> {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
