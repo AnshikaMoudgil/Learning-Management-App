@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
@@ -12,7 +16,8 @@ export class WishlistService {
   }
 
   async getWishlist(userId: string) {
-    const { data, error } = await (this.db.from('wishlists') as any)
+    const { data, error } = await this.db
+      .from('wishlists')
       .select('*, courses(*, profiles!courses_instructor_id_fkey(full_name))')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -26,8 +31,9 @@ export class WishlistService {
   }
 
   async addToWishlist(userId: string, courseId: string) {
-    const { data, error } = await (this.db.from('wishlists') as any)
-      .insert({ user_id: userId, course_id: courseId })
+    const { data, error } = await this.db
+      .from('wishlists')
+      .insert({ user_id: userId, course_id: courseId } as never)
       .select()
       .maybeSingle();
 
@@ -44,7 +50,8 @@ export class WishlistService {
   }
 
   async removeFromWishlist(userId: string, courseId: string) {
-    const { error } = await (this.db.from('wishlists') as any)
+    const { error } = await this.db
+      .from('wishlists')
       .delete()
       .eq('user_id', userId)
       .eq('course_id', courseId);
