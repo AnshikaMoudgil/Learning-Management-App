@@ -50,6 +50,7 @@ export class SessionsRepository {
     start_time: string;
     duration: number;
     status: string;
+    section_id?: string;
   }): Promise<Session> {
     const { data: session, error } = await this.db
       .from('sessions')
@@ -69,6 +70,7 @@ export class SessionsRepository {
       start_time: string;
       duration: number;
       status: string;
+      section_id: string | null;
     }>,
   ): Promise<Session> {
     const { data: session, error } = await this.db
@@ -111,6 +113,20 @@ export class SessionsRepository {
       .select(
         '*, courses(title, thumbnail_url), profiles!instructor_id(full_name, avatar_url), live_session_meetings(provider, meeting_id, recording_status, recording_url), session_recordings(*)',
       )
+      .in('status', ['scheduled', 'live'])
+      .order('start_time', { ascending: true }) as unknown as { data: Session[] | null; error: PostgrestError | null };
+
+    if (error) throw new BadRequestException(error.message);
+    return data ?? [];
+  }
+
+  async findUpcomingByCourseIds(courseIds: string[]): Promise<Session[]> {
+    const { data, error } = await this.db
+      .from('sessions')
+      .select(
+        '*, courses(title, thumbnail_url), profiles!instructor_id(full_name, avatar_url), live_session_meetings(provider, meeting_id, recording_status, recording_url), session_recordings(*)',
+      )
+      .in('course_id', courseIds)
       .in('status', ['scheduled', 'live'])
       .order('start_time', { ascending: true }) as unknown as { data: Session[] | null; error: PostgrestError | null };
 

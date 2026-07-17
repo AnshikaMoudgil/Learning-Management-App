@@ -37,13 +37,11 @@ export class InvoicesController {
   async downloadPdf(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
-    @Res() res: Response,
   ) {
     const invoice = await this.invoicesService.findOneForUser(id, req.user.id);
-    const pdfUrl = invoice.pdf_url;
-    if (!pdfUrl) {
+    if (!invoice.pdf_url) {
       throw new NotFoundException('PDF not yet available for this invoice');
     }
-    return res.redirect(pdfUrl);
+    return { url: invoice.pdf_url };
   }
 }

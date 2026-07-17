@@ -27,8 +27,8 @@ export class ZoomWebhookController {
     private readonly configService: ConfigService,
     private readonly supabaseService: SupabaseService,
     private readonly attendanceService: ZoomAttendanceService,
-    @InjectQueue('zoom-download-recording')
-    private readonly downloadQueue: Queue,
+    @InjectQueue('zoom-task')
+    private readonly zoomTaskQueue: Queue,
   ) {}
 
   private get db() {
@@ -184,7 +184,7 @@ export class ZoomWebhookController {
           status: 'processing',
         });
 
-      await this.downloadQueue.add(
+      await this.zoomTaskQueue.add(
         'download',
         {
           sessionId,

@@ -20,6 +20,8 @@ export default function EditSessionPage() {
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
 
   const [courseId, setCourseId] = useState('');
+  const [sectionId, setSectionId] = useState('');
+  const [sections, setSections] = useState<{ id: string; title: string }[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -27,13 +29,43 @@ export default function EditSessionPage() {
   const [status, setStatus] = useState('scheduled');
 
   useEffect(() => {
-    supabase
-      .from('courses')
-      .select('id, title')
-      .order('title', { ascending: true })
-      .then(({ data, error }) => {
-        if (!error && data) setCourses(data);
-      });
+    if (!courseId) {
+      setSections([]);
+      setSectionId('');
+      return;
+    }
+    (async () => {
+      const { data, error } = await supabase
+        .from('course_sections')
+        .select('id, title')
+        .eq('course_id', courseId)
+        .order('sort_order', { ascending: true });
+      if (!error && data) setSections(data);
+    })();
+  }, [courseId]);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+
+      let query = supabase.from('courses').select('id, title');
+
+      if (uid) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', uid)
+          .single();
+
+        if (profile?.role === 'instructor') {
+          query = query.or(`created_by.eq.${uid},instructor_id.eq.${uid}`);
+        }
+      }
+
+      const { data, error } = await query.order('title', { ascending: true });
+      if (!error && data) setCourses(data);
+    })();
   }, []);
 
   useEffect(() => {
@@ -64,6 +96,7 @@ export default function EditSessionPage() {
           : '');
         setDuration(data.duration?.toString() || '60');
         setStatus(data.status || 'scheduled');
+        setSectionId(data.section_id || '');
       } catch {
         toast.error('Failed to load session.');
       } finally {
@@ -92,6 +125,7 @@ export default function EditSessionPage() {
         start_time: new Date(startTime).toISOString(),
         duration: parseInt(duration, 10),
         status: status as any,
+        section_id: sectionId || undefined,
       });
 
       toast.dismiss(savingToast);
@@ -146,6 +180,23 @@ export default function EditSessionPage() {
                 placeholder="Select course"
               />
             </div>
+
+            {sections.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Module (Optional)
+                </label>
+                <Select
+                  value={sectionId}
+                  onChange={setSectionId}
+                  options={[
+                    { value: '', label: 'No specific module' },
+                    ...sections.map((s) => ({ value: s.id, label: s.title })),
+                  ]}
+                  placeholder="Select module"
+                />
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">

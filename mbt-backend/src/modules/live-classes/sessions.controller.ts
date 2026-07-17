@@ -48,8 +48,9 @@ export class SessionsController {
   }
 
   @Get('upcoming')
-  async getUpcoming() {
-    return this.sessionsService.getUpcomingSessions();
+  @UseGuards(AuthGuard)
+  async getUpcoming(@Request() req: AuthenticatedRequest) {
+    return this.sessionsService.getUpcomingSessions(req.user?.id as string);
   }
 
   @Get('course/:courseId')

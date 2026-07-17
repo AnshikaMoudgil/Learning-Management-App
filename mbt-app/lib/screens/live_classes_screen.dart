@@ -22,6 +22,8 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
   List<LiveSession> _sessions = [];
   bool _loading = true;
   String? _error;
+  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  int? _selectedDay = DateTime.now().day;
 
   @override
   void initState() {
@@ -179,9 +181,10 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
   }
 
   String _formatDuration(Duration d) {
-    if (d.inDays > 0) return '${d.inDays}d ${d.inHours % 24}h';
-    if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes % 60}m';
-    return '${d.inMinutes}m';
+    if (d.isNegative) return '0min';
+    if (d.inDays > 0) return '${d.inDays}day ${d.inHours % 24}hour';
+    if (d.inHours > 0) return '${d.inHours}hour ${d.inMinutes % 60}min';
+    return '${d.inMinutes}min';
   }
 
   Color _startsInColor(Duration d) {
@@ -213,7 +216,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
         s.startTime.month == DateTime.now().month &&
         s.startTime.year == DateTime.now().year).toList();
     final upcomingSessions = _sessions.where((s) =>
-        s.startTime.isAfter(DateTime.now())).toList();
+        s.status == 'live' || s.startTime.isAfter(DateTime.now())).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,7 +266,9 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
                 final isLive = session.status == 'live';
                 final startsIn = isLive
                     ? 'LIVE'
-                    : 'Starts in\n${_formatDuration(diff)}';
+                    : diff.isNegative
+                        ? 'Starting soon'
+                        : 'Starts in\n${_formatDuration(diff)}';
                 final startsInColor = isLive ? Colors.red : _startsInColor(diff);
 
                 return _buildUpcomingClassCard(
@@ -475,16 +480,19 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final sessionsInMonth = _sessions.where((s) =>
+        s.startTime.year == _calendarMonth.year &&
+        s.startTime.month == _calendarMonth.month).toList();
+
     final sessionsByDay = <int, List<LiveSession>>{};
-    for (final s in _sessions) {
+    for (final s in sessionsInMonth) {
       final d = s.startTime.day;
       sessionsByDay.putIfAbsent(d, () => []).add(s);
     }
 
-    final now = DateTime.now();
-    final monthStr = '${_monthAbbr(now.month)} ${now.year}';
-    final firstDay = DateTime(now.year, now.month, 1);
-    final lastDay = DateTime(now.year, now.month + 1, 0);
+    final monthStr = '${_monthAbbr(_calendarMonth.month)} ${_calendarMonth.year}';
+    final firstDay = DateTime(_calendarMonth.year, _calendarMonth.month, 1);
+    final lastDay = DateTime(_calendarMonth.year, _calendarMonth.month + 1, 0);
     final startWeekday = firstDay.weekday % 7;
 
     final weeks = <List<String?>>[];
@@ -505,8 +513,11 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
       weeks.add(row);
     }
 
-    final todayStr = now.day.toString();
-    final todaySessions = sessionsByDay[now.day] ?? [];
+    final now = DateTime.now();
+    final isCurrentMonth = now.month == _calendarMonth.month && now.year == _calendarMonth.year;
+    final detailDay = _selectedDay ?? (isCurrentMonth ? now.day : null);
+    final detailSessions = detailDay != null ? (sessionsByDay[detailDay] ?? []) : [];
+    final detailDate = detailDay != null ? DateTime(_calendarMonth.year, _calendarMonth.month, detailDay) : null;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -514,9 +525,23 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(icon: const Icon(Icons.chevron_left), onPressed: () {}),
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: () => setState(() {
+                _calendarMonth = DateTime(_calendarMonth.year, _calendarMonth.month - 1);
+                final now = DateTime.now();
+                _selectedDay = (now.month == _calendarMonth.month && now.year == _calendarMonth.year) ? now.day : 1;
+              }),
+            ),
             Text(monthStr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-            IconButton(icon: const Icon(Icons.chevron_right), onPressed: () {}),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () => setState(() {
+                _calendarMonth = DateTime(_calendarMonth.year, _calendarMonth.month + 1);
+                final now = DateTime.now();
+                _selectedDay = (now.month == _calendarMonth.month && now.year == _calendarMonth.year) ? now.day : 1;
+              }),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -525,7 +550,6 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
             _buildCalendarRow(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'], isHeader: true),
             ...weeks.map((w) => _buildCalendarRow(
               w.map((d) => d ?? '').toList(),
-              selectedDay: todayStr,
               dots: Map.fromEntries(
                 sessionsByDay.entries.where((e) =>
                     w.any((d) => d == e.key.toString())).map((e) =>
@@ -544,36 +568,28 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
           ],
         ),
         const SizedBox(height: 32),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('${_weekdayName(now.weekday)}, ${now.day} ${monthStr}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-            Text('${todaySessions.length} Classes', style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (todaySessions.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Text('No classes today.', style: TextStyle(color: AppColors.textLight))),
-          )
-        else
-          ...todaySessions.map((s) => _buildCalendarClassItem(s)),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () {
-            context.push('/daily-schedule');
-          },
-          icon: const Icon(Icons.calendar_today, size: 16, color: AppColors.primaryBlue),
-          label: Text('View Full Schedule for ${now.day} ${monthStr}',
-              style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppColors.primaryBlue),
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        if (detailDay != null) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                detailDate != null && detailDate == DateTime(now.year, now.month, now.day)
+                    ? '${_weekdayName(now.weekday)}, ${now.day} ${monthStr}'
+                    : '${detailDate?.day ?? ''} ${monthStr}',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
+              ),
+              Text('${detailSessions.length} Classes', style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+            ],
           ),
-        ),
+          const SizedBox(height: 16),
+          if (detailSessions.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(child: Text('No classes on this day.', style: const TextStyle(color: AppColors.textLight))),
+            )
+          else
+            ...detailSessions.map((s) => _buildCalendarClassItem(s)),
+        ],
       ],
     );
   }
@@ -583,50 +599,56 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
     return names[w - 1];
   }
 
-  TableRow _buildCalendarRow(List<String> days, {bool isHeader = false, String? selectedDay, Map<String, int>? dots}) {
+  TableRow _buildCalendarRow(List<String> days, {bool isHeader = false, Map<String, int>? dots}) {
     return TableRow(
       children: days.map((day) {
-        bool isSelected = day == selectedDay;
+        final dayNum = day.isNotEmpty ? int.tryParse(day) : null;
+        bool isSelected = dayNum != null && dayNum == _selectedDay;
         bool isFaded = isHeader ? false : day.isEmpty;
         int numDots = dots != null && dots.containsKey(day) ? dots[day]! : 0;
 
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryBlue : Colors.transparent,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    day,
-                    style: TextStyle(
-                      fontSize: isHeader ? 10 : 12,
-                      fontWeight: isHeader || isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Colors.white : (isFaded ? Colors.grey : AppColors.textDark),
+          child: GestureDetector(
+            onTap: dayNum != null
+                ? () => setState(() => _selectedDay = _selectedDay == dayNum ? null : dayNum)
+                : null,
+            child: Column(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: TextStyle(
+                        fontSize: isHeader ? 10 : 12,
+                        fontWeight: isHeader || isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.white : (isFaded ? Colors.grey : AppColors.textDark),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              if (!isHeader && numDots > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Container(
-                    width: 4,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: numDots == 1 ? Colors.green : (numDots == 2 ? Colors.orange : Colors.red),
-                      shape: BoxShape.circle,
+                if (!isHeader && numDots > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: numDots == 1 ? Colors.green : (numDots == 2 ? Colors.orange : Colors.red),
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                )
-              else if (!isHeader)
-                const SizedBox(height: 8)
-            ],
+                  )
+                else if (!isHeader)
+                  const SizedBox(height: 8)
+              ],
+            ),
           ),
         );
       }).toList(),

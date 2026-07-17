@@ -12,7 +12,6 @@ import type {
   InvoiceRow,
   InvoiceItemRow,
 } from '../../common/types/invoices.types';
-import Redis from 'ioredis';
 
 const COMPANY_SNAPSHOT = {
   name: 'Mobile Business Technology',
@@ -26,19 +25,12 @@ const COMPANY_SNAPSHOT = {
 @Injectable()
 export class InvoicesService {
   private readonly logger = new Logger(InvoicesService.name);
-  private readonly redisClient: Redis;
 
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly configService: ConfigService,
-  ) {
-    const redisUrl = process.env.REDIS_URL;
-    if (!redisUrl) {
-      throw new Error('REDIS_URL environment variable is required');
-    }
-    this.redisClient = new Redis(redisUrl);
-  }
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -53,17 +45,17 @@ export class InvoicesService {
     const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
     const dd = String(dateObj.getDate()).padStart(2, '0');
     const yyyymmdd = `${yyyy}${mm}${dd}`;
+    const prefix = `MBT-${yyyymmdd}-`;
 
-    const redisKey = `invoice:seq:${yyyymmdd}`;
-    const seq = await this.redisClient.incr(redisKey);
+    const { data } = await this.db
+      .from('invoices')
+      .select('invoice_number')
+      .like('invoice_number', `${prefix}%`)
+      .order('invoice_number', { ascending: false })
+      .limit(1);
 
-    // Set TTL to 24 hours on the first increment
-    if (seq === 1) {
-      await this.redisClient.expire(redisKey, 86400);
-    }
-
-    const paddedSeq = String(seq).padStart(6, '0');
-    return `MBT-${yyyymmdd}-${paddedSeq}`;
+    const seq = data?.length ? parseInt((data[0] as any).invoice_number.slice(-6), 10) + 1 : 1;
+    return `${prefix}${String(seq).padStart(6, '0')}`;
   }
 
   /**

@@ -107,8 +107,8 @@ class ApiClient {
     }
 
     final message = body is Map ? (body['message'] ?? body['error'] ?? response.reasonPhrase) : response.reasonPhrase;
-    final fullMessage = '[${response.statusCode}] ${message ?? 'Request failed'}';
-    debugPrint('API ERROR: $fullMessage | body: ${response.body} | url: ${response.request?.url}');
-    throw ApiException(response.statusCode, fullMessage);
+    final displayMessage = message ?? 'Request failed';
+    debugPrint('API ERROR: [${response.statusCode}] $displayMessage | body: ${response.body} | url: ${response.request?.url}');
+    throw ApiException(response.statusCode, displayMessage);
   }
 }

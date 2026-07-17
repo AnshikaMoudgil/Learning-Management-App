@@ -14,7 +14,7 @@ import { SupabaseModule } from '../supabase/supabase.module';
 @Module({
   imports: [
     SupabaseModule,
-    BullModule.registerQueue({ name: 'zoom-download-recording' }),
+    BullModule.registerQueue({ name: 'zoom-task' }),
   ],
   controllers: [ZoomWebhookController, ZoomOAuthController, ZoomController],
   providers: [

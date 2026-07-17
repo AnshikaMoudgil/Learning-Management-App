@@ -244,7 +244,9 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.courseProgress,
-      builder: (context, state) => const CourseProgressScreen(),
+      builder: (context, state) => CourseProgressScreen(
+        courseId: state.uri.queryParameters['id'],
+      ),
     ),
     GoRoute(
       path: RouteNames.cart,

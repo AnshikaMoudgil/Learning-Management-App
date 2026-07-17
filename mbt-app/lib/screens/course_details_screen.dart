@@ -368,7 +368,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => context.push('/course-progress'),
+        onPressed: () => context.push('/course-progress?id=${course.id}'),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryBlue,
           padding: const EdgeInsets.symmetric(vertical: 14),

@@ -1,11 +1,10 @@
-'use strict';
 'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Plus, Search, BookOpen, Trash2, Edit3, LayoutList } from 'lucide-react';
+import { Plus, Search, BookOpen, Trash2, Edit3 } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Pagination from '@/components/Pagination';
 
@@ -211,13 +210,6 @@ export default function CoursesPage() {
                       >
                         <Edit3 className="h-3.5 w-3.5" />
                         Edit
-                      </Link>
-                      <Link
-                        href={`/dashboard/courses/${course.id}/syllabus`}
-                        className="flex items-center gap-1.5 rounded-lg border border-zinc-800 hover:border-teal-700/40 hover:bg-teal-950/20 px-3.5 py-2 text-xs font-semibold text-teal-400 transition-all cursor-pointer"
-                      >
-                        <LayoutList className="h-3.5 w-3.5" />
-                        Syllabus
                       </Link>
                     </div>
 
