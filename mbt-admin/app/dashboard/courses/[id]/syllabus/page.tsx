@@ -1,5 +1,4 @@
-﻿'use strict';
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -7,7 +6,6 @@ import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import {
-  ArrowLeft,
   Plus,
   Loader2,
   ChevronDown,
@@ -21,7 +19,6 @@ import {
   PlayCircle,
   Eye,
 } from 'lucide-react';
-import Link from 'next/link';
 
 interface Lesson {
   id: string;
@@ -206,7 +203,7 @@ function AddLessonForm({
     if (!title.trim()) { toast.error('Lesson title is required.'); return; }
     setIsSaving(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('course_lessons')
         .insert({
           section_id: sectionId,
@@ -217,11 +214,19 @@ function AddLessonForm({
           video_duration: videoDuration.trim() || null,
           is_free_preview: Boolean(isFreePreview),
           sort_order: nextOrder,
-        })
-        .select()
-        .single();
+        });
       if (error) throw error;
-      onAdded(data as Lesson);
+      onAdded({
+        id: crypto.randomUUID(),
+        section_id: sectionId,
+        course_id: courseId,
+        title: title.trim(),
+        description: description.trim() || null,
+        video_url: videoUrl.trim() || null,
+        video_duration: videoDuration.trim() || null,
+        is_free_preview: Boolean(isFreePreview),
+        sort_order: nextOrder,
+      });
       toast.success('Lesson added.');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to add lesson.');
@@ -471,21 +476,11 @@ export default function SyllabusPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div>
-        <Link href="/dashboard/courses" className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-white transition-colors">
-          <ArrowLeft className="h-4 w-4" /> Back to Courses
-        </Link>
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mt-2">
-          <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Syllabus</h1>
-            <p className="text-zinc-400 text-sm mt-1">
-              <span className="text-teal-400 font-semibold">{courseTitle}</span>
-              {' '}— {sections.length} section{sections.length !== 1 ? 's' : ''}, {totalLessons} lesson{totalLessons !== 1 ? 's' : ''}
-            </p>
-          </div>
-          <Link href={`/dashboard/courses/${courseId}/edit`} className="inline-flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-zinc-300 hover:border-zinc-700 hover:text-white transition-all">
-            <Pencil className="h-3.5 w-3.5" /> Edit Course Details
-          </Link>
-        </div>
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">Syllabus</h1>
+        <p className="text-zinc-400 text-sm mt-1">
+          <span className="text-teal-400 font-semibold">{courseTitle}</span>
+          {' '}— {sections.length} section{sections.length !== 1 ? 's' : ''}, {totalLessons} lesson{totalLessons !== 1 ? 's' : ''}
+        </p>
       </div>
 
       <div className="space-y-4">

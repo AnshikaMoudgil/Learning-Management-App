@@ -14,7 +14,8 @@ class InvoiceService {
     return Invoice.fromJson(result);
   }
 
-  String getPdfUrl(String id) {
-    return '${_api.baseUrl}/api/v1/invoices/$id/pdf';
+  Future<String> getPdfUrl(String id) async {
+    final result = await _api.get('/api/v1/invoices/$id/pdf');
+    return (result as Map)['url'] as String;
   }
 }

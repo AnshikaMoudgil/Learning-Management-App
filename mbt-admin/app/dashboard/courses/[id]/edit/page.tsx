@@ -1,4 +1,3 @@
-'use strict';
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -8,7 +7,7 @@ import { courseSchema } from '@/app/lib/validations/course.schema';
 import Select from '@/components/Select';
 import ListEditor from '@/components/ListEditor';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Loader2, Upload, BookOpen, AlertTriangle } from 'lucide-react';
+import { Loader2, Upload, BookOpen, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 function extractStoragePathFromUrl(url: string): string | null {
@@ -331,14 +330,7 @@ export default function EditCoursePage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div>
-        <Link
-          href="/dashboard/courses"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Courses
-        </Link>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight mt-2">Edit Course</h1>
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">Edit Course</h1>
         <p className="text-zinc-400 text-sm mt-1">Modify structural and pricing parameters of the course.</p>
       </div>
 

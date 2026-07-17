@@ -1,4 +1,4 @@
-﻿import {
+import {
   IsOptional,
   IsString,
   IsDateString,
@@ -39,4 +39,8 @@ export class UpdateSessionDto {
   @IsString()
   @IsIn(VALID_STATUSES)
   status?: string;
+
+  @IsOptional()
+  @IsString()
+  section_id?: string;
 }

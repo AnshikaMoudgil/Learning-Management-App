@@ -56,7 +56,16 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
         if (parsed.protocol === 'rediss:') {
           connection.tls = {};
         }
-        return { connection };
+        return {
+          connection,
+          defaultJobOptions: {
+            removeOnComplete: true,
+            removeOnFail: false,
+          },
+          defaultWorkerOptions: {
+            stalledInterval: 60000,
+          },
+        };
       },
     }),
     SupabaseModule,

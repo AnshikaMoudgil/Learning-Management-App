@@ -21,14 +21,8 @@ export class SessionsService {
     private readonly zoomSdkService: ZoomSdkService,
     private readonly supabaseService: SupabaseService,
     private readonly configService: ConfigService,
-    @InjectQueue('zoom-create-meeting')
-    private readonly createMeetingQueue: Queue,
-    @InjectQueue('zoom-update-meeting')
-    private readonly updateMeetingQueue: Queue,
-    @InjectQueue('zoom-delete-meeting')
-    private readonly deleteMeetingQueue: Queue,
-    @InjectQueue('zoom-send-reminders')
-    private readonly sendRemindersQueue: Queue,
+    @InjectQueue('zoom-task')
+    private readonly zoomTaskQueue: Queue,
   ) {}
 
   private get db() {
@@ -44,10 +38,10 @@ export class SessionsService {
       start_time: dto.start_time,
       duration: dto.duration,
       status: 'scheduled',
+      section_id: dto.section_id,
     });
 
-    // Queue Zoom meeting creation
-    await this.createMeetingQueue.add('create', {
+    await this.zoomTaskQueue.add('create', {
       sessionId: session.id,
       instructorId,
       title: dto.title,
@@ -74,7 +68,7 @@ export class SessionsService {
     if (dto.status === 'cancelled' && session.status !== 'cancelled') {
       const meeting = await this.sessionsRepository.findMeetingBySessionId(id);
       if (meeting) {
-        await this.deleteMeetingQueue.add('delete', {
+        await this.zoomTaskQueue.add('delete', {
           instructorId,
           meetingId: meeting.meeting_id,
         });
@@ -82,13 +76,20 @@ export class SessionsService {
       await this.cancelReminders(id);
     }
 
-    const updated = await this.sessionsRepository.update(id, dto);
+    const updated = await this.sessionsRepository.update(id, {
+      title: dto.title,
+      description: dto.description,
+      start_time: dto.start_time,
+      duration: dto.duration,
+      status: dto.status,
+      section_id: dto.section_id !== undefined ? dto.section_id : undefined,
+    });
 
     // If start_time or duration changed, sync with Zoom and reschedule reminders
     if (dto.start_time || dto.duration) {
       const meeting = await this.sessionsRepository.findMeetingBySessionId(id);
       if (meeting) {
-        await this.updateMeetingQueue.add('update', {
+        await this.zoomTaskQueue.add('update', {
           instructorId,
           meetingId: meeting.meeting_id,
           topic: dto.title ?? session.title,
@@ -121,7 +122,7 @@ export class SessionsService {
 
     const meeting = await this.sessionsRepository.findMeetingBySessionId(id);
     if (meeting) {
-      await this.deleteMeetingQueue.add('delete', {
+      await this.zoomTaskQueue.add('delete', {
         instructorId,
         meetingId: meeting.meeting_id,
       });
@@ -144,32 +145,62 @@ export class SessionsService {
     return this.sessionsRepository.findAll();
   }
 
-  async getUpcomingSessions() {
-    return this.sessionsRepository.findUpcoming();
+  async getUpcomingSessions(userId: string) {
+    const { data: enrollments } = await this.db
+      .from('enrollments')
+      .select('course_id')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .or(
+        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
+      );
+
+    const rows = (enrollments || []) as { course_id: string }[];
+    const courseIds = rows.map((e) => e.course_id);
+    if (courseIds.length === 0) return [];
+
+    return this.sessionsRepository.findUpcomingByCourseIds(courseIds);
   }
 
   async getCourseSessions(courseId: string) {
     return this.sessionsRepository.findByCourseId(courseId);
   }
 
-  async startSession(id: string, instructorId: string) {
+  private async isAdminOrSuperadmin(userId: string): Promise<boolean> {
+    const { data: profile } = (await this.db
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()) as unknown as { data: { role: string } | null };
+    return profile?.role
+      ? ['admin', 'superadmin'].includes(profile.role)
+      : false;
+  }
+
+  async startSession(id: string, userId: string) {
     const session = await this.sessionsRepository.findById(id);
     if (!session) {
       throw new NotFoundException('Session not found');
     }
-    if (session.instructor_id !== instructorId) {
-      throw new ForbiddenException('Only the instructor can start the session');
+    const isAdmin = await this.isAdminOrSuperadmin(userId);
+    if (!isAdmin && session.instructor_id !== userId) {
+      throw new ForbiddenException(
+        'Only the instructor or an admin can start the session',
+      );
     }
     return this.sessionsRepository.update(id, { status: 'live' });
   }
 
-  async endSession(id: string, instructorId: string) {
+  async endSession(id: string, userId: string) {
     const session = await this.sessionsRepository.findById(id);
     if (!session) {
       throw new NotFoundException('Session not found');
     }
-    if (session.instructor_id !== instructorId) {
-      throw new ForbiddenException('Only the instructor can end the session');
+    const isAdmin = await this.isAdminOrSuperadmin(userId);
+    if (!isAdmin && session.instructor_id !== userId) {
+      throw new ForbiddenException(
+        'Only the instructor or an admin can end the session',
+      );
     }
     return this.sessionsRepository.update(id, { status: 'finished' });
   }
@@ -222,18 +253,23 @@ export class SessionsService {
       }
     }
 
-    // Validate join window
-    const now = new Date();
-    const startTime = new Date(session.start_time);
-    const earlyJoinMinutes = isInstructor || isAdmin ? 15 : 10;
-    const allowedJoinTime = new Date(
-      startTime.getTime() - earlyJoinMinutes * 60000,
-    );
-
-    if (now < allowedJoinTime && session.status !== 'live') {
+    // Students can only join when the session is live
+    if (!isInstructor && !isAdmin && session.status !== 'live') {
       throw new BadRequestException(
-        `You can only join this session starting ${earlyJoinMinutes} minutes before it begins.`,
+        'This session has not started yet. Please wait for the instructor to start it.',
       );
+    }
+
+    // Instructors/admins can join 15 minutes early to set up
+    if ((isInstructor || isAdmin) && session.status !== 'live') {
+      const now = new Date();
+      const startTime = new Date(session.start_time);
+      const allowedJoinTime = new Date(startTime.getTime() - 15 * 60000);
+      if (now < allowedJoinTime) {
+        throw new BadRequestException(
+          'You can only join this session starting 15 minutes before it begins.',
+        );
+      }
     }
 
     const meeting = await this.sessionsRepository.findMeetingBySessionId(id);
@@ -254,7 +290,10 @@ export class SessionsService {
     return {
       meeting_number: meeting.meeting_id,
       password: meeting.password ?? undefined,
-      join_url: meeting.join_url ?? undefined,
+      join_url:
+        (role === 1
+          ? (meeting.start_url ?? meeting.join_url)
+          : meeting.join_url) ?? undefined,
       signature,
       display_name: profile.full_name ?? 'User',
       role,
@@ -280,10 +319,10 @@ export class SessionsService {
       const triggerTime = startTime - job.offset;
       const delay = triggerTime - now;
       if (delay > 0) {
-        await this.sendRemindersQueue.add(
+        await this.zoomTaskQueue.add(
           job.name,
           { sessionId, type: job.name },
-          { delay, jobId: `${sessionId}:${job.name}` },
+          { delay, jobId: `${sessionId}-${job.name}` },
         );
       }
     }
@@ -293,9 +332,7 @@ export class SessionsService {
     const jobTypes = ['reminder_24h', 'reminder_1h', 'reminder_10min'];
     for (const type of jobTypes) {
       try {
-        const job = await this.sendRemindersQueue.getJob(
-          `${sessionId}:${type}`,
-        );
+        const job = await this.zoomTaskQueue.getJob(`${sessionId}-${type}`);
         if (job) {
           await job.remove();
         }

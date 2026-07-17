@@ -63,7 +63,10 @@ export class ZoomOAuthController {
       .eq('id', instructorId)
       .single();
 
-    if (!profile || (profile as Record<string, unknown>).role !== 'superadmin') {
+    if (
+      !profile ||
+      (profile as Record<string, unknown>).role !== 'superadmin'
+    ) {
       return {
         error: 'unauthorized',
         message: 'Only superadmins can connect the system Zoom account',

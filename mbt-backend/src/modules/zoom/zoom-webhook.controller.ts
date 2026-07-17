@@ -27,8 +27,8 @@ export class ZoomWebhookController {
     private readonly configService: ConfigService,
     private readonly supabaseService: SupabaseService,
     private readonly attendanceService: ZoomAttendanceService,
-    @InjectQueue('zoom-download-recording')
-    private readonly downloadQueue: Queue,
+    @InjectQueue('zoom-task')
+    private readonly zoomTaskQueue: Queue,
   ) {}
 
   private get db() {
@@ -44,7 +44,8 @@ export class ZoomWebhookController {
   ) {
     // ── Zoom URL validation challenge ──────────────────────────
     if (rawEvent.event === 'endpoint.url_validation') {
-      const plainToken = (rawEvent.payload as Record<string, unknown>)?.plainToken as string;
+      const plainToken = (rawEvent.payload as Record<string, unknown>)
+        ?.plainToken as string;
       const secret = this.configService.get<string>('zoom.webhookSecretToken')!;
       const hash = crypto
         .createHmac('sha256', secret)
@@ -155,7 +156,8 @@ export class ZoomWebhookController {
       .select('instructor_id')
       .eq('id', sessionId)
       .single();
-    const instructorId = (session as Record<string, unknown>)?.instructor_id as string | undefined;
+    const instructorId = (session as Record<string, unknown>)?.instructor_id as
+      string | undefined;
     if (!instructorId) {
       this.logger.warn(`No instructor found for session ${sessionId}`);
       return;
@@ -163,28 +165,27 @@ export class ZoomWebhookController {
 
     const recordingFiles = obj.recording_files ?? [];
     const mp4Files = recordingFiles.filter(
-      (f: ZoomRecordingFile) => f.file_type === 'MP4' && f.status === 'completed',
+      (f: ZoomRecordingFile) =>
+        f.file_type === 'MP4' && f.status === 'completed',
     );
 
     for (const file of mp4Files) {
-      await this.db
-        .from('session_recordings')
-        .insert({
-          session_id: sessionId,
-          provider_recording_id: file.id,
-          download_url: file.download_url,
-          duration: file.recording_end
-            ? Math.round(
-                (new Date(file.recording_end).getTime() -
-                  new Date(file.recording_start).getTime()) /
-                  1000,
-              )
-            : null,
-          size: file.file_size ?? null,
-          status: 'processing',
-        });
+      await this.db.from('session_recordings').insert({
+        session_id: sessionId,
+        provider_recording_id: file.id,
+        download_url: file.download_url,
+        duration: file.recording_end
+          ? Math.round(
+              (new Date(file.recording_end).getTime() -
+                new Date(file.recording_start).getTime()) /
+                1000,
+            )
+          : null,
+        size: file.file_size ?? null,
+        status: 'processing',
+      });
 
-      await this.downloadQueue.add(
+      await this.zoomTaskQueue.add(
         'download',
         {
           sessionId,

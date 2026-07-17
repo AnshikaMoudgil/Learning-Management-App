@@ -1,4 +1,4 @@
-﻿import {
+import {
   IsNotEmpty,
   IsString,
   IsOptional,
@@ -28,4 +28,8 @@ export class CreateSessionDto {
   @IsNotEmpty()
   @IsString()
   course_id: string;
+
+  @IsOptional()
+  @IsString()
+  section_id?: string;
 }

@@ -1,4 +1,9 @@
-﻿import { Controller, Get, Request, UnauthorizedException } from '@nestjs/common';
+﻿import {
+  Controller,
+  Get,
+  Request,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { ZoomMeetingService } from './zoom-meeting.service';
 
