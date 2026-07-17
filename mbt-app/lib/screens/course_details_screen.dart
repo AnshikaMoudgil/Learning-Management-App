@@ -5,6 +5,7 @@ import '../widgets/share_bottom_sheet.dart';
 import '../models/course.dart';
 import '../services/course_service.dart';
 import '../services/cart_provider.dart';
+import '../services/wishlist_provider.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   final String? courseId;
@@ -93,6 +94,22 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
               courseName: 'Mobile IC Repair Complete Course',
               url: 'https://app.skilltech.com/courses/mobile-ic-repair',
             ),
+          ),
+          AnimatedBuilder(
+            animation: WishlistProvider(),
+            builder: (context, _) {
+              if (widget.courseId == null) return const SizedBox();
+              final isWishlisted = WishlistProvider().isWishlisted(widget.courseId!);
+              return IconButton(
+                icon: Icon(
+                  isWishlisted ? Icons.favorite : Icons.favorite_border,
+                  color: isWishlisted ? Colors.red : AppColors.textDark,
+                ),
+                onPressed: () {
+                  WishlistProvider().toggleWishlist(widget.courseId!);
+                },
+              );
+            },
           ),
           const SizedBox(width: 8),
         ],

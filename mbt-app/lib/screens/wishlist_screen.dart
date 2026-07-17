@@ -6,6 +6,9 @@ import 'live_classes_screen.dart';
 import 'more_screen.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/cart_badge.dart';
+import '../services/wishlist_provider.dart';
+import '../services/cart_provider.dart';
+import '../services/wishlist_service.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({Key? key}) : super(key: key);
@@ -15,29 +18,64 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
-  // Toggle this to see empty vs populated state
-  bool _isEmpty = false;
+  final _wishlistProvider = WishlistProvider();
+  final _cartProvider = CartProvider();
 
-  void _onNavTapped(int index) {
-    if (index == 3) return;
-    Widget nextScreen;
-    switch (index) {
-      case 0:
-        nextScreen = const HomeDashboard();
-        break;
-      case 1:
-        nextScreen = const MyCoursesScreen();
-        break;
-      case 2:
-        nextScreen = const LiveClassesScreen();
-        break;
-      case 4:
-        nextScreen = const MoreScreen();
-        break;
-      default:
-        return;
+  @override
+  void initState() {
+    super.initState();
+    _wishlistProvider.addListener(_onChange);
+    if (!_wishlistProvider.initialized) {
+      _wishlistProvider.refresh();
     }
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => nextScreen));
+  }
+
+  @override
+  void dispose() {
+    _wishlistProvider.removeListener(_onChange);
+    super.dispose();
+  }
+
+  void _onChange() {
+    if (mounted) setState(() {});
+  }
+
+  void _moveToCart(String courseId) async {
+    try {
+      bool alreadyInCart = false;
+      try {
+        await _cartProvider.addItem(courseId);
+      } catch (e) {
+        if (e.toString().contains('409') || e.toString().contains('already in cart')) {
+          alreadyInCart = true;
+        } else {
+          rethrow;
+        }
+      }
+
+      await _wishlistProvider.toggleWishlist(courseId);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(alreadyInCart ? 'Item was already in cart' : 'Moved to cart')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to move to cart: $e')),
+        );
+      }
+    }
+  }
+
+  void _removeFromWishlist(String courseId) async {
+    await _wishlistProvider.toggleWishlist(courseId);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Removed from wishlist')),
+      );
+    }
   }
 
   @override
@@ -58,8 +96,11 @@ class _WishlistScreenState extends State<WishlistScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: _isEmpty ? _buildEmptyState() : _buildPopulatedState(),
-      
+      body: _wishlistProvider.isLoading && !_wishlistProvider.initialized
+          ? const Center(child: CircularProgressIndicator())
+          : _wishlistProvider.items.isEmpty
+              ? _buildEmptyState()
+              : _buildPopulatedState(),
     );
   }
 
@@ -93,7 +134,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              onPressed: () {},
+              onPressed: () {
+                context.go('/categories');
+              },
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -104,7 +147,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
                 side: const BorderSide(color: AppColors.border),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              onPressed: () {},
+              onPressed: () {
+                context.go('/store');
+              },
             ),
           ],
         ),
@@ -113,6 +158,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
   }
 
   Widget _buildPopulatedState() {
+    final items = _wishlistProvider.items;
     return Column(
       children: [
         Padding(
@@ -120,7 +166,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('6 items', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+              Text('${items.length} items', style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
               Row(
                 children: const [
                   Text('Sort by: ', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
@@ -132,191 +178,153 @@ class _WishlistScreenState extends State<WishlistScreen> {
           ),
         ),
         Expanded(
-          child: GridView.count(
-            crossAxisCount: 2,
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 0.65,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.65,
-            children: [
-              _buildWishlistItem(
-                title: 'Mobile IC Repair\nComplete Course',
-                author: 'By Mr. Ankit Verma',
-                price: '₹4,999',
-                rating: '4.8 (1.2k)',
-                image: 'assets/iphone_hardware.png',
-                tag: 'COURSE',
-                isPremium: true,
-              ),
-              _buildWishlistItem(
-                title: 'Advanced Soldering\nTechniques',
-                author: 'By Mr. Rahul Sharma',
-                price: '₹2,499',
-                rating: '4.7 (842)',
-                image: 'assets/iphone_software.png',
-                tag: 'COURSE',
-                isPremium: true,
-              ),
-              _buildWishlistItem(
-                title: 'Android Phone\nRepair Mastery',
-                author: 'By Mr. Sonu Singh',
-                price: '₹1,999',
-                rating: '4.6 (621)',
-                image: 'assets/android_hardware.png',
-                tag: 'COURSE',
-                isPremium: false,
-              ),
-              _buildWishlistItem(
-                title: 'Quick 861DW Hot Air\nRework Station',
-                author: '',
-                price: '₹6,499',
-                rating: '',
-                image: 'assets/iphone_hardware.png', // placeholder
-                tag: 'HARDWARE',
-                isPremium: false,
-              ),
-              _buildWishlistItem(
-                title: 'Trinocular Microscope\n7X-45X',
-                author: '',
-                price: '₹12,999',
-                rating: '',
-                image: 'assets/iphone_software.png', // placeholder
-                tag: 'HARDWARE',
-                isPremium: false,
-              ),
-              _buildWishlistItem(
-                title: 'Digital Multimeter\nTrue RMS',
-                author: '',
-                price: '₹1,299',
-                rating: '',
-                image: 'assets/android_hardware.png', // placeholder
-                tag: 'HARDWARE',
-                isPremium: false,
-              ),
-            ],
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return _buildWishlistItem(item);
+            },
           ),
         )
       ],
     );
   }
 
-  Widget _buildWishlistItem({
-    required String title,
-    required String author,
-    required String price,
-    required String rating,
-    required String image,
-    required String tag,
-    required bool isPremium,
-  }) {
-    bool isCourse = tag == 'COURSE';
+  Widget _buildWishlistItem(WishlistItem item) {
+    bool isCourse = item.category?.toLowerCase() != 'hardware';
+    String tag = isCourse ? 'COURSE' : 'HARDWARE';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image and badges
-          Stack(
-            children: [
-              Container(
-                height: 100,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: isCourse ? AppColors.primaryBlue : Colors.purple, borderRadius: BorderRadius.circular(4)),
-                  child: Text(tag, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                  child: const Icon(Icons.favorite, color: Colors.red, size: 16),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () {
+        context.push('/course?id=${item.courseId}');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image and badges
+            Stack(
               children: [
-                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
-                if (author.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(author, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
-                ],
-                if (rating.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.orange, size: 10),
-                      const SizedBox(width: 4),
-                      Text(rating, style: const TextStyle(fontSize: 9, color: AppColors.textDark)),
-                      const SizedBox(width: 4),
-                      if (isPremium)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                          child: const Text('Premium', style: TextStyle(color: AppColors.primaryBlue, fontSize: 8)),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                          child: const Text('Free', style: TextStyle(color: Colors.green, fontSize: 8)),
-                        )
-                    ],
+                Container(
+                  height: 90,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    color: Colors.grey[200],
+                    image: item.thumbnailUrl != null
+                        ? DecorationImage(image: NetworkImage(item.thumbnailUrl!), fit: BoxFit.cover)
+                        : null,
                   ),
-                ],
-                const SizedBox(height: 8),
-                Text(price, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.shopping_cart, size: 12),
-                        label: const Text('Add to Cart', style: TextStyle(fontSize: 9)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
-                          minimumSize: const Size(0, 28),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                        ),
-                        onPressed: () {},
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
+                  child: item.thumbnailUrl == null
+                      ? const Center(child: Icon(Icons.image, color: Colors.grey))
+                      : null,
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: isCourse ? AppColors.primaryBlue : Colors.purple, borderRadius: BorderRadius.circular(4)),
+                    child: Text(tag, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => _removeFromWishlist(item.courseId),
+                    child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(Icons.delete_outline, size: 16, color: AppColors.textLight),
-                    )
-                  ],
+                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      child: const Icon(Icons.favorite, color: Colors.red, size: 14),
+                    ),
+                  ),
                 ),
               ],
             ),
-          )
-        ],
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    if (item.instructorName != null && item.instructorName!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text('By ${item.instructorName}', style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
+                    ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 10),
+                        const SizedBox(width: 2),
+                        const Text('4.8 (1.2k)', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
+                        const SizedBox(width: 4),
+                        if (item.isPremium)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                            child: const Text('Premium', style: TextStyle(color: AppColors.primaryBlue, fontSize: 8)),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                            child: const Text('Free', style: TextStyle(color: Colors.green, fontSize: 8)),
+                          )
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text('₹${item.discountPrice ?? item.price}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.shopping_cart, size: 12),
+                            label: const Text('Add to Cart', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
+                              minimumSize: const Size(0, 32),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            ),
+                            onPressed: () => _moveToCart(item.courseId),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _removeFromWishlist(item.courseId),
+                          child: Container(
+                            height: 32,
+                            width: 32,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.border),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(Icons.delete_outline, size: 16, color: AppColors.textLight),
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

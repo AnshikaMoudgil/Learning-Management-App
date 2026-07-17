@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../models/course.dart';
 import '../services/course_service.dart';
 import '../widgets/cart_badge.dart';
+import '../services/wishlist_provider.dart';
 
 class CourseStoreScreen extends StatefulWidget {
   const CourseStoreScreen({Key? key}) : super(key: key);
@@ -68,6 +69,19 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                       ),
                     ),
                     const CartBadge(),
+                    const SizedBox(width: 16),
+                    AnimatedBuilder(
+                      animation: WishlistProvider(),
+                      builder: (context, _) {
+                        final count = WishlistProvider().items.length;
+                        return _buildIconBadge(
+                          Icons.favorite_border,
+                          count > 0 ? count.toString() : '0',
+                          Colors.red,
+                          () => context.push('/wishlist'),
+                        );
+                      },
+                    ),
                     const SizedBox(width: 16),
                     _buildIconBadge(Icons.notifications_outlined, '0', Colors.red, () => context.push('/notifications')),
                   ],
@@ -353,7 +367,24 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                       children: [
                         Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis)),
                         const SizedBox(width: 4),
-                        const Icon(Icons.favorite_border, size: 18, color: Colors.grey),
+                        AnimatedBuilder(
+                          animation: WishlistProvider(),
+                          builder: (context, _) {
+                            final isWishlisted = courseId != null && WishlistProvider().isWishlisted(courseId);
+                            return GestureDetector(
+                              onTap: () {
+                                if (courseId != null) {
+                                  WishlistProvider().toggleWishlist(courseId);
+                                }
+                              },
+                              child: Icon(
+                                isWishlisted ? Icons.favorite : Icons.favorite_border,
+                                size: 18,
+                                color: isWishlisted ? Colors.red : Colors.grey,
+                              ),
+                            );
+                          },
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -454,19 +485,50 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                image: course.thumbnailUrl != null
-                    ? DecorationImage(image: NetworkImage(course.thumbnailUrl!), fit: BoxFit.cover)
-                    : null,
-              ),
-              child: course.thumbnailUrl == null
-                  ? const Icon(Icons.menu_book, color: Colors.grey, size: 28)
-                  : null,
+            Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    image: course.thumbnailUrl != null
+                        ? DecorationImage(image: NetworkImage(course.thumbnailUrl!), fit: BoxFit.cover)
+                        : null,
+                  ),
+                  child: course.thumbnailUrl == null
+                      ? const Icon(Icons.menu_book, color: Colors.grey, size: 28)
+                      : null,
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: AnimatedBuilder(
+                    animation: WishlistProvider(),
+                    builder: (context, _) {
+                      final isWishlisted = WishlistProvider().isWishlisted(course.id);
+                      return GestureDetector(
+                        onTap: () {
+                          WishlistProvider().toggleWishlist(course.id);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isWishlisted ? Icons.favorite : Icons.favorite_border,
+                            size: 14,
+                            color: isWishlisted ? Colors.red : Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
             const Spacer(),
             Text(course.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark), maxLines: 2),

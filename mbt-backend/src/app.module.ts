@@ -23,6 +23,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { ZoomModule } from './modules/zoom/zoom.module';
 import { ZoomQueuesModule } from './modules/queues/zoom-queues.module';
 import { StorageModule } from './storage/storage.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { StorageModule } from './storage/storage.module';
     ZoomModule,
     ZoomQueuesModule,
     StorageModule,
+    WishlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],

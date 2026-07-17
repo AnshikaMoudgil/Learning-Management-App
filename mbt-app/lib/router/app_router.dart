@@ -233,6 +233,10 @@ final appRouter = GoRouter(
 
     // Other screens
     GoRoute(
+      path: RouteNames.categories,
+      builder: (context, state) => const CategoriesScreen(),
+    ),
+    GoRoute(
       path: RouteNames.categoryDetail,
       builder: (context, state) => const CategoryDetailScreen(),
     ),
