@@ -41,9 +41,9 @@ export class SearchRepository {
       ],
     );
 
-    let courses = coursesResult.data || [];
-    let recordings = recordingsResult.data || [];
-    let teachers = teachersResult.data || [];
+    let courses: any[] = (coursesResult.data as any[]) || [];
+    let recordings: any[] = (recordingsResult.data as any[]) || [];
+    let teachers: any[] = (teachersResult.data as any[]) || [];
 
     // If foreign key relations fail, fallback to simple select (similar to frontend fallback)
     if (coursesResult.error) {
@@ -56,7 +56,7 @@ export class SearchRepository {
         )
         .eq('is_published', true)
         .limit(20);
-      courses = fallback.data || [];
+      courses = (fallback.data as any[]) || [];
     }
 
     if (recordingsResult.error) {
@@ -66,7 +66,7 @@ export class SearchRepository {
         .select('*')
         .ilike('title', searchTerm)
         .limit(20);
-      recordings = fallback.data || [];
+      recordings = (fallback.data as any[]) || [];
     }
 
     if (teachersResult.error) {
@@ -77,7 +77,7 @@ export class SearchRepository {
         .eq('role', 'instructor')
         .ilike('full_name', searchTerm)
         .limit(20);
-      teachers = fallback.data || [];
+      teachers = (fallback.data as any[]) || [];
     }
 
     return { courses, recordings, teachers };
