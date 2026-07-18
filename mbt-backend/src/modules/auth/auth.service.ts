@@ -23,7 +23,7 @@ export class AuthService {
       throw new BadRequestException(`Failed to send OTP: ${error.message}`);
     }
 
-    await this.supabaseService.clearAuthSession();
+    // await this.supabaseService.clearAuthSession();
 
     return { message: 'OTP sent successfully' };
   }
@@ -43,7 +43,7 @@ export class AuthService {
 
     const response = await this.buildAuthResponse(data.session, data.user!);
 
-    await this.supabaseService.clearAuthSession();
+    // await this.supabaseService.clearAuthSession();
 
     return response;
   }
@@ -66,7 +66,7 @@ export class AuthService {
 
     const response = await this.buildAuthResponse(data.session, data.user);
 
-    await this.supabaseService.clearAuthSession();
+    // await this.supabaseService.clearAuthSession();
 
     return response;
   }
