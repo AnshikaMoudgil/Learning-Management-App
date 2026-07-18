@@ -3,16 +3,18 @@ services:
     name: mbt-backend
     env: node
     plan: free
+
     rootDir: mbt-backend
-    buildCommand: npm install && npm run build
+
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start:prod
 
     envVars:
+      - key: PORT
+        value: "10000"
+
       - key: NODE_ENV
         value: production
-
-      - key: PORT
-        value: 10000
 
       - key: SUPABASE_URL
         sync: false
@@ -28,6 +30,9 @@ services:
 
       - key: REDIS_URL
         sync: false
+
+      - key: DEVICE_CHECK_ENABLED
+        value: "false"
 
       - key: RAZORPAY_KEY_ID_A
         sync: false
