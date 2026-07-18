@@ -24,7 +24,7 @@ import { ZoomModule } from './modules/zoom/zoom.module';
 import { ZoomQueuesModule } from './modules/queues/zoom-queues.module';
 import { StorageModule } from './storage/storage.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
-
+import { MyCoursesModule } from './modules/my-courses/my-courses.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -88,8 +88,9 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
     ZoomQueuesModule,
     StorageModule,
     WishlistModule,
+    MyCoursesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

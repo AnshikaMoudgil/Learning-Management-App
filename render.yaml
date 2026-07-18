@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: mbt-backend
+    env: node
+    rootDir: mbt-backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
