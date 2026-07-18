@@ -6,8 +6,67 @@ services:
     rootDir: mbt-backend
     buildCommand: npm install && npm run build
     startCommand: npm run start:prod
+
     envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 10000
+
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_SERVICE_KEY
+
+      - key: SUPABASE_ANON_KEY
+        sync: false
+
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      - key: DATABASE_URL
+        sync: false
+
+      - key: REDIS_URL
+        sync: false
+
+      - key: RAZORPAY_KEY_ID_A
+        sync: false
+
+      - key: RAZORPAY_KEY_SECRET_A
+        sync: false
+
+      - key: RAZORPAY_KEY_ID_B
+        sync: false
+
+      - key: RAZORPAY_KEY_SECRET_B
+        sync: false
+
+      - key: ZOOM_CLIENT_ID
+        sync: false
+
+      - key: ZOOM_CLIENT_SECRET
+        sync: false
+
+      - key: ZOOM_REDIRECT_URI
+        sync: false
+
+      - key: ZOOM_TOKEN_ENCRYPTION_KEY
+        sync: false
+
+      - key: ZOOM_SDK_KEY
+        sync: false
+
+      - key: ZOOM_SDK_SECRET
+        sync: false
+
+      - key: STORAGE_PROVIDER
+        value: cloudinary
+
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+
+      - key: CLOUDINARY_API_KEY
+        sync: false
+
+      - key: CLOUDINARY_API_SECRET
         sync: false
