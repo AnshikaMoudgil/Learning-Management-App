@@ -6,10 +6,12 @@ class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({Key? key}) : super(key: key);
 
   @override
-  State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  State<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends State<NotificationSettingsScreen> {
   bool _liveClassReminders = true;
   bool _courseExpiryAlerts = true;
   bool _paymentConfirmations = true;
@@ -27,14 +29,31 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('Notification Settings', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Notification Settings',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Notification Categories', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          const Text(
+            'Notification Categories',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildToggleItem(
             icon: Icons.sensors,
@@ -72,15 +91,26 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             onChanged: (val) => setState(() => _promotionalMarketing = val),
           ),
           const SizedBox(height: 32),
-          const Text('Preferred Channels', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          const Text(
+            'Preferred Channels',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
           const SizedBox(height: 4),
-          const Text('Choose how you want to receive notifications', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+          const Text(
+            'Choose how you want to receive notifications',
+            style: TextStyle(fontSize: 12, color: AppColors.textLight),
+          ),
           const SizedBox(height: 16),
           _buildCheckboxItem(
             icon: Icons.notifications_active,
             title: 'Push Notifications',
             value: _pushNotifications,
-            onChanged: (val) => setState(() => _pushNotifications = val ?? false),
+            onChanged: (val) =>
+                setState(() => _pushNotifications = val ?? false),
           ),
           _buildCheckboxItem(
             icon: Icons.email,
@@ -117,9 +147,22 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textLight,
+                  ),
+                ),
               ],
             ),
           ),
@@ -127,7 +170,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             value: value,
             onChanged: onChanged,
             activeColor: AppColors.primaryBlue,
-          )
+          ),
         ],
       ),
     );
@@ -145,13 +188,24 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         children: [
           Icon(icon, color: AppColors.textLight, size: 20),
           const SizedBox(width: 16),
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 14, color: AppColors.textDark, fontWeight: FontWeight.w500))),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textDark,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
           Checkbox(
             value: value,
             onChanged: onChanged,
             activeColor: AppColors.primaryBlue,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          )
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
         ],
       ),
     );

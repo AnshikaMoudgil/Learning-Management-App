@@ -12,11 +12,24 @@ class CategoryDetailScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('Web Development', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Web Development',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
+          IconButton(
+            icon: const Icon(Icons.search, color: AppColors.textDark),
+            onPressed: () => context.push('/search'),
+          ),
         ],
       ),
       body: ListView(
@@ -33,7 +46,11 @@ class CategoryDetailScreen extends StatelessWidget {
                 Positioned(
                   right: -20,
                   bottom: -20,
-                  child: Icon(Icons.code, color: Colors.white.withValues(alpha: 0.1), size: 120),
+                  child: Icon(
+                    Icons.code,
+                    color: Colors.white.withValues(alpha: 0.1),
+                    size: 120,
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -41,9 +58,19 @@ class CategoryDetailScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
-                      Text('Web Development', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Web Development',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       SizedBox(height: 8),
-                      Text('128 Courses', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      Text(
+                        '128 Courses',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -51,7 +78,14 @@ class CategoryDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Text('Popular Courses', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          const Text(
+            'Popular Courses',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildCourseListCard(
             title: 'React - The Complete Guide',
@@ -108,7 +142,9 @@ class CategoryDetailScreen extends StatelessWidget {
             height: 90,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(16),
+              ),
             ),
             child: Center(child: Icon(icon, color: Colors.white, size: 36)),
           ),
@@ -118,23 +154,58 @@ class CategoryDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                    maxLines: 2,
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(Icons.star, color: Colors.orange, size: 12),
                       const SizedBox(width: 4),
-                      Text(rating, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      Text(
+                        rating,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Text(enrolled, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                      Text(
+                        enrolled,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textLight,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text(price, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      Text(
+                        price,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Text(originalPrice, style: const TextStyle(fontSize: 10, color: AppColors.textLight, decoration: TextDecoration.lineThrough)),
+                      Text(
+                        originalPrice,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textLight,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
                     ],
                   ),
                 ],

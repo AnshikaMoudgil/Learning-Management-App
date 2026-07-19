@@ -49,10 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 12),
             const Text(
               'Learn Anywhere, Anytime',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textLight,
-              ),
+              style: TextStyle(fontSize: 16, color: AppColors.textLight),
             ),
             const SizedBox(height: 48),
             const CircularProgressIndicator(
@@ -61,10 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 16),
             const Text(
               'Loading your learning experience...',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textLight,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.textLight),
             ),
           ],
         ),

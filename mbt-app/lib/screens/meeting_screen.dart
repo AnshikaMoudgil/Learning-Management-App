@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MeetingScreen extends StatefulWidget {
@@ -39,7 +39,8 @@ class _MeetingScreenState extends State<MeetingScreen> {
       }
     }
 
-    final fallbackUrl = 'https://zoom.us/j/${widget.meetingNumber}?pwd=${widget.password}';
+    final fallbackUrl =
+        'https://zoom.us/j/${widget.meetingNumber}?pwd=${widget.password}';
     final uri = Uri.parse(fallbackUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -64,18 +65,12 @@ class _MeetingScreenState extends State<MeetingScreen> {
             const SizedBox(height: 24),
             Text(
               'Redirecting to Zoom...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               'Meeting: ${widget.meetingNumber}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[400],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[400]),
             ),
           ],
         ),

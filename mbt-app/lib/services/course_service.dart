@@ -22,10 +22,10 @@ class CourseService {
 
     final result = await _api.get('/api/v1/courses', queryParams: params);
 
-    final List<dynamic> data = result is Map ? (result['data'] as List<dynamic>?) ?? [] : (result as List<dynamic>);
-    return data
-        .map((e) => Course.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final List<dynamic> data = result is Map
+        ? (result['data'] as List<dynamic>?) ?? []
+        : (result as List<dynamic>);
+    return data.map((e) => Course.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<Course> getCourseDetails(String idOrSlug) async {

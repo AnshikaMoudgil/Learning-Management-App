@@ -18,7 +18,8 @@ class MyCoursesScreen extends StatefulWidget {
   State<MyCoursesScreen> createState() => _MyCoursesScreenState();
 }
 
-class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProviderStateMixin {
+class _MyCoursesScreenState extends State<MyCoursesScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _sortBy = 'Recently Accessed';
 
@@ -53,7 +54,10 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
       default:
         return;
     }
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => nextScreen));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => nextScreen),
+    );
   }
 
   @override
@@ -65,7 +69,10 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
         elevation: 0,
         title: const Text(
           'My Courses',
-          style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
         actions: [
@@ -77,7 +84,10 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_none, color: AppColors.textDark),
+                icon: const Icon(
+                  Icons.notifications_none,
+                  color: AppColors.textDark,
+                ),
                 onPressed: () {},
               ),
               Positioned(
@@ -91,7 +101,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                     shape: BoxShape.circle,
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ],
@@ -116,17 +126,16 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
           ],
         ),
       ),
-      body: widget.courses.isEmpty ? _buildEmptyState() : _buildPopulatedState(),
-      
+      body: widget.courses.isEmpty
+          ? _buildEmptyState()
+          : _buildPopulatedState(),
     );
   }
 
   Widget _buildTab(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
       child: Text(
         text,
         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
@@ -146,7 +155,11 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
               width: 250,
               height: 250,
               errorBuilder: (context, error, stackTrace) {
-                return const Icon(Icons.inventory_2_outlined, size: 120, color: AppColors.primaryBlue);
+                return const Icon(
+                  Icons.inventory_2_outlined,
+                  size: 120,
+                  color: AppColors.primaryBlue,
+                );
               },
             ),
             const SizedBox(height: 24),
@@ -174,7 +187,11 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
               width: double.infinity,
               height: 48,
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.shopping_bag_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 label: const Text(
                   'Explore Store',
                   style: TextStyle(
@@ -228,9 +245,17 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                   ),
                   DropdownButton<String>(
                     value: _sortBy,
-                    icon: const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textDark),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: AppColors.textDark,
+                    ),
                     elevation: 16,
-                    style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
                     underline: const SizedBox(),
                     onChanged: (String? value) {
                       setState(() {
@@ -239,18 +264,23 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                     },
                     items: ['Recently Accessed', 'Newest First', 'A-Z']
                         .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        })
+                        .toList(),
                   ),
                 ],
               ),
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                icon: const Icon(Icons.tune, color: AppColors.textLight, size: 20),
+                icon: const Icon(
+                  Icons.tune,
+                  color: AppColors.textLight,
+                  size: 20,
+                ),
                 onPressed: () {},
               ),
             ],
@@ -274,7 +304,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
 
   Widget _buildCourseCard(Map<String, dynamic> course) {
     bool isCompleted = (course['progress'] ?? 0) >= 1.0;
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -311,9 +341,14 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                   child: Align(
                     alignment: Alignment.bottomLeft,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: isCompleted ? Colors.green : AppColors.primaryBlue,
+                        color: isCompleted
+                            ? Colors.green
+                            : AppColors.primaryBlue,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -350,7 +385,11 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Icon(Icons.more_vert, color: AppColors.textLight, size: 20),
+                        const Icon(
+                          Icons.more_vert,
+                          color: AppColors.textLight,
+                          size: 20,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -370,7 +409,10 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                             value: course['progress'] ?? 0.0,
                             backgroundColor: AppColors.border,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                isCompleted ? Colors.green : AppColors.primaryBlue),
+                              isCompleted
+                                  ? Colors.green
+                                  : AppColors.primaryBlue,
+                            ),
                             minHeight: 4,
                             borderRadius: BorderRadius.circular(2),
                           ),
@@ -390,7 +432,11 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                     // Validity
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textLight),
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 12,
+                          color: AppColors.textLight,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           isCompleted
@@ -398,7 +444,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                               : 'Valid for ${course['validDays']} days',
                           style: TextStyle(
                             fontSize: 10,
-                            color: isCompleted ? Colors.green : AppColors.textLight,
+                            color: isCompleted
+                                ? Colors.green
+                                : AppColors.textLight,
                           ),
                         ),
                         const Spacer(),
@@ -408,7 +456,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: (course['daysLeft'] ?? 99) < 20 ? Colors.red : Colors.green,
+                              color: (course['daysLeft'] ?? 99) < 20
+                                  ? Colors.red
+                                  : Colors.green,
                             ),
                           ),
                       ],
@@ -449,7 +499,13 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Text('Continue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(
+                          'Continue',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                         SizedBox(width: 4),
                         Icon(Icons.play_arrow_outlined, size: 16),
                       ],

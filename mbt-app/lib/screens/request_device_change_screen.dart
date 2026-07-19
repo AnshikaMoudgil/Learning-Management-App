@@ -15,8 +15,7 @@ class RequestDeviceChangeScreen extends StatefulWidget {
       _RequestDeviceChangeScreenState();
 }
 
-class _RequestDeviceChangeScreenState
-    extends State<RequestDeviceChangeScreen> {
+class _RequestDeviceChangeScreenState extends State<RequestDeviceChangeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
   final _deviceService = DeviceService();
@@ -66,16 +65,17 @@ class _RequestDeviceChangeScreenState
           e.toString().contains('Connection refused') ||
           e.toString().contains('XMLHttpRequest') ||
           e.toString().toLowerCase().contains('failed to fetch')) {
-        msg = 'Cannot reach the server. Please check your internet connection and that the backend is running.';
+        msg =
+            'Cannot reach the server. Please check your internet connection and that the backend is running.';
       } else if (e is ApiException) {
         msg = 'Server error (${e.statusCode}): ${e.message}';
       } else {
         msg = e.toString();
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -95,7 +95,10 @@ class _RequestDeviceChangeScreenState
         ),
         title: const Text(
           'Request Device Change',
-          style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SafeArea(
@@ -125,7 +128,11 @@ class _RequestDeviceChangeScreenState
           const Text(
             'Your request will be sent to the admin for review. '
             'You can only submit one request at a time.',
-            style: TextStyle(fontSize: 13, color: AppColors.textLight, height: 1.5),
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textLight,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 24),
           TextFormField(
@@ -133,7 +140,10 @@ class _RequestDeviceChangeScreenState
             maxLines: 5,
             decoration: InputDecoration(
               hintText: 'e.g., My phone got stolen, I bought a new device...',
-              hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 13),
+              hintStyle: const TextStyle(
+                color: AppColors.textLight,
+                fontSize: 13,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: AppColors.border),
@@ -227,7 +237,11 @@ class _RequestDeviceChangeScreenState
           'Your request has been sent to the admin. '
           'You will be notified once it is reviewed.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: AppColors.textLight, height: 1.5),
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textLight,
+            height: 1.5,
+          ),
         ),
         const SizedBox(height: 32),
         SizedBox(

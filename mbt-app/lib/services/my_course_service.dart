@@ -26,7 +26,9 @@ class MyCourseContent {
       courseId: json['course_id'] as String,
       title: json['title'] as String,
       thumbnailUrl: json['thumbnail_url'] as String?,
-      enrollment: MyCourseEnrollmentState.fromJson(json['enrollment'] as Map<String, dynamic>),
+      enrollment: MyCourseEnrollmentState.fromJson(
+        json['enrollment'] as Map<String, dynamic>,
+      ),
       sections: (json['sections'] as List<dynamic>? ?? [])
           .map((e) => MyCourseSection.fromJson(e as Map<String, dynamic>))
           .toList(),

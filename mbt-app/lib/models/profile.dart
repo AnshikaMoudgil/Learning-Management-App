@@ -36,7 +36,10 @@ class Profile {
       id: json['id'] as String,
       isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
       isDeleted: (json['is_deleted'] ?? json['isDeleted']) as bool? ?? false,
-      onboardingCompleted: (json['onboarding_completed'] ?? json['onboardingCompleted']) as bool? ?? false,
+      onboardingCompleted:
+          (json['onboarding_completed'] ?? json['onboardingCompleted'])
+              as bool? ??
+          false,
       lastLoginAt: _parseDate(json['last_login_at'] ?? json['lastLoginAt']),
       fullName: (json['full_name'] ?? json['fullName']) as String?,
       avatarUrl: (json['avatar_url'] ?? json['avatarUrl']) as String?,

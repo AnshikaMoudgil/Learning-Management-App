@@ -7,7 +7,7 @@ class WishlistProvider extends ChangeNotifier {
   factory WishlistProvider() => _instance;
 
   final WishlistService _service = WishlistService();
-  
+
   List<WishlistItem> _items = [];
   final Set<String> _wishlistedCourseIds = {};
   bool _initialized = false;
@@ -41,7 +41,7 @@ class WishlistProvider extends ChangeNotifier {
 
   Future<void> toggleWishlist(String courseId) async {
     final currentlyWishlisted = _wishlistedCourseIds.contains(courseId);
-    
+
     // Optimistic update
     if (currentlyWishlisted) {
       _wishlistedCourseIds.remove(courseId);

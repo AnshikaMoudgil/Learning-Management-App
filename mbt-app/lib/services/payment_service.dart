@@ -14,10 +14,10 @@ class PaymentService {
     required String code,
     required String courseId,
   }) async {
-    final result = await _api.post('/api/v1/coupons/validate', body: {
-      'code': code,
-      'courseId': courseId,
-    });
+    final result = await _api.post(
+      '/api/v1/coupons/validate',
+      body: {'code': code, 'courseId': courseId},
+    );
     return CouponValidation.fromJson(result as Map<String, dynamic>);
   }
 
@@ -25,10 +25,10 @@ class PaymentService {
     required String code,
     required List<String> courseIds,
   }) async {
-    final result = await _api.post('/api/v1/coupons/validate-cart', body: {
-      'code': code,
-      'courseIds': courseIds,
-    });
+    final result = await _api.post(
+      '/api/v1/coupons/validate-cart',
+      body: {'code': code, 'courseIds': courseIds},
+    );
     return CouponValidation.fromJson(result as Map<String, dynamic>);
   }
 
@@ -37,12 +37,15 @@ class PaymentService {
     String? couponCode,
     bool allowRenewal = false,
   }) async {
-    final result = await _api.post('/api/v1/payments/create-order', body: {
-      'courseIds': courseIds,
-      'allowRenewal': allowRenewal,
-      if (couponCode != null && couponCode.trim().isNotEmpty)
-        'couponCode': couponCode.trim(),
-    });
+    final result = await _api.post(
+      '/api/v1/payments/create-order',
+      body: {
+        'courseIds': courseIds,
+        'allowRenewal': allowRenewal,
+        if (couponCode != null && couponCode.trim().isNotEmpty)
+          'couponCode': couponCode.trim(),
+      },
+    );
     return PaymentOrder.fromJson(result as Map<String, dynamic>);
   }
 
@@ -51,11 +54,14 @@ class PaymentService {
     required String razorpayPaymentId,
     required String razorpaySignature,
   }) {
-    return _api.post('/api/v1/payments/verify', body: {
-      'razorpayOrderId': razorpayOrderId,
-      'razorpayPaymentId': razorpayPaymentId,
-      'razorpaySignature': razorpaySignature,
-    });
+    return _api.post(
+      '/api/v1/payments/verify',
+      body: {
+        'razorpayOrderId': razorpayOrderId,
+        'razorpayPaymentId': razorpayPaymentId,
+        'razorpaySignature': razorpaySignature,
+      },
+    );
   }
 
   Future<PaymentCheckoutResult> checkoutCourses({
@@ -84,7 +90,9 @@ class PaymentService {
     final completer = Completer<PaymentCheckoutResult>();
     final razorpay = Razorpay();
 
-    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse response) async {
+    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (
+      PaymentSuccessResponse response,
+    ) async {
       try {
         final result = await verifyPayment(
           razorpayOrderId: response.orderId ?? order.orderId,
@@ -105,9 +113,13 @@ class PaymentService {
       }
     });
 
-    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (PaymentFailureResponse response) {
+    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, (
+      PaymentFailureResponse response,
+    ) {
       if (!completer.isCompleted) {
-        completer.completeError(Exception(response.message ?? 'Payment failed'));
+        completer.completeError(
+          Exception(response.message ?? 'Payment failed'),
+        );
       }
       razorpay.clear();
     });

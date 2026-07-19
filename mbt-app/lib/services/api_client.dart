@@ -80,14 +80,21 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  Future<dynamic> uploadFile(String path, String fieldName, Uint8List bytes, String fileName) async {
+  Future<dynamic> uploadFile(
+    String path,
+    String fieldName,
+    Uint8List bytes,
+    String fileName,
+  ) async {
     final uri = Uri.parse('$baseUrl$path');
     final request = http.MultipartRequest('POST', uri);
 
     final headers = await _headers(withBody: true);
     headers.remove('Content-Type');
     request.headers.addAll(headers);
-    request.files.add(http.MultipartFile.fromBytes(fieldName, bytes, filename: fileName));
+    request.files.add(
+      http.MultipartFile.fromBytes(fieldName, bytes, filename: fileName),
+    );
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
@@ -106,9 +113,13 @@ class ApiClient {
       return body;
     }
 
-    final message = body is Map ? (body['message'] ?? body['error'] ?? response.reasonPhrase) : response.reasonPhrase;
+    final message = body is Map
+        ? (body['message'] ?? body['error'] ?? response.reasonPhrase)
+        : response.reasonPhrase;
     final displayMessage = message ?? 'Request failed';
-    debugPrint('API ERROR: [${response.statusCode}] $displayMessage | body: ${response.body} | url: ${response.request?.url}');
+    debugPrint(
+      'API ERROR: [${response.statusCode}] $displayMessage | body: ${response.body} | url: ${response.request?.url}',
+    );
     throw ApiException(response.statusCode, displayMessage);
   }
 }

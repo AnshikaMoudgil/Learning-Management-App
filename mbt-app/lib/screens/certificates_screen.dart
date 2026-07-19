@@ -19,15 +19,27 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('Certificates', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Certificates',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
       ),
       body: Column(
         children: [
           Container(
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+              border: Border(
+                bottom: BorderSide(color: AppColors.border, width: 1),
+              ),
             ),
             child: Row(
               children: [
@@ -45,9 +57,18 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
               childAspectRatio: 0.7,
               children: _selectedTab == 0
                   ? [
-                      _buildEarnedCard('React - The Complete Guide', '15 Apr 2025'),
-                      _buildEarnedCard('Python for Data Science', '22 Feb 2025'),
-                      _buildEarnedCard('UI/UX Design Masterclass', '10 Jan 2025'),
+                      _buildEarnedCard(
+                        'React - The Complete Guide',
+                        '15 Apr 2025',
+                      ),
+                      _buildEarnedCard(
+                        'Python for Data Science',
+                        '22 Feb 2025',
+                      ),
+                      _buildEarnedCard(
+                        'UI/UX Design Masterclass',
+                        '10 Jan 2025',
+                      ),
                     ]
                   : [
                       _buildInProgressCard('Data Structures & Algorithms', 65),
@@ -68,7 +89,12 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: isSelected ? AppColors.primaryBlue : Colors.transparent, width: 2)),
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                width: 2,
+              ),
+            ),
           ),
           child: Center(
             child: Text(
@@ -95,64 +121,101 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
           border: Border.all(color: AppColors.border),
         ),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 100,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              image: DecorationImage(
-                image: AssetImage('assets/iphone_hardware.png'), // Using placeholder, it should be a certificate thumbnail
-                fit: BoxFit.cover,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 100,
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                image: DecorationImage(
+                  image: AssetImage(
+                    'assets/iphone_hardware.png',
+                  ), // Using placeholder, it should be a certificate thumbnail
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
-                const SizedBox(height: 4),
-                Text('Issued on\n$date', style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primaryBlue,
-                          side: const BorderSide(color: AppColors.primaryBlue),
-                          minimumSize: const Size(0, 28),
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        child: const Text('Download', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                      ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
                     ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primaryBlue,
-                          side: const BorderSide(color: AppColors.primaryBlue),
-                          minimumSize: const Size(0, 28),
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        child: const Text('Verify', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                      ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Issued on\n$date',
+                    style: const TextStyle(
+                      fontSize: 9,
+                      color: AppColors.textLight,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {},
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryBlue,
+                            side: const BorderSide(
+                              color: AppColors.primaryBlue,
+                            ),
+                            minimumSize: const Size(0, 28),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          child: const Text(
+                            'Download',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {},
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryBlue,
+                            side: const BorderSide(
+                              color: AppColors.primaryBlue,
+                            ),
+                            minimumSize: const Size(0, 28),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          child: const Text(
+                            'Verify',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildInProgressCard(String title, int progress) {
@@ -180,7 +243,15 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                  maxLines: 2,
+                ),
                 const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -189,17 +260,32 @@ class _CertificatesScreenState extends State<CertificatesScreen> {
                       child: LinearProgressIndicator(
                         value: progress / 100,
                         backgroundColor: AppColors.border,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primaryBlue,
+                        ),
                         minHeight: 4,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text('$progress%', style: const TextStyle(fontSize: 9, color: AppColors.textDark, fontWeight: FontWeight.bold)),
+                    Text(
+                      '$progress%',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text('Complete ${100 - progress}% more to earn certificate', style: const TextStyle(fontSize: 8, color: AppColors.textLight)),
+                Text(
+                  'Complete ${100 - progress}% more to earn certificate',
+                  style: const TextStyle(
+                    fontSize: 8,
+                    color: AppColors.textLight,
+                  ),
+                ),
               ],
             ),
           ),

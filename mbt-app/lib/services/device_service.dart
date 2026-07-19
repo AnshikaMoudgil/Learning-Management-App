@@ -23,15 +23,17 @@ class DeviceService {
     required String fingerprint,
     String? reason,
   }) async {
-    final result = await _api.post('/api/v1/devices/change-request', body: {
-      'fingerprint': fingerprint,
-      if (reason != null) 'reason': reason,
-    });
+    final result = await _api.post(
+      '/api/v1/devices/change-request',
+      body: {'fingerprint': fingerprint, if (reason != null) 'reason': reason},
+    );
     return DeviceChangeRequest.fromJson(result);
   }
 
   Future<List<DeviceChangeRequest>> getUserChangeRequests() async {
     final result = await _api.get('/api/v1/devices/change-requests');
-    return (result as List).map((r) => DeviceChangeRequest.fromJson(r)).toList();
+    return (result as List)
+        .map((r) => DeviceChangeRequest.fromJson(r))
+        .toList();
   }
 }

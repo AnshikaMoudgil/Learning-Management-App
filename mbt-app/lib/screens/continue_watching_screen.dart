@@ -5,10 +5,8 @@ import 'package:go_router/go_router.dart';
 class ContinueWatchingScreen extends StatelessWidget {
   final List<Map<String, dynamic>> inProgressCourses;
 
-  const ContinueWatchingScreen({
-    Key? key,
-    this.inProgressCourses = const [],
-  }) : super(key: key);
+  const ContinueWatchingScreen({Key? key, this.inProgressCourses = const []})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +29,10 @@ class ContinueWatchingScreen extends StatelessWidget {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_alt_outlined, color: AppColors.textDark),
+            icon: const Icon(
+              Icons.filter_alt_outlined,
+              color: AppColors.textDark,
+            ),
             onPressed: () {},
           ),
         ],
@@ -41,10 +42,7 @@ class ContinueWatchingScreen extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
               'Pick up where you left off',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textLight,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.textLight),
             ),
           ),
         ),
@@ -106,17 +104,17 @@ class ContinueWatchingScreen extends StatelessWidget {
                 onPressed: () {},
                 child: const Text(
                   'Explore Courses',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
             const SizedBox(height: 16),
             TextButton.icon(
               onPressed: () {},
-              icon: const Icon(Icons.explore_outlined, color: AppColors.primaryBlue),
+              icon: const Icon(
+                Icons.explore_outlined,
+                color: AppColors.primaryBlue,
+              ),
               label: const Text(
                 'Browse All Courses',
                 style: TextStyle(
@@ -157,7 +155,11 @@ class ContinueWatchingScreen extends StatelessWidget {
                       color: AppColors.primaryBlue,
                     ),
                   ),
-                  Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.primaryBlue),
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 16,
+                    color: AppColors.primaryBlue,
+                  ),
                 ],
               ),
             ],
@@ -217,7 +219,11 @@ class ContinueWatchingScreen extends StatelessWidget {
                   color: Colors.black.withOpacity(0.5),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.play_arrow, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.play_arrow,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -257,7 +263,11 @@ class ContinueWatchingScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.access_time, size: 12, color: AppColors.textLight),
+                    const Icon(
+                      Icons.access_time,
+                      size: 12,
+                      color: AppColors.textLight,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${course['timeRemaining'] ?? 0}m remaining',
@@ -280,7 +290,9 @@ class ContinueWatchingScreen extends StatelessWidget {
                 LinearProgressIndicator(
                   value: course['progress'] ?? 0.0,
                   backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryBlue,
+                  ),
                   minHeight: 4,
                   borderRadius: BorderRadius.circular(2),
                 ),
@@ -295,7 +307,11 @@ class ContinueWatchingScreen extends StatelessWidget {
               border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.play_arrow_outlined, color: AppColors.primaryBlue, size: 20),
+            child: const Icon(
+              Icons.play_arrow_outlined,
+              color: AppColors.primaryBlue,
+              size: 20,
+            ),
           ),
         ],
       ),

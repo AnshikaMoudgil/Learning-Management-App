@@ -44,7 +44,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _setupAuthListener() {
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      data,
+    ) async {
       final session = data.session;
       final event = data.event;
 
@@ -55,7 +57,8 @@ class _MyAppState extends State<MyApp> {
         return;
       }
 
-      if (event == AuthChangeEvent.initialSession || event == AuthChangeEvent.signedIn) {
+      if (event == AuthChangeEvent.initialSession ||
+          event == AuthChangeEvent.signedIn) {
         if (event == AuthChangeEvent.initialSession) {
           await Future.delayed(const Duration(milliseconds: 2500));
         }
@@ -64,24 +67,24 @@ class _MyAppState extends State<MyApp> {
           try {
             final profile = await profileService.validateSession(session);
 
-              if (profile == null) {
-                _navigateTo(RouteNames.createProfile);
-              } else if (!profile.onboardingCompleted) {
-                _navigateTo(RouteNames.createProfile);
-              } else {
-                try {
-                  await profileService.bindDevice(session.user.id);
-                } catch (e) {
-                  if (e.toString().contains('bound to another device')) {
-                    _navigateTo(RouteNames.deviceBlocked);
-                    return;
-                  }
+            if (profile == null) {
+              _navigateTo(RouteNames.createProfile);
+            } else if (!profile.onboardingCompleted) {
+              _navigateTo(RouteNames.createProfile);
+            } else {
+              try {
+                await profileService.bindDevice(session.user.id);
+              } catch (e) {
+                if (e.toString().contains('bound to another device')) {
+                  _navigateTo(RouteNames.deviceBlocked);
+                  return;
                 }
-                try {
-                  await profileService.updateLoginDetails(session.user.id);
-                } catch (_) {}
-                _navigateTo(RouteNames.home);
               }
+              try {
+                await profileService.updateLoginDetails(session.user.id);
+              } catch (_) {}
+              _navigateTo(RouteNames.home);
+            }
           } catch (e) {
             _showErrorAndLogout(e.toString());
           }
@@ -104,9 +107,13 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _showErrorAndLogout(String message) async {
-    final context = navigatorKey.currentContext ?? appRouter.routerDelegate.navigatorKey.currentContext;
+    final context =
+        navigatorKey.currentContext ??
+        appRouter.routerDelegate.navigatorKey.currentContext;
     if (mounted && context != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
     await authService.signOut();
     if (mounted) {

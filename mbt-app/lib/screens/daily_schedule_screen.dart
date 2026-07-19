@@ -21,11 +21,24 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('2 May 2025', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          '2 May 2025',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.calendar_month, color: AppColors.textDark), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.calendar_month, color: AppColors.textDark),
+            onPressed: () {},
+          ),
         ],
       ),
       body: Column(
@@ -52,8 +65,21 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: const [
-                    Text('Friday, 2 May 2025', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                    Text('2 Classes', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                    Text(
+                      'Friday, 2 May 2025',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    Text(
+                      '2 Classes',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -88,16 +114,36 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: const Icon(Icons.calendar_today, color: AppColors.primaryBlue, size: 20),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.calendar_today,
+                          color: AppColors.primaryBlue,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: const [
-                            Text('Can\'t attend live?', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                            Text('Watch the recording anytime after the class ends.', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                            Text(
+                              'Can\'t attend live?',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            Text(
+                              'Watch the recording anytime after the class ends.',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textLight,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -110,19 +156,27 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primaryBlue,
                           side: const BorderSide(color: AppColors.primaryBlue),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           minimumSize: const Size(0, 36),
                         ),
-                        child: const Text('Go to Recordings', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                      )
+                        child: const Text(
+                          'Go to Recordings',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 32),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -142,9 +196,22 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(dayStr, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : AppColors.textLight)),
+            Text(
+              dayStr,
+              style: TextStyle(
+                fontSize: 12,
+                color: isSelected ? Colors.white : AppColors.textLight,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(dateStr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : AppColors.textDark)),
+            Text(
+              dateStr,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : AppColors.textDark,
+              ),
+            ),
           ],
         ),
       ),
@@ -171,9 +238,22 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(startTime, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                Text(
+                  startTime,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(endTime, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                Text(
+                  endTime,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textLight,
+                  ),
+                ),
               ],
             ),
           ),
@@ -196,7 +276,10 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                         height: 90,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
+                          image: DecorationImage(
+                            image: AssetImage(image),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -204,28 +287,78 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(courseName, style: const TextStyle(fontSize: 9, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+                            Text(
+                              courseName,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                color: AppColors.primaryBlue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                              maxLines: 2,
+                            ),
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
+                                const CircleAvatar(
+                                  radius: 8,
+                                  backgroundImage: AssetImage('assets/1.png'),
+                                ),
                                 const SizedBox(width: 4),
-                                Text(author, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                                Text(
+                                  author,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textDark,
+                                  ),
+                                ),
                                 const SizedBox(width: 2),
-                                const Icon(Icons.verified, color: AppColors.primaryBlue, size: 10),
+                                const Icon(
+                                  Icons.verified,
+                                  color: AppColors.primaryBlue,
+                                  size: 10,
+                                ),
                               ],
                             ),
-                            const Text('Hardware Expert', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
+                            const Text(
+                              'Hardware Expert',
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: AppColors.textLight,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('Starts in', style: TextStyle(fontSize: 8, color: AppColors.textLight)),
-                          Text(startsIn, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isGreen ? Colors.green : AppColors.primaryBlue)),
+                          Text(
+                            'Starts in',
+                            style: TextStyle(
+                              fontSize: 8,
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                          Text(
+                            startsIn,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isGreen
+                                  ? Colors.green
+                                  : AppColors.primaryBlue,
+                            ),
+                          ),
                           const SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: () {
@@ -235,14 +368,25 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                               backgroundColor: AppColors.primaryBlue,
                               foregroundColor: Colors.white,
                               minimumSize: const Size(60, 28),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 0,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                              ),
                               elevation: 0,
                             ),
-                            child: const Text('Join Class', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              'Join Class',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -252,12 +396,24 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {},
-                        icon: const Icon(Icons.calendar_today, size: 14, color: AppColors.primaryBlue),
-                        label: const Text('Add to Calendar', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        icon: const Icon(
+                          Icons.calendar_today,
+                          size: 14,
+                          color: AppColors.primaryBlue,
+                        ),
+                        label: const Text(
+                          'Add to Calendar',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryBlue,
                           side: const BorderSide(color: AppColors.border),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           minimumSize: const Size(0, 36),
                         ),
                       ),
@@ -266,12 +422,24 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {},
-                        icon: const Icon(Icons.notifications_active_outlined, size: 14, color: AppColors.primaryBlue),
-                        label: const Text('Set Reminder', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        icon: const Icon(
+                          Icons.notifications_active_outlined,
+                          size: 14,
+                          color: AppColors.primaryBlue,
+                        ),
+                        label: const Text(
+                          'Set Reminder',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryBlue,
                           side: const BorderSide(color: AppColors.border),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           minimumSize: const Size(0, 36),
                         ),
                       ),

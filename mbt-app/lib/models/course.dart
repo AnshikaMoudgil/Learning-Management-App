@@ -90,29 +90,44 @@ class Course {
       id: json['id'] as String,
       title: (json['title'] ?? json['Title']) as String,
       slug: (json['slug'] ?? json['Slug']) as String,
-      shortDescription: (json['short_description'] ?? json['shortDescription']) as String?,
+      shortDescription:
+          (json['short_description'] ?? json['shortDescription']) as String?,
       description: (json['description'] ?? json['Description']) as String?,
       thumbnailUrl: (json['thumbnail_url'] ?? json['thumbnailUrl']) as String?,
-      previewVideoUrl: (json['preview_video_url'] ?? json['previewVideoUrl']) as String?,
+      previewVideoUrl:
+          (json['preview_video_url'] ?? json['previewVideoUrl']) as String?,
       language: (json['language'] ?? json['Language'] ?? 'English') as String,
       level: _parseLevel(json['level'] ?? json['Level']),
       category: (json['category'] ?? json['Category']) as String?,
       price: ((json['price'] ?? json['Price'] ?? 0) as num).toDouble(),
-      discountPrice: ((json['discount_price'] ?? json['discountPrice']) as num?)?.toDouble(),
+      discountPrice: ((json['discount_price'] ?? json['discountPrice']) as num?)
+          ?.toDouble(),
       validityDays: (json['validity_days'] ?? json['validityDays']) as int?,
-      estimatedDuration: (json['estimated_duration'] ?? json['estimatedDuration']) as String?,
-      isPublished: (json['is_published'] ?? json['isPublished'] ?? true) as bool,
+      estimatedDuration:
+          (json['estimated_duration'] ?? json['estimatedDuration']) as String?,
+      isPublished:
+          (json['is_published'] ?? json['isPublished'] ?? true) as bool,
       instructorId: (json['instructor_id'] ?? json['instructorId']) as String?,
-      instructorName: (json['instructor_name'] ?? json['instructorName']) as String?,
-      instructorAvatarUrl: (json['instructor_avatar_url'] ?? json['instructorAvatarUrl']) as String?,
-      instructorSpecialization: (json['instructor_specialization'] ?? json['instructorSpecialization']) as String?,
-      averageRating: ((json['average_rating'] ?? json['averageRating'] ?? 0) as num).toDouble(),
+      instructorName:
+          (json['instructor_name'] ?? json['instructorName']) as String?,
+      instructorAvatarUrl:
+          (json['instructor_avatar_url'] ?? json['instructorAvatarUrl'])
+              as String?,
+      instructorSpecialization:
+          (json['instructor_specialization'] ??
+                  json['instructorSpecialization'])
+              as String?,
+      averageRating:
+          ((json['average_rating'] ?? json['averageRating'] ?? 0) as num)
+              .toDouble(),
       reviewsCount: (json['reviews_count'] ?? json['reviewsCount'] ?? 0) as int,
-      isBestseller: (json['is_bestseller'] ?? json['isBestseller'] ?? false) as bool,
+      isBestseller:
+          (json['is_bestseller'] ?? json['isBestseller'] ?? false) as bool,
       totalLessons: (json['total_lessons'] ?? json['totalLessons'] ?? 0) as int,
-      learningOutcomes: (json['learning_outcomes'] ?? json['learningOutcomes'] ?? [])
-          .map<String>((e) => e as String)
-          .toList(),
+      learningOutcomes:
+          (json['learning_outcomes'] ?? json['learningOutcomes'] ?? [])
+              .map<String>((e) => e as String)
+              .toList(),
       requirements: (json['requirements'] ?? [])
           .map<String>((e) => e as String)
           .toList(),
@@ -120,7 +135,9 @@ class Course {
           .map((e) => CourseSection.fromJson(e as Map<String, dynamic>))
           .toList(),
       enrollment: json['enrollment'] is Map<String, dynamic>
-          ? CourseEnrollment.fromJson(json['enrollment'] as Map<String, dynamic>)
+          ? CourseEnrollment.fromJson(
+              json['enrollment'] as Map<String, dynamic>,
+            )
           : null,
       createdAt: _parseDate(json['created_at'] ?? json['createdAt']),
       updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']),
@@ -235,8 +252,10 @@ class CourseLesson {
       title: json['title'] as String,
       description: json['description'] as String?,
       videoUrl: (json['video_url'] ?? json['videoUrl']) as String?,
-      videoDuration: (json['video_duration'] ?? json['videoDuration']) as String?,
-      isFreePreview: (json['is_free_preview'] ?? json['isFreePreview'] ?? false) as bool,
+      videoDuration:
+          (json['video_duration'] ?? json['videoDuration']) as String?,
+      isFreePreview:
+          (json['is_free_preview'] ?? json['isFreePreview'] ?? false) as bool,
       sortOrder: (json['sort_order'] ?? json['sortOrder'] ?? 0) as int,
     );
   }
@@ -277,7 +296,8 @@ class CourseEnrollment {
       isEnrolled: json['isEnrolled'] as bool? ?? false,
       enrollmentId: json['enrollmentId'] as String?,
       status: json['status'] as String?,
-      progressPercent: (json['progressPercent'] ?? json['progress_percent'] ?? 0) as int,
+      progressPercent:
+          (json['progressPercent'] ?? json['progress_percent'] ?? 0) as int,
       validityEndAt: validity is String ? DateTime.parse(validity) : null,
     );
   }

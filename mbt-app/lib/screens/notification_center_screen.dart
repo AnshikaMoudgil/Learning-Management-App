@@ -20,8 +20,18 @@ class NotificationCenterScreen extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
-            Text('Notification Center', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-            Text('Stay updated with important alerts', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+            Text(
+              'Notification Center',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
+              ),
+            ),
+            Text(
+              'Stay updated with important alerts',
+              style: TextStyle(fontSize: 10, color: AppColors.textLight),
+            ),
           ],
         ),
         actions: [
@@ -32,15 +42,33 @@ class NotificationCenterScreen extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.only(top: 8),
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.lightBlueBg, borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.notifications_outlined, color: AppColors.textDark, size: 18),
+                decoration: BoxDecoration(
+                  color: AppColors.lightBlueBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.notifications_outlined,
+                  color: AppColors.textDark,
+                  size: 18,
+                ),
               ),
               Positioned(
-                right: 0, top: 4,
+                right: 0,
+                top: 4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold)),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text(
+                    '3',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 7,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -63,7 +91,11 @@ class NotificationCenterScreen extends StatelessWidget {
                   _buildFilterChip('Expiry', false, icon: Icons.access_time),
                   _buildFilterChip('Payment', false, icon: Icons.payment),
                   _buildFilterChip('Device', false, icon: Icons.devices),
-                  _buildFilterChip('Announcements', false, icon: Icons.campaign),
+                  _buildFilterChip(
+                    'Announcements',
+                    false,
+                    icon: Icons.campaign,
+                  ),
                 ],
               ),
             ),
@@ -77,7 +109,14 @@ class NotificationCenterScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Today
-                  const Text('Today', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  const Text(
+                    'Today',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   _buildNotification(
                     icon: Icons.videocam_outlined,
@@ -87,7 +126,8 @@ class NotificationCenterScreen extends StatelessWidget {
                     badge: 'Live Class',
                     badgeBg: const Color(0xFFE3F2FD),
                     badgeColor: AppColors.primaryBlue,
-                    description: '"React for Beginners" class will start in 15 minutes.',
+                    description:
+                        '"React for Beginners" class will start in 15 minutes.',
                     meta: 'Today, 10:00 AM',
                     metaIcon: Icons.calendar_today_outlined,
                     time: '9:45 AM',
@@ -101,7 +141,8 @@ class NotificationCenterScreen extends StatelessWidget {
                     badge: 'Expiry',
                     badgeBg: const Color(0xFFFFF3E0),
                     badgeColor: const Color(0xFFFF9800),
-                    description: '"UI/UX Design Fundamentals" will expire in 3 days.',
+                    description:
+                        '"UI/UX Design Fundamentals" will expire in 3 days.',
                     meta: 'Expires on 5 Jun 2024',
                     metaIcon: Icons.calendar_today_outlined,
                     time: '9:10 AM',
@@ -115,7 +156,8 @@ class NotificationCenterScreen extends StatelessWidget {
                     badge: 'Payment',
                     badgeBg: const Color(0xFFE8F5E9),
                     badgeColor: const Color(0xFF43A047),
-                    description: 'Your payment of ₹1,499 for "Mobile Repair Mastery"\nwas successful.',
+                    description:
+                        'Your payment of ₹1,499 for "Mobile Repair Mastery"\nwas successful.',
                     meta: 'Order ID: #ORD-2024-1287',
                     metaIcon: Icons.receipt_outlined,
                     time: '8:30 AM',
@@ -143,7 +185,8 @@ class NotificationCenterScreen extends StatelessWidget {
                     badge: 'Announcements',
                     badgeBg: const Color(0xFFF3E5F5),
                     badgeColor: const Color(0xFF7B1FA2),
-                    description: 'New course "Advanced Micro Soldering" is now\navailable. Enroll now!',
+                    description:
+                        'New course "Advanced Micro Soldering" is now\navailable. Enroll now!',
                     meta: null,
                     metaIcon: null,
                     time: '7:20 AM',
@@ -152,7 +195,14 @@ class NotificationCenterScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Yesterday
-                  const Text('Yesterday', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  const Text(
+                    'Yesterday',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   _buildNotification(
                     icon: Icons.access_time,
@@ -190,7 +240,8 @@ class NotificationCenterScreen extends StatelessWidget {
                     badge: 'Payment',
                     badgeBg: const Color(0xFFE8F5E9),
                     badgeColor: const Color(0xFF43A047),
-                    description: 'Your refund of ₹999 for "Drone Technology Basics"\nhas been processed.',
+                    description:
+                        'Your refund of ₹999 for "Drone Technology Basics"\nhas been processed.',
                     meta: 'Refund ID: #RFND-2024-0891',
                     metaIcon: Icons.receipt_outlined,
                     time: 'Yesterday, 2:40 PM',
@@ -201,28 +252,53 @@ class NotificationCenterScreen extends StatelessWidget {
 
                   // Enable push
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.lightBlueBg,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, size: 16, color: AppColors.primaryBlue),
+                        const Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: AppColors.primaryBlue,
+                        ),
                         const SizedBox(width: 8),
                         const Expanded(
-                          child: Text('Enable push notifications to never miss an important update.', style: TextStyle(fontSize: 11, color: AppColors.textDark)),
+                          child: Text(
+                            'Enable push notifications to never miss an important update.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textDark,
+                            ),
+                          ),
                         ),
                         ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             minimumSize: Size.zero,
                             elevation: 0,
                           ),
-                          child: const Text('Enable Now', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                          child: const Text(
+                            'Enable Now',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -245,16 +321,29 @@ class NotificationCenterScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryBlue : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? AppColors.primaryBlue : AppColors.border),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryBlue : AppColors.border,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 14, color: isSelected ? Colors.white : AppColors.textLight),
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? Colors.white : AppColors.textLight,
+              ),
               const SizedBox(width: 4),
             ],
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : AppColors.textDark)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : AppColors.textDark,
+              ),
+            ),
           ],
         ),
       ),
@@ -288,7 +377,10 @@ class NotificationCenterScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 12),
@@ -302,13 +394,34 @@ class NotificationCenterScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Flexible(
-                            child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(4)),
-                            child: Text(badge, style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: badgeColor)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: badgeBg,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              badge,
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                                color: badgeColor,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -316,7 +429,14 @@ class NotificationCenterScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(description, style: const TextStyle(fontSize: 11, color: AppColors.textLight, height: 1.3)),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textLight,
+                    height: 1.3,
+                  ),
+                ),
                 if (meta != null) ...[
                   const SizedBox(height: 4),
                   Row(
@@ -325,7 +445,13 @@ class NotificationCenterScreen extends StatelessWidget {
                         Icon(metaIcon, size: 10, color: AppColors.textLight),
                         const SizedBox(width: 4),
                       ],
-                      Text(meta, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                      Text(
+                        meta,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textLight,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -336,12 +462,18 @@ class NotificationCenterScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(time, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
+              Text(
+                time,
+                style: const TextStyle(fontSize: 9, color: AppColors.textLight),
+              ),
               const SizedBox(height: 6),
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
               ),
             ],
           ),

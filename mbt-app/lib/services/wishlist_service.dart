@@ -35,7 +35,9 @@ class WishlistItem {
       title: course['title'] as String? ?? 'Unknown',
       instructorName: profile['full_name'] as String?,
       price: ((course['price'] ?? 0) as num).toDouble(),
-      discountPrice: course['discount_price'] != null ? (course['discount_price'] as num).toDouble() : null,
+      discountPrice: course['discount_price'] != null
+          ? (course['discount_price'] as num).toDouble()
+          : null,
       thumbnailUrl: course['thumbnail_url'] as String?,
       category: course['category'] as String?,
       isPremium: course['is_premium'] as bool? ?? false,
@@ -51,7 +53,8 @@ class WishlistResponse {
 
   factory WishlistResponse.fromJson(Map<String, dynamic> json) {
     return WishlistResponse(
-      items: (json['items'] as List?)
+      items:
+          (json['items'] as List?)
               ?.map((e) => WishlistItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],

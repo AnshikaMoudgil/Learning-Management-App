@@ -33,8 +33,18 @@ class WavePainter extends CustomPainter {
 
     var path1 = Path();
     path1.moveTo(0, size.height * 0.6);
-    path1.quadraticBezierTo(size.width * 0.25, size.height * 0.3, size.width * 0.5, size.height * 0.6);
-    path1.quadraticBezierTo(size.width * 0.75, size.height * 0.9, size.width, size.height * 0.5);
+    path1.quadraticBezierTo(
+      size.width * 0.25,
+      size.height * 0.3,
+      size.width * 0.5,
+      size.height * 0.6,
+    );
+    path1.quadraticBezierTo(
+      size.width * 0.75,
+      size.height * 0.9,
+      size.width,
+      size.height * 0.5,
+    );
     path1.lineTo(size.width, size.height);
     path1.lineTo(0, size.height);
     path1.close();
@@ -48,12 +58,22 @@ class WavePainter extends CustomPainter {
 
     var path2 = Path();
     path2.moveTo(0, size.height * 0.8);
-    path2.quadraticBezierTo(size.width * 0.3, size.height * 0.5, size.width * 0.6, size.height * 0.8);
-    path2.quadraticBezierTo(size.width * 0.8, size.height * 1.0, size.width, size.height * 0.6);
+    path2.quadraticBezierTo(
+      size.width * 0.3,
+      size.height * 0.5,
+      size.width * 0.6,
+      size.height * 0.8,
+    );
+    path2.quadraticBezierTo(
+      size.width * 0.8,
+      size.height * 1.0,
+      size.width,
+      size.height * 0.6,
+    );
     path2.lineTo(size.width, size.height);
     path2.lineTo(0, size.height);
     path2.close();
-    
+
     canvas.drawPath(path2, paint2);
   }
 
