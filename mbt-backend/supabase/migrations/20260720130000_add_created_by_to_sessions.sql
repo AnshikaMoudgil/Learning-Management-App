@@ -23,5 +23,6 @@ WHERE s.course_id = c.id
   AND c.instructor_id IS NOT NULL
   AND s.instructor_id IS DISTINCT FROM c.instructor_id;
 
--- Make created_by NOT NULL after backfill
-ALTER TABLE public.sessions ALTER COLUMN created_by SET NOT NULL;
+-- Note: NOT NULL is intentionally NOT set here.
+-- created_by uses ON DELETE SET NULL so session data survives profile deletion.
+-- The backfill above ensures all existing rows have a value.

@@ -12,6 +12,7 @@ export type NotificationType =
   | 'session_live'
   | 'payment_confirmation'
   | 'expiry_alert'
+  | 'expiry_expired'
   | 'device_login'
   | 'announcement';
 

@@ -150,13 +150,13 @@ export class ExpiryNotificationService implements OnModuleInit {
       const alreadyNotified =
         await this.notificationsService.wasNotifiedRecently(
           userId,
-          'expiry_alert',
+          'expiry_expired',
         );
       if (alreadyNotified) continue;
 
       const courseList = courses.map((c) => c.title).join(', ');
       await this.notificationsService.notify(userId, {
-        type: 'expiry_alert',
+        type: 'expiry_expired',
         title: 'Course Expired',
         body: `"${courseList}" has expired. Renew your access to continue learning.`,
         data: { course_ids: courses.map((c) => c.course_id).join(',') },

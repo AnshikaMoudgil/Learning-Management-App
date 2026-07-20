@@ -144,7 +144,10 @@ export default function NewCoursePage() {
 
     // Validate dimensions
     const dims = await validateImageDimensions(file);
-    if (!dims) return;
+    if (!dims) {
+      toast.error('Failed to read image dimensions.');
+      return;
+    }
 
     const { width, height } = dims;
     const MIN_W = 1280;
