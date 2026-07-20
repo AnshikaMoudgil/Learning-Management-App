@@ -11,6 +11,6 @@ export interface StorageProvider {
 
   exists(fileKey: string): Promise<boolean>;
 
-  getSignedUrl(fileKey: string): Promise<string>;
+  getSignedUrl(fileKey: string, expiresInSeconds?: number): Promise<string>;
 }
 export const STORAGE_PROVIDER_TOKEN = 'STORAGE_PROVIDER_TOKEN';

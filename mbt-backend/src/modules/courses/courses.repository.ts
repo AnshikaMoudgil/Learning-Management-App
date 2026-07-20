@@ -171,7 +171,7 @@ export class CoursesRepository {
     const { data, error } = await this.db
       .from('course_lessons')
       .select(
-        'id, section_id, course_id, title, description, video_url, video_duration, is_free_preview, sort_order',
+        'id, section_id, course_id, title, description, video_asset_id, video_url, video_duration, is_free_preview, sort_order, media_assets!video_asset_id(id, storage_url, duration, thumbnail_url, status)',
       )
       .eq('course_id', courseId)
       .order('sort_order', { ascending: true });
@@ -180,7 +180,26 @@ export class CoursesRepository {
       throw new BadRequestException(error.message);
     }
 
-    return (data ?? []) as CourseLesson[];
+    return ((data as Record<string, unknown>[]) ?? []).map((row) => {
+      const asset = row.media_assets as {
+        storage_url?: string | null;
+        duration?: number | null;
+        thumbnail_url?: string | null;
+        status?: string | null;
+      } | null;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { media_assets, ...lesson } = row;
+      return {
+        ...(lesson as unknown as CourseLesson),
+        video_url: asset?.storage_url ?? (row.video_url as string | null),
+        video_duration:
+          asset?.duration != null
+            ? String(asset.duration)
+            : (row.video_duration as string | null),
+        video_status: asset?.status ?? null,
+        thumbnail_url: asset?.thumbnail_url ?? null,
+      };
+    });
   }
 
   private async findActiveEnrollment(courseId: string, userId: string) {

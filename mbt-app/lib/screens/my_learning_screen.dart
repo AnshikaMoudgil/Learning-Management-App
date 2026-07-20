@@ -210,8 +210,9 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
       itemCount: enrollments.length,
       itemBuilder: (context, index) {
         final item = enrollments[index];
-        final statusColor = item.status == 'active' ? AppColors.primaryBlue : Colors.grey;
-        final statusText = item.status == 'active' ? 'In Progress' : item.status.toUpperCase();
+        final isCompleted = item.progressPercent >= 100;
+        final statusColor = isCompleted ? Colors.green : AppColors.primaryBlue;
+        final statusText = isCompleted ? 'Completed' : 'In Progress';
 
         return _buildGridCard(
           enrollment: item,

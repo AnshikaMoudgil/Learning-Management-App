@@ -1,8 +1,9 @@
 ﻿'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
+import { uploadVideo, createDirectUrlAsset } from '@/app/lib/backendApi';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import {
@@ -18,6 +19,11 @@ import {
   BookOpen,
   PlayCircle,
   Eye,
+  Upload,
+  Clock,
+  AlertCircle,
+  RefreshCw,
+  Video,
 } from 'lucide-react';
 
 interface Lesson {
@@ -30,6 +36,8 @@ interface Lesson {
   video_duration: string | null;
   is_free_preview: boolean;
   sort_order: number;
+  video_asset_id: string | null;
+  video_status: string | null;
 }
 
 interface Section {
@@ -63,6 +71,110 @@ function InlineInput({
   );
 }
 
+function StatusBadge({ status }: { status: string | null }) {
+  if (!status) {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-400 border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 rounded-full">
+        <Clock className="h-3 w-3 animate-pulse" /> PENDING
+      </span>
+    );
+  }
+  if (status === 'READY') {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+        <Video className="h-3 w-3" /> Video
+      </span>
+    );
+  }
+  if (status === 'PENDING' || status === 'UPLOADING' || status === 'PROCESSING') {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-400 border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 rounded-full">
+        <Clock className="h-3 w-3 animate-pulse" /> {status}
+      </span>
+    );
+  }
+  if (status === 'FAILED') {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-rose-400 border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 rounded-full">
+        <AlertCircle className="h-3 w-3" /> Failed
+      </span>
+    );
+  }
+  return null;
+}
+
+function VideoUploadButton({
+  lessonId,
+  onStatusChange,
+  isUploading,
+  setIsUploading,
+}: {
+  lessonId: string;
+  onStatusChange: (assetId: string, status: string) => void;
+  isUploading: boolean;
+  setIsUploading: (v: boolean) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [progress, setProgress] = useState(0);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProgress(0);
+    setIsUploading(true);
+    try {
+      const result = (await uploadVideo(file, lessonId, setProgress)) as {
+        asset?: { id: string; status: string };
+        duplicate?: boolean;
+      };
+      if (result.asset) {
+        onStatusChange(result.asset.id, result.asset.status);
+      }
+      toast.success('Video uploaded');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
+        onChange={handleFile}
+        className="hidden"
+      />
+      {isUploading ? (
+        <div className="flex flex-col gap-1 w-full">
+          <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+            <span className="font-medium">Uploading {progress}%</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-zinc-800 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-teal-400 hover:border-teal-500/40 transition cursor-pointer"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Upload Video
+        </button>
+      )}
+    </>
+  );
+}
+
 function LessonRow({
   lesson,
   onUpdate,
@@ -76,6 +188,7 @@ function LessonRow({
   const [draft, setDraft] = useState<Lesson>({ ...lesson, is_free_preview: Boolean(lesson.is_free_preview) });
   const [isSaving, setIsSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSave = async () => {
     if (!draft.title.trim()) { toast.error('Lesson title is required.'); return; }
@@ -113,6 +226,10 @@ function LessonRow({
     }
   };
 
+  const handleUploadStatus = (assetId: string, status: string) => {
+    onUpdate({ ...lesson, video_asset_id: assetId, video_status: status });
+  };
+
   if (isEditing) {
     return (
       <div className="rounded-xl border border-teal-500/30 bg-zinc-900/60 p-4 space-y-3">
@@ -131,13 +248,21 @@ function LessonRow({
           />
           Free Preview
         </label>
-        <div className="flex gap-2 justify-end">
-          <button type="button" onClick={() => { setDraft(lesson); setIsEditing(false); }} className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition cursor-pointer">
-            <X className="h-3.5 w-3.5" /> Cancel
-          </button>
-          <button type="button" onClick={handleSave} disabled={isSaving} className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-500 transition disabled:opacity-50 cursor-pointer">
-            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Save
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <VideoUploadButton
+            lessonId={lesson.id}
+            onStatusChange={handleUploadStatus}
+            isUploading={isUploading}
+            setIsUploading={setIsUploading}
+          />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { setDraft(lesson); setIsEditing(false); }} className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition cursor-pointer">
+              <X className="h-3.5 w-3.5" /> Cancel
+            </button>
+            <button type="button" onClick={handleSave} disabled={isSaving} className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-500 transition disabled:opacity-50 cursor-pointer">
+              {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Save
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -152,6 +277,13 @@ function LessonRow({
           <span className="text-sm font-medium text-zinc-200 truncate block">{lesson.title}</span>
           {lesson.video_duration && <span className="text-xs text-zinc-500">{lesson.video_duration}</span>}
         </div>
+        {lesson.video_status != null || lesson.video_asset_id != null ? (
+          <StatusBadge status={lesson.video_status} />
+        ) : lesson.video_url ? (
+          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-blue-400 border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 rounded-full">
+            <Video className="h-3 w-3" /> External
+          </span>
+        ) : null}
         {lesson.is_free_preview && (
           <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 rounded-full">
             <Eye className="h-3 w-3" /> Free
@@ -198,12 +330,15 @@ function AddLessonForm({
   const [description, setDescription] = useState('');
   const [isFreePreview, setIsFreePreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = async () => {
     if (!title.trim()) { toast.error('Lesson title is required.'); return; }
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('course_lessons')
         .insert({
           section_id: sectionId,
@@ -214,24 +349,91 @@ function AddLessonForm({
           video_duration: videoDuration.trim() || null,
           is_free_preview: Boolean(isFreePreview),
           sort_order: nextOrder,
-        });
+        })
+        .select()
+        .single();
       if (error) throw error;
+
+      let videoAssetId: string | null = null;
+      let videoStatus: string | null = null;
+      const trimmedUrl = videoUrl.trim();
+
+      if (trimmedUrl) {
+        const result = (await createDirectUrlAsset(trimmedUrl, data.id)) as {
+          asset?: { id: string; status: string };
+          duplicate?: boolean;
+        };
+        videoAssetId = result.asset?.id ?? null;
+        videoStatus = result.asset?.status ?? null;
+      }
+
       onAdded({
-        id: crypto.randomUUID(),
-        section_id: sectionId,
-        course_id: courseId,
-        title: title.trim(),
-        description: description.trim() || null,
-        video_url: videoUrl.trim() || null,
-        video_duration: videoDuration.trim() || null,
-        is_free_preview: Boolean(isFreePreview),
-        sort_order: nextOrder,
-      });
+        ...data,
+        is_free_preview: Boolean(data.is_free_preview),
+        video_asset_id: videoAssetId,
+        video_status: videoStatus,
+      } as Lesson);
       toast.success('Lesson added.');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to add lesson.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !title.trim()) {
+      if (!title.trim()) toast.error('Add a title first, then upload the video.');
+      return;
+    }
+    setUploadProgress(0);
+    setIsUploading(true);
+    let createdLessonId: string | null = null;
+    try {
+      const { data: lessonData, error: lessonError } = await supabase
+        .from('course_lessons')
+        .insert({
+          section_id: sectionId,
+          course_id: courseId,
+          title: title.trim(),
+          description: description.trim() || null,
+          is_free_preview: Boolean(isFreePreview),
+          sort_order: nextOrder,
+        })
+        .select()
+        .single();
+      if (lessonError) throw lessonError;
+      createdLessonId = lessonData.id;
+
+      const result = (await uploadVideo(file, lessonData.id, setUploadProgress)) as {
+        asset?: { id: string; status: string };
+        duplicate?: boolean;
+      };
+
+      const newLesson = {
+        ...lessonData,
+        is_free_preview: Boolean(lessonData.is_free_preview),
+        video_asset_id: result.asset?.id ?? null,
+        video_status: result.asset?.status ?? null,
+        video_url: null,
+        video_duration: null,
+      } as Lesson;
+
+      onAdded(newLesson);
+      toast.success('Lesson added with video.');
+    } catch (err: unknown) {
+      if (createdLessonId) {
+        await supabase
+          .from('course_lessons')
+          .delete()
+          .eq('id', createdLessonId)
+          .then(() => undefined);
+      }
+      toast.error(err instanceof Error ? err.message : 'Failed to add lesson with video.');
+    } finally {
+      setIsUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
     }
   };
 
@@ -247,13 +449,45 @@ function AddLessonForm({
         <input type="checkbox" checked={isFreePreview} onChange={(e) => setIsFreePreview(e.target.checked)} className="h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-teal-500 focus:ring-teal-500/20 focus:ring-offset-0 focus:ring-2" />
         Free Preview
       </label>
-      <div className="flex gap-2 justify-end">
-        <button type="button" onClick={onCancel} className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition cursor-pointer">
-          <X className="h-3.5 w-3.5" /> Cancel
-        </button>
-        <button type="button" onClick={handleAdd} disabled={isSaving} className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-500 transition disabled:opacity-50 cursor-pointer">
-          {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Add Lesson
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+        {isUploading ? (
+          <div className="flex flex-col gap-1 w-full">
+            <div className="flex items-center gap-2 text-xs text-zinc-400">
+              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+              <span className="font-medium">Uploading {uploadProgress}%</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-zinc-800 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-teal-400 hover:border-teal-500/40 transition cursor-pointer"
+          >
+            <Video className="h-3.5 w-3.5" />
+            Upload Video File
+          </button>
+        )}
+        <div className="flex gap-2">
+          <button type="button" onClick={onCancel} className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition cursor-pointer">
+            <X className="h-3.5 w-3.5" /> Cancel
+          </button>
+          <button type="button" onClick={handleAdd} disabled={isSaving} className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-500 transition disabled:opacity-50 cursor-pointer">
+            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Add Lesson
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -416,11 +650,36 @@ export default function SyllabusPage() {
       const { data: lessonsData, error: lessonsError } = await supabase.from('course_lessons').select('*').eq('course_id', courseId).order('sort_order', { ascending: true });
       if (lessonsError) throw lessonsError;
 
+      const assetIds = (lessonsData || [])
+        .map((l) => (l as Record<string, unknown>).video_asset_id as string | null)
+        .filter(Boolean) as string[];
+
+      let assetStatusMap: Record<string, string> = {};
+      if (assetIds.length > 0) {
+        const { data: assets } = await supabase
+          .from('media_assets')
+          .select('id, status')
+          .in('id', assetIds);
+        if (assets) {
+          assetStatusMap = Object.fromEntries(
+            (assets as { id: string; status: string }[]).map((a) => [a.id, a.status]),
+          );
+        }
+      }
+
       const sectionsWithLessons: Section[] = (sectionsData || []).map((s) => ({
         ...s,
-        lessons: (lessonsData || []).filter((l) => l.section_id === s.id),
+        lessons: (lessonsData || [])
+          .filter((l) => l.section_id === s.id)
+          .map((l) => ({
+            ...l,
+            is_free_preview: Boolean(l.is_free_preview),
+            video_status: (l as Record<string, unknown>).video_asset_id
+              ? assetStatusMap[(l as Record<string, unknown>).video_asset_id as string] ?? null
+              : null,
+          })),
       }));
-      setSections(sectionsWithLessons);
+      setSections(sectionsWithLessons as unknown as Section[]);
     } catch {
       toast.error('Failed to load syllabus.');
     } finally {
@@ -475,12 +734,21 @@ export default function SyllabusPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Syllabus</h1>
-        <p className="text-zinc-400 text-sm mt-1">
-          <span className="text-teal-400 font-semibold">{courseTitle}</span>
-          {' '}— {sections.length} section{sections.length !== 1 ? 's' : ''}, {totalLessons} lesson{totalLessons !== 1 ? 's' : ''}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Syllabus</h1>
+          <p className="text-zinc-400 text-sm mt-1">
+            <span className="text-teal-400 font-semibold">{courseTitle}</span>
+            {' '}— {sections.length} section{sections.length !== 1 ? 's' : ''}, {totalLessons} lesson{totalLessons !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={fetchSyllabus}
+          className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> Refresh
+        </button>
       </div>
 
       <div className="space-y-4">

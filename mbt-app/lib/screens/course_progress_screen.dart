@@ -524,11 +524,10 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
               ],
             ),
           ),
-          if (lesson.videoUrl != null)
-            IconButton(
-              icon: const Icon(Icons.play_arrow, color: AppColors.primaryBlue),
-              onPressed: () => context.push('/recorded-player?url=${Uri.encodeComponent(lesson.videoUrl!)}'),
-            ),
+          IconButton(
+            icon: const Icon(Icons.play_arrow, color: AppColors.primaryBlue),
+            onPressed: () => context.push('/recorded-player?lessonId=${lesson.id}&courseId=${widget.courseId}'),
+          ),
         ],
       ),
     );
@@ -596,6 +595,9 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
   Widget _buildLiveClassesTab(MyCourseContent content) {
     final filtered = content.allLiveClasses.where((item) {
       if (_liveFilter == 'All') return true;
+      if (_liveFilter == 'Upcoming') {
+        return item.status == 'scheduled' && item.startTime.isAfter(DateTime.now());
+      }
       return item.status.toLowerCase() == _liveFilter.toLowerCase();
     }).toList();
 
