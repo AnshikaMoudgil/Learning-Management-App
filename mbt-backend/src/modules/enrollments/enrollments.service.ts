@@ -109,14 +109,34 @@ export class EnrollmentsService {
       throw new BadRequestException(countError.message);
     }
 
-    const countMap = new Map<string, number>();
+    const totalMap = new Map<string, number>();
     for (const lesson of (lessonCounts as unknown as LessonCountRow[]) ?? []) {
-      countMap.set(lesson.course_id, (countMap.get(lesson.course_id) ?? 0) + 1);
+      totalMap.set(lesson.course_id, (totalMap.get(lesson.course_id) ?? 0) + 1);
+    }
+
+    const { data: completedData, error: completedError } = await this.db
+      .from('user_lesson_progress')
+      .select('course_id')
+      .eq('user_id', userId)
+      .eq('is_completed', true)
+      .in('course_id', courseIds);
+
+    if (completedError) {
+      throw new BadRequestException(completedError.message);
+    }
+
+    const completedMap = new Map<string, number>();
+    for (const lp of (completedData as { course_id: string }[]) ?? []) {
+      completedMap.set(lp.course_id, (completedMap.get(lp.course_id) ?? 0) + 1);
     }
 
     return rows.map((row) => {
       const course = row.courses;
       const instructorName = course?.profiles?.full_name ?? null;
+      const total = totalMap.get(row.course_id) ?? 0;
+      const completed = completedMap.get(row.course_id) ?? 0;
+      const liveProgress =
+        total > 0 ? Math.round((completed / total) * 100) : 0;
 
       return {
         enrollment_id: row.id,
@@ -124,10 +144,10 @@ export class EnrollmentsService {
         title: course?.title ?? null,
         thumbnail_url: course?.thumbnail_url ?? null,
         instructor_name: instructorName,
-        progress_percent: row.progress_percent,
+        progress_percent: liveProgress,
         status: row.status,
         validity_end_at: row.validity_end_at,
-        total_lessons: countMap.get(row.course_id) ?? 0,
+        total_lessons: total,
         estimated_duration: course?.estimated_duration ?? null,
         enrolled_at: row.enrolled_at,
       };

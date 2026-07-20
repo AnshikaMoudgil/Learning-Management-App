@@ -47,8 +47,11 @@ export interface CourseLesson {
   course_id: string;
   title: string;
   description: string | null;
+  video_asset_id?: string | null;
   video_url?: string | null;
   video_duration: string | null;
+  video_status?: string | null;
+  thumbnail_url?: string | null;
   is_free_preview: boolean;
   sort_order: number;
 }

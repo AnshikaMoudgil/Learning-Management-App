@@ -44,6 +44,22 @@ export class CloudinaryStorageService implements StorageProvider {
             url: result.secure_url,
             size: result.bytes || file.length,
             mimeType,
+            duration:
+              typeof result.duration === 'number' ? result.duration : null,
+            width: typeof result.width === 'number' ? result.width : null,
+            height: typeof result.height === 'number' ? result.height : null,
+            bitrate:
+              typeof result.bit_rate === 'number' ? result.bit_rate : null,
+            codec:
+              typeof (result.video as { codec?: string } | undefined)?.codec ===
+              'string'
+                ? (result.video as { codec?: string }).codec
+                : null,
+            thumbnailUrl: cloudinary.url(result.public_id, {
+              secure: true,
+              resource_type: 'video',
+              format: 'jpg',
+            }),
           });
         },
       );
@@ -96,11 +112,12 @@ export class CloudinaryStorageService implements StorageProvider {
     }
   }
 
-  getSignedUrl(fileKey: string): Promise<string> {
+  getSignedUrl(fileKey: string, expiresInSeconds = 60): Promise<string> {
     const url = cloudinary.url(fileKey, {
       secure: true,
       resource_type: 'video',
       sign_url: true,
+      expires_at: Math.floor(Date.now() / 1000) + expiresInSeconds,
     });
     return Promise.resolve(url);
   }

@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
 import '../services/profile_service.dart';
+import '../services/notification_service.dart';
+import '../services/sessions_service.dart';
+import '../services/enrollments_service.dart';
+import '../services/my_course_service.dart';
 import '../models/profile.dart';
+import '../models/session.dart';
 import 'my_courses_screen.dart';
 import 'live_classes_screen.dart';
 import 'recent_recordings_screen.dart';
@@ -24,18 +29,77 @@ class _HomeDashboardState extends State<HomeDashboard> {
   int _bannerIndex = 0;
   final PageController _pageController = PageController();
   final ProfileService _profileService = ProfileService();
+  final NotificationService _notificationService = NotificationService();
+  final SessionsService _sessionsService = SessionsService();
+  final EnrollmentsService _enrollmentsService = EnrollmentsService();
+  final MyCourseService _myCourseService = MyCourseService();
+
   Profile? _profile;
+  int _unreadNotifications = 0;
+  List<LiveSession> _upcomingSessions = [];
+  List<EnrollmentItem> _enrollments = [];
+  List<ContinueWatchingItem> _continueWatching = [];
+  List<AppNotification> _notifications = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    if (mounted) setState(() => _isLoading = true);
+    try {
+      await Future.wait([
+        _loadProfile(),
+        _loadNotifications(),
+        _loadUpcomingSessions(),
+        _loadEnrollments(),
+        _loadContinueWatching(),
+      ]);
+    } catch (_) {}
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _loadProfile() async {
     try {
       final profile = await _profileService.getProfile();
       if (mounted) setState(() => _profile = profile);
+    } catch (_) {}
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final count = await _notificationService.getUnreadCount();
+      final list = await _notificationService.getNotifications(limit: 2);
+      if (mounted) {
+        setState(() {
+          _unreadNotifications = count;
+          _notifications = list;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadUpcomingSessions() async {
+    try {
+      final list = await _sessionsService.getUpcoming();
+      if (mounted) setState(() => _upcomingSessions = list);
+    } catch (_) {}
+  }
+
+  Future<void> _loadEnrollments() async {
+    try {
+      final list = await _enrollmentsService.getMyEnrollments();
+      if (mounted) setState(() => _enrollments = list);
+    } catch (_) {}
+  }
+
+  Future<void> _loadContinueWatching() async {
+    try {
+      final list = await _myCourseService.getContinueWatching();
+      if (mounted) setState(() => _continueWatching = list);
     } catch (_) {}
   }
 
@@ -82,16 +146,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     Stack(
                       children: [
                         IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                            child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
-                          ),
-                        )
+                        if (_unreadNotifications > 0)
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                              child: Text('$_unreadNotifications', style: const TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
+                            ),
+                          )
                       ],
                     ),
                     IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
@@ -105,42 +170,65 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 child: PageView(
                   controller: _pageController,
                   onPageChanged: (index) => setState(() => _bannerIndex = index),
-                  children: [
-                    _buildBanner(
-                      color: const Color(0xFF0038FF),
-                      tagText: 'LIVE',
-                      tagTitle: 'Upcoming Live Class',
-                      title: 'iPhone Hardware Basics',
-                      subtitle: 'by MBT Faculty',
-                      image: 'assets/iphone_hardware.png',
-                      isLive: true,
-                    ),
-                    _buildBanner(
-                      color: const Color(0xFF1B4332),
-                      tagText: 'NEW',
-                      tagTitle: 'Featured Course',
-                      title: 'Advanced Soldering',
-                      subtitle: 'by MBT Faculty',
-                      image: 'assets/android_hardware.png',
-                      isLive: false,
-                    ),
-                    _buildBanner(
-                      color: const Color(0xFF3B1E54),
-                      tagText: 'OFFER',
-                      tagTitle: 'Limited Time',
-                      title: 'Get Flat 25% OFF',
-                      subtitle: 'Code: LEARN25',
-                      image: 'assets/iphone_software.png',
-                      isLive: false,
-                    ),
-                  ],
+                  children: _upcomingSessions.isEmpty
+                      ? [
+                          _buildBanner(
+                            color: const Color(0xFF0038FF),
+                            tagText: 'LIVE',
+                            tagTitle: 'Upcoming Live Class',
+                            title: 'iPhone Hardware Basics',
+                            subtitle: 'by MBT Faculty',
+                            image: 'assets/iphone_hardware.png',
+                            isLive: true,
+                            timeText: 'Today, 07:00 PM',
+                            durationText: '60 min',
+                          ),
+                          _buildBanner(
+                            color: const Color(0xFF1B4332),
+                            tagText: 'NEW',
+                            tagTitle: 'Featured Course',
+                            title: 'Advanced Soldering',
+                            subtitle: 'by MBT Faculty',
+                            image: 'assets/android_hardware.png',
+                            isLive: false,
+                            timeText: 'Coming Soon',
+                            durationText: '120 min',
+                          ),
+                          _buildBanner(
+                            color: const Color(0xFF3B1E54),
+                            tagText: 'OFFER',
+                            tagTitle: 'Limited Time',
+                            title: 'Get Flat 25% OFF',
+                            subtitle: 'Code: LEARN25',
+                            image: 'assets/iphone_software.png',
+                            isLive: false,
+                            timeText: 'Today, 07:00 PM',
+                            durationText: '60 min',
+                          ),
+                        ]
+                      : _upcomingSessions.map((session) {
+                          return _buildBanner(
+                            color: session.status == 'live' ? const Color(0xFF0038FF) : const Color(0xFF1B4332),
+                            tagText: session.status == 'live' ? 'LIVE' : 'UPCOMING',
+                            tagTitle: session.status == 'live' ? 'Ongoing Live Class' : 'Upcoming Live Class',
+                            title: session.title,
+                            subtitle: 'by ${session.instructorName ?? "MBT Faculty"}',
+                            image: session.courseImageUrl ?? 'assets/iphone_hardware.png',
+                            isLive: session.status == 'live',
+                            timeText: session.startTime.toLocal().toString().substring(0, 16),
+                            durationText: '${session.duration} min',
+                            onJoin: () {
+                              context.push('/live-player');
+                            },
+                          );
+                        }).toList(),
                 ),
               ),
               const SizedBox(height: 8),
               // Dot indicators
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (index) {
+                children: List.generate(_upcomingSessions.isEmpty ? 3 : _upcomingSessions.length, (index) {
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: _bannerIndex == index ? 16 : 6,
@@ -155,38 +243,80 @@ class _HomeDashboardState extends State<HomeDashboard> {
               const SizedBox(height: 24),
 
               // Continue Watching
-              _buildSectionHeader('Continue Watching', onViewAll: () {
-                context.push('/continue-watching');
-              }),
-              SizedBox(
-                height: 110,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: [
-                    _buildContinueWatchingCard('assets/iphone_software.png', 'Display Light Problem Diagnosis', 'iPhone Repair Course', 35),
-                  ],
+              if (_continueWatching.isNotEmpty) ...[
+                _buildSectionHeader('Continue Watching', onViewAll: () {
+                  context.push('/continue-watching');
+                }),
+                SizedBox(
+                  height: 110,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: _continueWatching.length,
+                    itemBuilder: (context, index) {
+                      final item = _continueWatching[index];
+                      int progressPercent = 30;
+                      if (item.videoDuration.contains(':')) {
+                        final parts = item.videoDuration.split(':');
+                        int totalSecs = 0;
+                        if (parts.length == 2) {
+                          totalSecs = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+                        } else if (parts.length == 3) {
+                          totalSecs = int.parse(parts[0]) * 3600 + int.parse(parts[1]) * 60 + int.parse(parts[2]);
+                        }
+                        if (totalSecs > 0) {
+                          progressPercent = ((item.watchedSeconds / totalSecs) * 100).round();
+                          if (progressPercent > 100) progressPercent = 100;
+                        }
+                      }
+                      return GestureDetector(
+                        onTap: () {
+                          context.push('/recorded-player?lessonId=${item.lessonId}&courseId=${item.courseId}');
+                        },
+                        child: _buildContinueWatchingCard(
+                          item.courseThumbnailUrl ?? 'assets/iphone_software.png',
+                          item.lessonTitle,
+                          item.courseTitle,
+                          progressPercent,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
+              ],
 
               // My Courses
               _buildSectionHeader('My Courses', onViewAll: () {
                 context.push('/my-courses');
               }),
               SizedBox(
-                height: 170,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: [
-                    _buildCourseCard('assets/iphone_hardware.png', 'iPhone Hardware\nComplete Course', 'In Progress', 65, AppColors.primaryBlue),
-                    const SizedBox(width: 16),
-                    _buildCourseCard('assets/iphone_software.png', 'iPhone Software\nMastery', 'In Progress', 40, AppColors.primaryBlue),
-                    const SizedBox(width: 16),
-                    _buildCourseCard('assets/android_hardware.png', 'Android Hardware\nFundamentals', 'Not Started', 0, Colors.grey),
-                  ],
-                ),
+                height: 180,
+                child: _enrollments.isEmpty
+                    ? const Center(child: Text('No enrolled courses yet.', style: TextStyle(color: AppColors.textLight)))
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: _enrollments.length,
+                        itemBuilder: (context, index) {
+                          final enrollment = _enrollments[index];
+                          return GestureDetector(
+                            onTap: () {
+                              context.push('/course?id=${enrollment.courseId}');
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 16),
+                              child: _buildCourseCard(
+                                enrollment.thumbnailUrl ?? 'assets/iphone_hardware.png',
+                                enrollment.title ?? 'Course',
+                                enrollment.status.toUpperCase(),
+                                enrollment.progressPercent,
+                                AppColors.primaryBlue,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
               ),
               const SizedBox(height: 24),
 
@@ -228,15 +358,19 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: const [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.trending_up, color: AppColors.primaryBlue, size: 16),
-                                      SizedBox(width: 4),
-                                      Text('Course Progress', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12)),
-                                    ],
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      children: const [
+                                        Icon(Icons.trending_up, color: AppColors.primaryBlue, size: 16),
+                                        SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text('Course Progress', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  Icon(Icons.chevron_right, color: AppColors.textLight, size: 16),
+                                  const Icon(Icons.chevron_right, color: AppColors.textLight, size: 16),
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -249,13 +383,18 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                       children: [
                                         Center(
                                           child: CircularProgressIndicator(
-                                            value: 0.68,
+                                            value: _enrollments.isEmpty ? 0.0 : (_enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollments.length) / 100,
                                             backgroundColor: AppColors.border,
                                             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                                             strokeWidth: 4,
                                           ),
                                         ),
-                                        const Center(child: Text('68%', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue, fontSize: 12))),
+                                        Center(
+                                          child: Text(
+                                            '${_enrollments.isEmpty ? 0 : (_enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollments.length).round()}%',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue, fontSize: 12),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -277,79 +416,106 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => context.push('/expiring-courses'),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: const [
-                                    Row(
-                                      children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => context.push('/expiring-courses'),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      children: const [
                                         Icon(Icons.access_time, color: Colors.deepOrange, size: 16),
                                         SizedBox(width: 4),
-                                        Text('Expiring Courses', style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12)),
+                                        Expanded(
+                                          child: Text('Expiring Courses', style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
+                                        ),
                                       ],
                                     ),
-                                    Icon(Icons.chevron_right, color: AppColors.textLight, size: 16),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    const Text('2', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.deepOrange)),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: const [
-                                          Text('Courses expiring soon', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark)),
-                                          Text('Renew now to continue learning', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
-                                        ],
-                                      ),
+                                  ),
+                                  const Icon(Icons.chevron_right, color: AppColors.textLight, size: 16),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Text(
+                                    '${_enrollments.where((e) => e.validityEndAt != null && e.validityEndAt!.difference(DateTime.now()).inDays <= 30).length}',
+                                    style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: const [
+                                        Text('Courses expiring soon', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textDark)),
+                                        Text('Renew now to continue learning', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 24),
 
-                // Notifications
-                _buildSectionHeader('Notifications', onViewAll: () {
-                  context.push('/notifications');
-                }),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      _buildNotificationItem(Icons.calendar_today, Colors.blue, 'Live Class Reminder', 'iPhone Hardware Basics is starting in 1 hour.', 'Today, 05:30 PM'),
-                      const SizedBox(height: 12),
-                      _buildNotificationItem(Icons.warning_amber_rounded, Colors.orange, 'Course Expiring Soon', 'iPhone Software Mastery will expire in 5 days.', 'Today, 04:15 PM'),
-                    ],
-                  ),
+              // Notifications
+              _buildSectionHeader('Notifications', onViewAll: () {
+                context.push('/notifications');
+              }),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: _notifications.isEmpty
+                      ? [
+                          _buildNotificationItem(Icons.info_outline, Colors.blue, 'No Notifications', 'You are all caught up!', 'Today'),
+                        ]
+                      : _notifications.map((n) {
+                          IconData icon = Icons.notifications_none;
+                          Color color = Colors.blue;
+                          if (n.type.contains('session')) {
+                            icon = Icons.calendar_today;
+                            color = Colors.blue;
+                          } else if (n.type.contains('expire')) {
+                            icon = Icons.warning_amber_rounded;
+                            color = Colors.orange;
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildNotificationItem(
+                              icon,
+                              color,
+                              n.title,
+                              n.body,
+                              n.createdAt.toLocal().toString().substring(0, 16),
+                            ),
+                          );
+                        }).toList(),
                 ),
-                const SizedBox(height: 24),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
   Widget _buildBanner({
     required Color color,
@@ -359,14 +525,21 @@ class _HomeDashboardState extends State<HomeDashboard> {
     required String subtitle,
     required String image,
     required bool isLive,
+    required String timeText,
+    required String durationText,
+    VoidCallback? onJoin,
   }) {
+    final ImageProvider imageProvider = image.startsWith('http')
+        ? NetworkImage(image) as ImageProvider
+        : AssetImage(image) as ImageProvider;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(16),
         image: DecorationImage(
-          image: AssetImage(image),
+          image: imageProvider,
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(color.withValues(alpha: 0.85), BlendMode.srcOver),
         ),
@@ -413,19 +586,19 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 Flexible(
                   child: Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
-                    children: const [
-                      Icon(Icons.calendar_today, color: Colors.white, size: 12),
-                      SizedBox(width: 4),
-                      Text('Today, 07:00 PM', style: TextStyle(color: Colors.white, fontSize: 12)),
-                      SizedBox(width: 12),
-                      Icon(Icons.access_time, color: Colors.white, size: 12),
-                      SizedBox(width: 4),
-                      Text('60 min', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    children: [
+                      const Icon(Icons.calendar_today, color: Colors.white, size: 12),
+                      const SizedBox(width: 4),
+                      Text(timeText, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.access_time, color: Colors.white, size: 12),
+                      const SizedBox(width: 4),
+                      Text(durationText, style: const TextStyle(color: Colors.white, fontSize: 12)),
                     ],
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: onJoin ?? () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.primaryBlue,
@@ -447,7 +620,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         ),
       ),
     );
-    }
+  }
 
   Widget _buildSectionHeader(String title, {VoidCallback? onViewAll}) {
     return Padding(
@@ -467,6 +640,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   Widget _buildContinueWatchingCard(String image, String title, String subtitle, int progress) {
+    final ImageProvider imageProvider = image.startsWith('http')
+        ? NetworkImage(image) as ImageProvider
+        : AssetImage(image) as ImageProvider;
+
     return Container(
       width: 280,
       margin: const EdgeInsets.only(right: 16),
@@ -484,7 +661,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 height: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-                  image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
+                  image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
                 ),
               ),
               Positioned.fill(
@@ -537,6 +714,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   Widget _buildCourseCard(String image, String title, String badgeText, int progress, Color badgeColor) {
+    final ImageProvider imageProvider = image.startsWith('http')
+        ? NetworkImage(image) as ImageProvider
+        : AssetImage(image) as ImageProvider;
+
     return Container(
       width: 160,
       decoration: BoxDecoration(
@@ -550,10 +731,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
           Stack(
             children: [
               Container(
-                height: 90,
+                height: 80,
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
+                  image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
                 ),
               ),
               Positioned(

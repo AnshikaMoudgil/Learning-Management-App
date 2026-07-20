@@ -45,6 +45,8 @@ dependencies:
   go_router: ^17.3.0
   razorpay_flutter: ^1.4.0
   url_launcher: ^6.3.0
+  video_player: ^2.9.2
+  chewie: ^1.10.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

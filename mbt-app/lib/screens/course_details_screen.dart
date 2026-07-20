@@ -297,7 +297,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
           ],
           const Text('Course Content', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
           const SizedBox(height: 12),
-          ...course.sections.map(_buildSectionExpansion),
+          ...course.sections.map((s) => _buildSectionExpansion(s, course.id)),
           const SizedBox(height: 24),
           if (!enrolled) _buildCartPanel(course) else _buildResumePanel(course),
         ],
@@ -305,7 +305,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
     );
   }
 
-  Widget _buildSectionExpansion(CourseSection section) {
+  Widget _buildSectionExpansion(CourseSection section, String courseId) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -321,6 +321,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
             leading: Icon(locked ? Icons.lock_outline : Icons.play_circle_outline, color: locked ? Colors.grey : AppColors.primaryBlue),
             title: Text(lesson.title, style: const TextStyle(fontSize: 13)),
             subtitle: lesson.videoDuration == null ? null : Text(lesson.videoDuration!, style: const TextStyle(fontSize: 11)),
+            onTap: lesson.isFreePreview
+                ? () => context.push('/recorded-player?lessonId=${lesson.id}&courseId=$courseId')
+                : null,
           );
         }).toList(),
       ),

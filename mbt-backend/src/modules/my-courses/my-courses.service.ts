@@ -8,6 +8,25 @@ import { SupabaseService } from '../supabase/supabase.service';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
+interface ContinueWatchingRow {
+  lesson_id: string;
+  is_completed: boolean;
+  watched_seconds: number;
+  last_watched_at: string;
+  course_lessons: {
+    id: string;
+    title: string;
+    video_duration: string | null;
+    course_id: string;
+    section_id: string;
+    courses: {
+      id: string;
+      title: string;
+      thumbnail_url: string | null;
+    } | null;
+  } | null;
+}
+
 export interface LessonProgress {
   lesson_id: string;
   is_completed: boolean;
@@ -20,8 +39,11 @@ export interface LessonWithProgress {
   section_id: string;
   title: string;
   description: string | null;
+  video_asset_id?: string | null;
   video_url: string | null;
   video_duration: string | null;
+  video_status?: string | null;
+  thumbnail_url?: string | null;
   is_free_preview: boolean;
   sort_order: number;
   is_completed: boolean;
@@ -101,6 +123,54 @@ export class MyCoursesService {
 
   private get db() {
     return this.supabaseService.getClient();
+  }
+
+  async getContinueWatching(userId: string) {
+    const { data, error } = await this.db
+      .from('user_lesson_progress')
+      .select(
+        `
+        lesson_id,
+        is_completed,
+        watched_seconds,
+        last_watched_at,
+        course_lessons (
+          id,
+          title,
+          video_duration,
+          course_id,
+          section_id,
+          courses (
+            id,
+            title,
+            thumbnail_url
+          )
+        )
+      `,
+      )
+      .eq('user_id', userId)
+      .eq('is_completed', false)
+      .order('last_watched_at', { ascending: false })
+      .limit(5);
+
+    if (error) throw new BadRequestException(error.message);
+
+    return ((data ?? []) as ContinueWatchingRow[]).map((row) => {
+      const lesson = row.course_lessons;
+      const course = lesson?.courses;
+      return {
+        lesson_id: row.lesson_id,
+        is_completed: row.is_completed,
+        watched_seconds: row.watched_seconds,
+        last_watched_at: row.last_watched_at,
+        lesson_title: lesson?.title ?? '',
+        video_duration: lesson?.video_duration ?? '00:00',
+        section_id: lesson?.section_id,
+        course_id: course?.id,
+        course_title: course?.title ?? '',
+        course_thumbnail_url: course?.thumbnail_url,
+      };
+    });
   }
 
   // ─── Get full course content (post-purchase) ───────────────────────────────
@@ -201,17 +271,12 @@ export class MyCoursesService {
         const prevCompleted =
           index === 0
             ? true
-            : sectionsData[index - 1]
-              ? (() => {
-                  const prevLessons =
-                    lessonsBySection.get(sectionsData[index - 1].id) ?? [];
-                  const prevTotal = prevLessons.length;
-                  const prevCompleted = prevLessons.filter(
-                    (l) => l.is_completed,
-                  ).length;
-                  return prevTotal === 0 || prevCompleted >= prevTotal;
-                })()
-              : true;
+            : sectionsData.slice(0, index).every((sec) => {
+                const secLessons = lessonsBySection.get(sec.id) ?? [];
+                const secTotal = secLessons.length;
+                const secDone = secLessons.filter((l) => l.is_completed).length;
+                return secTotal === 0 || secDone >= secTotal;
+              });
         return {
           id: section.id,
           title: section.title,
@@ -229,13 +294,23 @@ export class MyCoursesService {
       },
     );
 
+    const totalLessons = sections.reduce((sum, s) => sum + s.total_lessons, 0);
+    const completedLessons = sections.reduce(
+      (sum, s) => sum + s.completed_lessons,
+      0,
+    );
+    const computedProgress =
+      totalLessons > 0
+        ? Math.round((completedLessons / totalLessons) * 100)
+        : 0;
+
     return {
       course_id: course.id as string,
       title: course.title as string,
       thumbnail_url: course.thumbnail_url as string | null,
       enrollment: {
         enrollment_id: enrollment.id as string,
-        progress_percent: enrollment.progress_percent as number,
+        progress_percent: computedProgress,
         validity_end_at: enrollment.validity_end_at as string | null,
         status: enrollment.status as string,
       },
@@ -325,18 +400,40 @@ export class MyCoursesService {
     const { data, error } = await this.db
       .from('course_lessons')
       .select(
-        'id, section_id, title, description, video_url, video_duration, is_free_preview, sort_order',
+        'id, section_id, title, description, video_asset_id, video_url, video_duration, is_free_preview, sort_order, media_assets!video_asset_id(id, storage_url, duration, thumbnail_url, status)',
       )
       .eq('course_id', courseId)
       .order('sort_order', { ascending: true });
     if (error) throw new BadRequestException(error.message);
-    return (data ?? []) as {
+    return ((data as Record<string, unknown>[]) ?? []).map((row) => {
+      const asset = row.media_assets as {
+        storage_url?: string | null;
+        duration?: number | null;
+        thumbnail_url?: string | null;
+        status?: string | null;
+      } | null;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { media_assets: _unused, ...lesson } = row;
+      return {
+        ...lesson,
+        video_url: asset?.storage_url ?? (row.video_url as string | null),
+        video_duration:
+          asset?.duration != null
+            ? String(asset.duration)
+            : (row.video_duration as string | null),
+        video_status: asset?.status ?? null,
+        thumbnail_url: asset?.thumbnail_url ?? null,
+      };
+    }) as {
       id: string;
       section_id: string;
       title: string;
       description: string | null;
+      video_asset_id: string | null;
       video_url: string | null;
       video_duration: string | null;
+      video_status: string | null;
+      thumbnail_url: string | null;
       is_free_preview: boolean;
       sort_order: number;
     }[];

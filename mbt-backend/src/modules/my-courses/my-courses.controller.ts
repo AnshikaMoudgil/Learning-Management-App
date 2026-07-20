@@ -20,6 +20,11 @@ import type { AuthenticatedRequest } from '../../common/types/authenticated-requ
 export class MyCoursesController {
   constructor(private readonly myCoursesService: MyCoursesService) {}
 
+  @Get('continue-watching')
+  getContinueWatching(@Req() req: AuthenticatedRequest) {
+    return this.myCoursesService.getContinueWatching(req.user.id);
+  }
+
   @Get(':courseId/content')
   getCourseContent(
     @Param('courseId') courseId: string,

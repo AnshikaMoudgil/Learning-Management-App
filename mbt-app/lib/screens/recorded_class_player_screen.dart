@@ -1,18 +1,83 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/watermarked_video_player.dart';
+import '../services/my_course_service.dart';
 
 class RecordedClassPlayerScreen extends StatefulWidget {
-  const RecordedClassPlayerScreen({Key? key}) : super(key: key);
+  final String? lessonId;
+  final String? url;
+  final String? courseId;
+  const RecordedClassPlayerScreen({Key? key, this.lessonId, this.url, this.courseId}) : super(key: key);
 
   @override
   State<RecordedClassPlayerScreen> createState() => _RecordedClassPlayerScreenState();
 }
 
 class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
-  int _selectedTabIndex = 0;
-  final List<String> _tabs = ['Notes', 'Chapters', 'Related Lessons'];
-  bool _autoPlay = true;
+  final MyCourseService _courseService = MyCourseService();
+  List<MyCourseLesson> _allLessons = [];
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLessons();
+  }
+
+  Future<void> _loadLessons() async {
+    if (widget.courseId == null || widget.lessonId == null) return;
+    try {
+      final content = await _courseService.getCourseContent(widget.courseId!);
+      final flat = <MyCourseLesson>[];
+      for (final sec in content.sections) {
+        flat.addAll(sec.lessons);
+      }
+      final idx = flat.indexWhere((l) => l.id == widget.lessonId);
+      if (!mounted) return;
+      setState(() {
+        _allLessons = flat;
+        _currentIndex = idx >= 0 ? idx : 0;
+      });
+    } catch (_) {}
+  }
+
+  MyCourseLesson? get _currentLesson =>
+      _allLessons.isNotEmpty ? _allLessons[_currentIndex] : null;
+
+  Future<void> _markComplete() async {
+    final lesson = _currentLesson;
+    if (lesson == null || widget.courseId == null) return;
+    try {
+      await _courseService.toggleLessonProgress(
+        widget.courseId!, lesson.id, !lesson.isCompleted,
+      );
+      if (!mounted) return;
+      setState(() {
+        _allLessons[_currentIndex] = MyCourseLesson(
+          id: lesson.id, sectionId: lesson.sectionId,
+          title: lesson.title, description: lesson.description,
+          videoUrl: lesson.videoUrl, videoDuration: lesson.videoDuration,
+          isFreePreview: lesson.isFreePreview, sortOrder: lesson.sortOrder,
+          isCompleted: !lesson.isCompleted, watchedSeconds: lesson.watchedSeconds,
+        );
+      });
+    } catch (_) {}
+  }
+
+  void _goPrevious() {
+    if (_currentIndex > 0) {
+      final prev = _allLessons[_currentIndex - 1];
+      context.pushReplacement('/recorded-player?lessonId=${prev.id}&courseId=${widget.courseId}');
+    }
+  }
+
+  void _goNext() {
+    if (_currentIndex < _allLessons.length - 1) {
+      final next = _allLessons[_currentIndex + 1];
+      context.pushReplacement('/recorded-player?lessonId=${next.id}&courseId=${widget.courseId}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +88,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
           children: [
             _buildVideoPlayer(context),
             _buildVideoSettingsRow(context),
-            _buildTabs(),
-            Expanded(
-              child: _buildTabContent(),
-            ),
+            const Spacer(),
           ],
         ),
       ),
@@ -35,13 +97,21 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
   }
 
   Widget _buildVideoPlayer(BuildContext context) {
+    if (widget.lessonId != null) {
+      return SizedBox(
+        width: double.infinity,
+        height: MediaQuery.of(context).size.width * 9 / 16,
+        child: WatermarkedVideoPlayer(lessonId: widget.lessonId!),
+      );
+    }
+
     return Container(
       width: double.infinity,
       height: 240,
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
         image: DecorationImage(
-          image: AssetImage('assets/iphone_hardware.png'), // Placeholder
+          image: AssetImage('assets/iphone_hardware.png'),
           fit: BoxFit.cover,
         ),
       ),
@@ -60,7 +130,6 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
               ),
             ),
           ),
-          // Top Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
@@ -110,21 +179,19 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
               ],
             ),
           ),
-          // Bottom Controls
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Column(
               children: [
-                // Progress Bar
                 Container(
                   height: 3,
                   width: double.infinity,
                   color: Colors.white24,
                   alignment: Alignment.centerLeft,
                   child: Container(
-                    width: 150, // Simulated progress
+                    width: 150,
                     color: Colors.red,
                     child: Align(
                       alignment: Alignment.centerRight,
@@ -212,205 +279,6 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
     );
   }
 
-  Widget _buildTabs() {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
-      ),
-      child: Row(
-        children: List.generate(_tabs.length, (index) {
-          final isSelected = _selectedTabIndex == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedTabIndex = index;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isSelected ? Colors.blue : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  _tabs[index],
-                  style: TextStyle(
-                    color: isSelected ? Colors.blue : AppColors.textLight,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildTabContent() {
-    if (_selectedTabIndex == 0) {
-      return _buildNotesView();
-    }
-    return Center(child: Text('${_tabs[_selectedTabIndex]} View coming soon', style: const TextStyle(color: AppColors.textLight)));
-  }
-
-  Widget _buildNotesView() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Note Input
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Text('Write your notes here...', style: TextStyle(color: AppColors.textLight, fontSize: 13)),
-        ),
-        const SizedBox(height: 24),
-        // My Notes
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('My Notes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
-            Row(
-              children: const [
-                Icon(Icons.add_circle_outline, color: AppColors.primaryBlue, size: 16),
-                SizedBox(width: 4),
-                Text('Add Note', style: TextStyle(color: AppColors.primaryBlue, fontSize: 12, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildNoteItem('Display light circuit is controlled by the backlight IC.', '18:42'),
-        _buildNoteItem('Check the connection between display connector and logic board.', '24:10'),
-        _buildNoteItem('Common issues: loose connector, damaged flex, faulty backlight IC.', '32:05'),
-        _buildNoteItem('Use multimeter to verify voltage on the backlight line.', '45:30'),
-        
-        const SizedBox(height: 24),
-        // Related Lessons
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Related Lessons', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
-            Row(
-              children: [
-                const Text('Auto Play', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
-                const SizedBox(width: 8),
-                Switch(
-                  value: _autoPlay,
-                  onChanged: (val) {
-                    setState(() {
-                      _autoPlay = val;
-                    });
-                  },
-                  activeColor: Colors.white,
-                  activeTrackColor: AppColors.primaryBlue,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildRelatedLesson('Introduction to iPhone Display System', '12:45', true),
-        _buildRelatedLesson('Backlight IC Testing Process', '15:30', false),
-        _buildRelatedLesson('Display Connector Cleaning Guide', '10:20', false),
-      ],
-    );
-  }
-
-  Widget _buildNoteItem(String text, String time) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 6),
-            child: Icon(Icons.circle, size: 4, color: AppColors.textLight),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 11, color: AppColors.textDark, height: 1.4)),
-          ),
-          const SizedBox(width: 8),
-          Text(time, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
-          const SizedBox(width: 8),
-          const Icon(Icons.more_vert, size: 16, color: AppColors.textLight),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRelatedLesson(String title, String time, bool isCompleted) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 120,
-            height: 70,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              image: const DecorationImage(image: AssetImage('assets/iphone_hardware.png'), fit: BoxFit.cover),
-            ),
-            child: Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                const Center(child: Icon(Icons.play_circle_outline, color: Colors.white, size: 24)),
-                Positioned(
-                  bottom: 4,
-                  right: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(4)),
-                    child: Text(time, style: const TextStyle(color: Colors.white, fontSize: 9)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark, height: 1.2)),
-                const SizedBox(height: 4),
-                const Text('Understand how the display system works in iPhones', style: TextStyle(fontSize: 10, color: AppColors.textLight, overflow: TextOverflow.ellipsis), maxLines: 1),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
-                    const SizedBox(width: 6),
-                    const Expanded(child: Text('Rahul Verma', style: TextStyle(fontSize: 10, color: AppColors.textDark))),
-                    Icon(isCompleted ? Icons.check_circle_outline : Icons.play_circle_outline, color: AppColors.textLight, size: 16),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBottomControls() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -422,8 +290,8 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
         child: Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {},
+              child:               OutlinedButton.icon(
+                onPressed: _currentIndex > 0 ? _goPrevious : null,
                 icon: const Icon(Icons.chevron_left, size: 16, color: AppColors.primaryBlue),
                 label: const Text('Previous Lesson', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
                 style: OutlinedButton.styleFrom(
@@ -436,9 +304,19 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primaryBlue),
-                label: const Text('Mark as Complete', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                onPressed: _currentLesson != null ? _markComplete : null,
+                icon: Icon(
+                  _currentLesson?.isCompleted == true
+                      ? Icons.check_circle
+                      : Icons.check_circle_outline,
+                  size: 16, color: AppColors.primaryBlue,
+                ),
+                label: Text(
+                  _currentLesson?.isCompleted == true
+                      ? 'Completed'
+                      : 'Mark as Complete',
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryBlue),
+                ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.border),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -449,7 +327,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _currentIndex < _allLessons.length - 1 ? _goNext : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   foregroundColor: Colors.white,
@@ -473,7 +351,6 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
     );
   }
 
-  // Modals for settings
   void _showLanguageModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
