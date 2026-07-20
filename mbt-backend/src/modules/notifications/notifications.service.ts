@@ -8,7 +8,12 @@ export type NotificationType =
   | 'reminder_24h'
   | 'reminder_1h'
   | 'reminder_10min'
-  | 'recording_ready';
+  | 'recording_ready'
+  | 'session_live'
+  | 'payment_confirmation'
+  | 'expiry_alert'
+  | 'device_login'
+  | 'announcement';
 
 export interface NotificationPayload {
   type: NotificationType;
@@ -35,6 +40,26 @@ export class NotificationsService {
     return this.supabaseService.getClient();
   }
 
+  async wasNotifiedRecently(
+    userId: string,
+    type: string,
+    withinHours = 24,
+  ): Promise<boolean> {
+    const since = new Date(
+      Date.now() - withinHours * 60 * 60 * 1000,
+    ).toISOString();
+
+    const { count, error } = await this.db
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('type', type)
+      .gte('created_at', since);
+
+    if (error) return false;
+    return (count ?? 0) > 0;
+  }
+
   async notify(userId: string, payload: NotificationPayload): Promise<void> {
     const row: NotificationRow = {
       user_id: userId,
@@ -51,6 +76,12 @@ export class NotificationsService {
         `Failed to insert notification for user ${userId}: ${error.message}`,
       );
     }
+  }
+
+  async notifyAll(payload: NotificationPayload): Promise<void> {
+    const { data: profiles } = await this.db.from('profiles').select('id');
+    const userIds = (profiles ?? []).map((p: { id: string }) => p.id);
+    await this.notifyMany(userIds, payload);
   }
 
   async notifyMany(

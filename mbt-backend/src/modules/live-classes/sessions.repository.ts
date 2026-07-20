@@ -6,6 +6,7 @@ export interface Session {
   id: string;
   course_id: string;
   instructor_id: string;
+  created_by: string;
   title: string;
   description: string | null;
   start_time: string;
@@ -45,6 +46,7 @@ export class SessionsRepository {
   async create(data: {
     course_id: string;
     instructor_id: string;
+    created_by: string;
     title: string;
     description?: string;
     start_time: string;

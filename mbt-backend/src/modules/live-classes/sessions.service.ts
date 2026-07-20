@@ -13,6 +13,10 @@ import { UpdateSessionDto } from './dto/update-session.dto';
 import { JoinSessionResponseDto } from './dto/join-session-response.dto';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ConfigService } from '@nestjs/config';
+import {
+  NotificationsService,
+  type NotificationPayload,
+} from '../notifications/notifications.service';
 
 @Injectable()
 export class SessionsService {
@@ -21,6 +25,7 @@ export class SessionsService {
     private readonly zoomSdkService: ZoomSdkService,
     private readonly supabaseService: SupabaseService,
     private readonly configService: ConfigService,
+    private readonly notificationsService: NotificationsService,
     @InjectQueue('zoom-task')
     private readonly zoomTaskQueue: Queue,
   ) {}
@@ -29,10 +34,30 @@ export class SessionsService {
     return this.supabaseService.getClient();
   }
 
-  async createSession(instructorId: string, dto: CreateSessionDto) {
+  async createSession(userId: string, dto: CreateSessionDto) {
+    // Look up the course to get its assigned instructor
+    const { data: course, error: courseError } = (await this.db
+      .from('courses')
+      .select('instructor_id')
+      .eq('id', dto.course_id)
+      .single()) as unknown as {
+      data: { instructor_id: string | null } | null;
+      error: { message: string } | null;
+    };
+
+    if (courseError || !course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    const courseInstructorId = course.instructor_id;
+    if (!courseInstructorId) {
+      throw new BadRequestException('Course has no assigned instructor');
+    }
+
     const session = await this.sessionsRepository.create({
       course_id: dto.course_id,
-      instructor_id: instructorId,
+      instructor_id: courseInstructorId,
+      created_by: userId,
       title: dto.title,
       description: dto.description,
       start_time: dto.start_time,
@@ -43,7 +68,7 @@ export class SessionsService {
 
     await this.zoomTaskQueue.add('create', {
       sessionId: session.id,
-      instructorId,
+      instructorId: courseInstructorId,
       title: dto.title,
       startTime: dto.start_time,
       duration: dto.duration,
@@ -51,6 +76,12 @@ export class SessionsService {
 
     // Queue reminder jobs via BullMQ
     await this.scheduleReminders(session.id, dto.start_time);
+
+    await this.notifyEnrolledStudents(session.id, session.course_id, {
+      type: 'session_created',
+      title: 'New Live Session Scheduled',
+      body: `"${dto.title}" has been scheduled. Check the schedule for details.`,
+    });
 
     return session;
   }
@@ -130,6 +161,12 @@ export class SessionsService {
 
     await this.cancelReminders(id);
 
+    await this.notifyEnrolledStudents(id, session.course_id, {
+      type: 'session_cancelled',
+      title: 'Live Session Cancelled',
+      body: `"${session.title}" has been cancelled.`,
+    });
+
     return updated;
   }
 
@@ -188,7 +225,17 @@ export class SessionsService {
         'Only the instructor or an admin can start the session',
       );
     }
-    return this.sessionsRepository.update(id, { status: 'live' });
+    const updated = await this.sessionsRepository.update(id, {
+      status: 'live',
+    });
+
+    await this.notifyEnrolledStudents(id, session.course_id, {
+      type: 'session_live',
+      title: 'Live Session Started',
+      body: `"${session.title}" is live now! Join the class.`,
+    });
+
+    return updated;
   }
 
   async endSession(id: string, userId: string) {
@@ -299,6 +346,33 @@ export class SessionsService {
       role,
       zoom_app_key: sdkKey,
     };
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Notification helpers
+  // ──────────────────────────────────────────────────────────
+
+  private async notifyEnrolledStudents(
+    sessionId: string,
+    courseId: string,
+    payload: NotificationPayload,
+  ) {
+    const { data: enrollments } = await this.db
+      .from('enrollments')
+      .select('user_id')
+      .eq('course_id', courseId)
+      .eq('status', 'active')
+      .or(
+        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
+      );
+
+    const userIds = ((enrollments ?? []) as { user_id: string }[]).map(
+      (e) => e.user_id,
+    );
+
+    if (userIds.length > 0) {
+      await this.notificationsService.notifyMany(userIds, payload);
+    }
   }
 
   // ──────────────────────────────────────────────────────────

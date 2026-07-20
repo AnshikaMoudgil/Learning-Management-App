@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
@@ -17,6 +18,8 @@ import 'expiring_courses_screen.dart';
 import 'continue_watching_screen.dart';
 import 'notifications_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
+import '../services/coupon_service.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({Key? key}) : super(key: key);
@@ -33,6 +36,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   final SessionsService _sessionsService = SessionsService();
   final EnrollmentsService _enrollmentsService = EnrollmentsService();
   final MyCourseService _myCourseService = MyCourseService();
+  final CouponService _couponService = CouponService();
 
   Profile? _profile;
   int _unreadNotifications = 0;
@@ -40,12 +44,51 @@ class _HomeDashboardState extends State<HomeDashboard> {
   List<EnrollmentItem> _enrollments = [];
   List<ContinueWatchingItem> _continueWatching = [];
   List<AppNotification> _notifications = [];
+  List<CouponItem> _activeCoupons = [];
   bool _isLoading = true;
+  int _couponDisplayIndex = 0;
+
+  Timer? _autoPlayTimer;
+  Timer? _couponCycleTimer;
 
   @override
   void initState() {
     super.initState();
     _loadAllData();
+    _autoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
+      final itemCount = _bannerItemCount;
+      if (itemCount <= 1) return;
+      final nextIndex = (_bannerIndex + 1) % itemCount;
+      _pageController.animateToPage(
+        nextIndex,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    });
+    _couponCycleTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || _activeCoupons.length <= 1) return;
+      setState(() {
+        _couponDisplayIndex = (_couponDisplayIndex + 1) % _activeCoupons.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoPlayTimer?.cancel();
+    _couponCycleTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  int get _bannerItemCount {
+    final hasCoupon = _activeCoupons.isNotEmpty ? 1 : 0;
+    final sessionCount = _upcomingSessions.length;
+    if (hasCoupon > 0 || sessionCount > 0) {
+      return hasCoupon + sessionCount;
+    }
+    return 3; // fallback banners
   }
 
   Future<void> _loadAllData() async {
@@ -57,6 +100,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         _loadUpcomingSessions(),
         _loadEnrollments(),
         _loadContinueWatching(),
+        _loadCoupons(),
       ]);
     } catch (_) {}
     if (mounted) setState(() => _isLoading = false);
@@ -72,11 +116,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
   Future<void> _loadNotifications() async {
     try {
       final count = await _notificationService.getUnreadCount();
-      final list = await _notificationService.getNotifications(limit: 2);
+      final result = await _notificationService.getNotifications(limit: 2);
       if (mounted) {
         setState(() {
           _unreadNotifications = count;
-          _notifications = list;
+          _notifications = result.data;
         });
       }
     } catch (_) {}
@@ -100,6 +144,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
     try {
       final list = await _myCourseService.getContinueWatching();
       if (mounted) setState(() => _continueWatching = list);
+    } catch (_) {}
+  }
+
+  Future<void> _loadCoupons() async {
+    try {
+      final list = await _couponService.getActiveCoupons();
+      if (mounted) setState(() => _activeCoupons = list);
     } catch (_) {}
   }
 
@@ -170,65 +221,72 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 child: PageView(
                   controller: _pageController,
                   onPageChanged: (index) => setState(() => _bannerIndex = index),
-                  children: _upcomingSessions.isEmpty
-                      ? [
-                          _buildBanner(
-                            color: const Color(0xFF0038FF),
-                            tagText: 'LIVE',
-                            tagTitle: 'Upcoming Live Class',
-                            title: 'iPhone Hardware Basics',
-                            subtitle: 'by MBT Faculty',
-                            image: 'assets/iphone_hardware.png',
-                            isLive: true,
-                            timeText: 'Today, 07:00 PM',
-                            durationText: '60 min',
-                          ),
-                          _buildBanner(
-                            color: const Color(0xFF1B4332),
-                            tagText: 'NEW',
-                            tagTitle: 'Featured Course',
-                            title: 'Advanced Soldering',
-                            subtitle: 'by MBT Faculty',
-                            image: 'assets/android_hardware.png',
-                            isLive: false,
-                            timeText: 'Coming Soon',
-                            durationText: '120 min',
-                          ),
-                          _buildBanner(
-                            color: const Color(0xFF3B1E54),
-                            tagText: 'OFFER',
-                            tagTitle: 'Limited Time',
-                            title: 'Get Flat 25% OFF',
-                            subtitle: 'Code: LEARN25',
-                            image: 'assets/iphone_software.png',
-                            isLive: false,
-                            timeText: 'Today, 07:00 PM',
-                            durationText: '60 min',
-                          ),
-                        ]
-                      : _upcomingSessions.map((session) {
-                          return _buildBanner(
-                            color: session.status == 'live' ? const Color(0xFF0038FF) : const Color(0xFF1B4332),
-                            tagText: session.status == 'live' ? 'LIVE' : 'UPCOMING',
-                            tagTitle: session.status == 'live' ? 'Ongoing Live Class' : 'Upcoming Live Class',
-                            title: session.title,
-                            subtitle: 'by ${session.instructorName ?? "MBT Faculty"}',
-                            image: session.courseImageUrl ?? 'assets/iphone_hardware.png',
-                            isLive: session.status == 'live',
-                            timeText: session.startTime.toLocal().toString().substring(0, 16),
-                            durationText: '${session.duration} min',
-                            onJoin: () {
-                              context.push('/live-player');
-                            },
-                          );
-                        }).toList(),
+                  children: () {
+                    final hasCoupons = _activeCoupons.isNotEmpty;
+                    final couponWidget = hasCoupons ? [_buildCouponBanner()] : <Widget>[];
+                    final sessions = _upcomingSessions.map((session) {
+                      return _buildBanner(
+                        color: session.status == 'live' ? const Color(0xFF0038FF) : const Color(0xFF1B4332),
+                        tagText: session.status == 'live' ? 'LIVE' : 'UPCOMING',
+                        tagTitle: session.status == 'live' ? 'Ongoing Live Class' : 'Upcoming Live Class',
+                        title: session.title,
+                        subtitle: 'by ${(session.instructorName?.isNotEmpty == true ? session.instructorName! : "MBT Faculty")}',
+                        image: session.courseImageUrl ?? 'assets/iphone_hardware.png',
+                        isLive: session.status == 'live',
+                        timeText: session.startTime.toLocal().toString().substring(0, 16),
+                        durationText: '${session.duration} min',
+                        onJoin: () {
+                          context.push('/live-player');
+                        },
+                      );
+                    }).toList();
+                    final combined = [...couponWidget, ...sessions];
+                    if (combined.isEmpty) {
+                      return [
+                        _buildBanner(
+                          color: const Color(0xFF0038FF),
+                          tagText: 'LIVE',
+                          tagTitle: 'Upcoming Live Class',
+                          title: 'iPhone Hardware Basics',
+                          subtitle: 'by MBT Faculty',
+                          image: 'assets/iphone_hardware.png',
+                          isLive: true,
+                          timeText: 'Today, 07:00 PM',
+                          durationText: '60 min',
+                        ),
+                        _buildBanner(
+                          color: const Color(0xFF1B4332),
+                          tagText: 'NEW',
+                          tagTitle: 'Featured Course',
+                          title: 'Advanced Soldering',
+                          subtitle: 'by MBT Faculty',
+                          image: 'assets/android_hardware.png',
+                          isLive: false,
+                          timeText: 'Coming Soon',
+                          durationText: '120 min',
+                        ),
+                        _buildBanner(
+                          color: const Color(0xFF3B1E54),
+                          tagText: 'OFFER',
+                          tagTitle: 'Limited Time',
+                          title: 'Get Flat 25% OFF',
+                          subtitle: 'Code: LEARN25',
+                          image: 'assets/iphone_software.png',
+                          isLive: false,
+                          timeText: 'Today, 07:00 PM',
+                          durationText: '60 min',
+                        ),
+                      ];
+                    }
+                    return combined;
+                  }(),
                 ),
               ),
               const SizedBox(height: 8),
               // Dot indicators
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_upcomingSessions.isEmpty ? 3 : _upcomingSessions.length, (index) {
+                children: List.generate(_bannerItemCount, (index) {
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: _bannerIndex == index ? 16 : 6,
@@ -512,6 +570,98 @@ class _HomeDashboardState extends State<HomeDashboard> {
               const SizedBox(height: 24),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCouponBanner() {
+    if (_activeCoupons.isEmpty) return const SizedBox.shrink();
+    final coupon = _activeCoupons[_couponDisplayIndex % _activeCoupons.length];
+    final couponCount = _activeCoupons.length;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6C3BAA), Color(0xFF3B1E54)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.amber.shade700, borderRadius: BorderRadius.circular(4)),
+                  child: const Text('OFFER', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 8),
+                const Text('Limited Time', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const Spacer(),
+                if (couponCount > 1)
+                  Text('${_couponDisplayIndex + 1}/$couponCount',
+                      style: const TextStyle(color: Colors.white54, fontSize: 10)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Text(coupon.discountText,
+                  key: ValueKey('discount-${coupon.code}'),
+                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 4),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Text('Use code: ${coupon.code}',
+                  key: ValueKey('code-${coupon.code}'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (coupon.expiresAt != null)
+                  Flexible(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        const Icon(Icons.access_time, color: Colors.white, size: 12),
+                        const SizedBox(width: 4),
+                        Text('Expires ${coupon.expiresAt!.day}/${coupon.expiresAt!.month}/${coupon.expiresAt!.year}',
+                            style: const TextStyle(color: Colors.white, fontSize: 12)),
+                      ],
+                    ),
+                  )
+                else
+                  const SizedBox.shrink(),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: coupon.code));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Copied ${coupon.code} to clipboard'), duration: const Duration(seconds: 2)),
+                    );
+                  },
+                  icon: const Icon(Icons.copy, size: 14),
+                  label: const Text('Copy Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF6C3BAA),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
