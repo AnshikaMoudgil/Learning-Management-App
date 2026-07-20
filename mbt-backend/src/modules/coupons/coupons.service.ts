@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import type {
+  ActiveCouponResult,
   CouponRow,
   CoursePriceRow,
   CouponValidationResult,
@@ -17,6 +18,32 @@ export class CouponsService {
 
   private get db() {
     return this.supabaseService.getClient();
+  }
+
+  async getActiveCoupons(): Promise<ActiveCouponResult[]> {
+    const now = new Date();
+    const { data, error } = await this.db.from('coupons').select('*');
+
+    if (error)
+      throw new InternalServerErrorException('Failed to fetch active coupons');
+
+    const coupons = (data ?? []) as CouponRow[];
+
+    return coupons
+      .filter((c) => {
+        if (!c.is_active) return false;
+        if (c.starts_at && new Date(c.starts_at) > now) return false;
+        if (c.expires_at && new Date(c.expires_at) <= now) return false;
+        if (c.max_uses !== null && c.uses_count >= c.max_uses) return false;
+        return true;
+      })
+      .map((c) => ({
+        id: c.id,
+        code: c.code,
+        discount_type: c.discount_type,
+        discount_value: c.discount_value,
+        expires_at: c.expires_at,
+      }));
   }
 
   async assertUserCouponNotUsed(

@@ -37,6 +37,13 @@ class AppNotification {
   }
 }
 
+class NotificationsResult {
+  final List<AppNotification> data;
+  final int total;
+
+  NotificationsResult({required this.data, required this.total});
+}
+
 class NotificationService {
   final ApiClient _api = ApiClient();
 
@@ -50,18 +57,22 @@ class NotificationService {
     return 0;
   }
 
-  Future<List<AppNotification>> getNotifications({int page = 1, int limit = 20}) async {
+  Future<NotificationsResult> getNotifications({int page = 1, int limit = 20}) async {
     try {
       final result = await _api.get(
         '/notifications',
         queryParams: {'page': page.toString(), 'limit': limit.toString()},
       );
       final List<dynamic> data = result is Map ? (result['data'] as List<dynamic>?) ?? [] : (result as List<dynamic>);
-      return data
+      final total = result is Map && result['meta'] != null
+          ? ((result['meta'] as Map)['total'] as int?) ?? data.length
+          : data.length;
+      final notifications = data
           .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
           .toList();
+      return NotificationsResult(data: notifications, total: total);
     } catch (_) {
-      return [];
+      return NotificationsResult(data: [], total: 0);
     }
   }
 

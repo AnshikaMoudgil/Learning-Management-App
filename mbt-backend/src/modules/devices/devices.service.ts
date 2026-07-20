@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DevicesRepository } from './devices.repository';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Device } from '../../common/types/device.type';
 import { DeviceChangeRequest } from '../../common/types/device-change-request.type';
 import { sanitizeText } from '../../common/utils/sanitize';
@@ -14,6 +15,7 @@ import { sanitizeText } from '../../common/utils/sanitize';
 export class DevicesService {
   constructor(
     private readonly devicesRepository: DevicesRepository,
+    private readonly notificationsService: NotificationsService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -57,7 +59,18 @@ export class DevicesService {
 
       if (approved) {
         await this.devicesRepository.deactivateDevice(anyDevice.id);
-        return this.devicesRepository.create(userId, fingerprint, platform);
+        const device = await this.devicesRepository.create(
+          userId,
+          fingerprint,
+          platform,
+        );
+        await this.notificationsService.notify(userId, {
+          type: 'device_login',
+          title: 'New Device Login',
+          body: `A new login was detected on ${platform || 'a new device'}.`,
+          data: { device_id: device.id, platform: platform ?? '' },
+        });
+        return device;
       }
 
       throw new UnauthorizedException(
@@ -65,7 +78,18 @@ export class DevicesService {
       );
     }
 
-    return this.devicesRepository.create(userId, fingerprint, platform);
+    const firstDevice = await this.devicesRepository.create(
+      userId,
+      fingerprint,
+      platform,
+    );
+    await this.notificationsService.notify(userId, {
+      type: 'device_login',
+      title: 'New Device Login',
+      body: `A new login was detected on ${platform || 'a new device'}.`,
+      data: { device_id: firstDevice.id, platform: platform ?? '' },
+    });
+    return firstDevice;
   }
 
   // --- Device Change Requests ---

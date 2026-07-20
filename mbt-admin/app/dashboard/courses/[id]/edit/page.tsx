@@ -186,6 +186,22 @@ export default function EditCoursePage() {
     );
   };
 
+  const validateImageDimensions = (file: File): Promise<{ width: number; height: number } | null> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve({ width: img.width, height: img.height });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -194,6 +210,30 @@ export default function EditCoursePage() {
 
     if (!file.type.startsWith('image/')) {
       toast.error('Selected file must be an image.');
+      return;
+    }
+
+    // Validate dimensions
+    const dims = await validateImageDimensions(file);
+    if (!dims) {
+      toast.error('Failed to read image dimensions.');
+      return;
+    }
+
+    const { width, height } = dims;
+    const MIN_W = 1280;
+    const MIN_H = 720;
+    const TARGET = 16 / 9;
+    const TOLERANCE = 0.05;
+
+    if (width < MIN_W || height < MIN_H) {
+      toast.error(`Image must be at least ${MIN_W}×${MIN_H}px (received ${width}×${height}px).`);
+      return;
+    }
+
+    const ratio = width / height;
+    if (Math.abs(ratio - TARGET) > TOLERANCE) {
+      toast.error(`Image must be 16:9 aspect ratio (received ${width}×${height}).`);
       return;
     }
 

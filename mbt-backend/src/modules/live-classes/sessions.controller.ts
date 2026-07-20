@@ -26,7 +26,7 @@ export class SessionsController {
     @Request() req: AuthenticatedRequest,
     @Body() dto: CreateSessionDto,
   ) {
-    return this.sessionsService.createSession(req.user?.id, dto);
+    return this.sessionsService.createSession(req.user.id, dto);
   }
 
   @Patch(':id')
