@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
 
-type AuthResult = { error: string; status: number } | { user: { id: string }; adminClient: any };
+type AuthResult = 
+  | { error: string; status: number } 
+  | { user: { id: string }; adminClient: any; callerProfile: any };
 
 async function authorize(request: Request): Promise<AuthResult> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
   if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
@@ -17,9 +18,7 @@ async function authorize(request: Request): Promise<AuthResult> {
   }
 
   const token = authHeader.replace('Bearer ', '');
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const adminClient = getSupabaseAdmin();
 
   const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
   if (authError || !user) {
@@ -28,15 +27,21 @@ async function authorize(request: Request): Promise<AuthResult> {
 
   const { data: callerProfile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, allowed_sections, allowed_actions')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!callerProfile || !['admin', 'superadmin'].includes(callerProfile.role)) {
+  const hasAccess = callerProfile && (
+    callerProfile.role === 'superadmin' ||
+    callerProfile.role === 'admin' ||
+    (callerProfile.allowed_sections || []).includes('Manage Coupons')
+  );
+
+  if (!hasAccess) {
     return { error: 'Access Denied.', status: 403 };
   }
 
-  return { user, adminClient };
+  return { user, adminClient, callerProfile };
 }
 
 export async function GET(request: Request) {
@@ -55,7 +60,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ coupons: coupons || [] });
+    const response = NextResponse.json({ coupons: coupons || [] });
+    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }
@@ -66,6 +73,11 @@ export async function POST(request: Request) {
     const auth = await authorize(request);
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const canWrite = auth.callerProfile.role === 'superadmin' || auth.callerProfile.role === 'admin' || (auth.callerProfile.allowed_actions || []).includes('Manage Coupons: Write');
+    if (!canWrite) {
+      return NextResponse.json({ error: 'Access Denied: Read-only access.' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -81,6 +93,10 @@ export async function POST(request: Request) {
 
     if (discount_value === undefined || discount_value <= 0) {
       return NextResponse.json({ error: 'Discount value must be greater than 0.' }, { status: 400 });
+    }
+
+    if (starts_at && expires_at && new Date(expires_at) <= new Date(starts_at)) {
+      return NextResponse.json({ error: 'Expiry date must be after start date.' }, { status: 400 });
     }
 
     const { data, error } = await auth.adminClient
@@ -118,6 +134,11 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const canWrite = auth.callerProfile.role === 'superadmin' || auth.callerProfile.role === 'admin' || (auth.callerProfile.allowed_actions || []).includes('Manage Coupons: Write');
+    if (!canWrite) {
+      return NextResponse.json({ error: 'Access Denied: Read-only access.' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -138,6 +159,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'No valid fields to update.' }, { status: 400 });
     }
 
+    if (sanitized.starts_at && sanitized.expires_at && new Date(sanitized.expires_at as string) <= new Date(sanitized.starts_at as string)) {
+      return NextResponse.json({ error: 'Expiry date must be after start date.' }, { status: 400 });
+    }
+
     const { data, error } = await auth.adminClient
       .from('coupons')
       .update(sanitized)
@@ -153,6 +178,39 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ coupon: data });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const auth = await authorize(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const canWrite = auth.callerProfile.role === 'superadmin' || auth.callerProfile.role === 'admin' || (auth.callerProfile.allowed_actions || []).includes('Manage Coupons: Write');
+    if (!canWrite) {
+      return NextResponse.json({ error: 'Access Denied: Read-only access.' }, { status: 403 });
+    }
+
+    const { id } = await request.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'Coupon ID is required.' }, { status: 400 });
+    }
+
+    const { error } = await auth.adminClient
+      .from('coupons')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }

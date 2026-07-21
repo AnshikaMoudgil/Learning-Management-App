@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
-import { createClient } from '@supabase/supabase-js';
 
 // Helper to authenticate the caller and get their role
 async function checkCallerRole(request: Request) {
@@ -8,20 +7,13 @@ async function checkCallerRole(request: Request) {
   if (!authHeader) return { error: 'No authorization token provided', role: null, userId: null };
 
   const token = authHeader.replace('Bearer ', '');
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false },
-  });
+  const adminClient = getSupabaseAdmin();
 
-  const { data: { user }, error: authError } = await client.auth.getUser(token);
+  const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
   if (authError || !user) {
     return { error: 'Invalid session token', role: null, userId: null };
   }
 
-  // Get caller profile
-  const adminClient = getSupabaseAdmin();
   const { data: profile, error: profileError } = await adminClient
     .from('profiles')
     .select('role')
@@ -47,7 +39,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Access Denied: Only superadmins can invite users.' }, { status: 403 });
     }
 
-    const { email, password, role } = await request.json();
+    const { email, password, role, full_name } = await request.json();
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Email, password and role are required.' }, { status: 400 });
@@ -60,7 +52,7 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: 'Invited Staff' }
+      user_metadata: { full_name: full_name || 'Invited Staff' }
     });
 
     if (createError || !authData.user) {
@@ -71,7 +63,7 @@ export async function POST(request: Request) {
     // but we want to update their role to the invited role.
     const { error: updateError } = await adminClient
       .from('profiles')
-      .update({ role, email })
+      .update({ role, email, full_name: full_name || null })
       .eq('id', authData.user.id);
 
     if (updateError) {
@@ -92,7 +84,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: authError }, { status: 401 });
     }
 
-    const { targetUserId, role, status } = await request.json();
+    const { targetUserId, role, status, allowed_sections, allowed_actions } = await request.json();
 
     if (!targetUserId) {
       return NextResponse.json({ error: 'Target User ID is required.' }, { status: 400 });
@@ -109,9 +101,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Access Denied: Only superadmins can suspend accounts.' }, { status: 403 });
     }
 
+    if ((allowed_sections !== undefined || allowed_actions !== undefined) && callerRole !== 'superadmin') {
+      return NextResponse.json({ error: 'Access Denied: Only superadmins can configure permissions.' }, { status: 403 });
+    }
+
     const updatePayload: Record<string, any> = {};
     if (role) updatePayload.role = role;
     if (status) updatePayload.status = status;
+    if (allowed_sections !== undefined) updatePayload.allowed_sections = allowed_sections;
+    if (allowed_actions !== undefined) updatePayload.allowed_actions = allowed_actions;
 
     const adminClient = getSupabaseAdmin();
     const { error: updateError } = await adminClient

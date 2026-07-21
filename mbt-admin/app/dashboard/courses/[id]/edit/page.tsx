@@ -7,6 +7,7 @@ import { courseSchema } from '@/app/lib/validations/course.schema';
 import Select from '@/components/Select';
 import ListEditor from '@/components/ListEditor';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 import { Loader2, Upload, BookOpen, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -75,34 +76,32 @@ export default function EditCoursePage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user?.id) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role, full_name, avatar_url')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile?.role === 'instructor') {
-          const { data: instructorData } = await supabase
-            .from('instructor_profiles')
-            .select('phone, specialization, experience_years, education')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          const missing: string[] = [];
-          if (!profile.full_name?.trim()) missing.push('Full Name');
-          if (!profile.avatar_url) missing.push('Profile Photo');
-          if (!instructorData?.phone?.trim()) missing.push('Phone');
-          if (!instructorData?.specialization?.trim()) missing.push('Specialization');
-          if (!instructorData?.experience_years) missing.push('Years of Experience');
-          if (!instructorData?.education?.trim()) missing.push('Education');
-
-          if (missing.length > 0) {
-            setProfileIncomplete(true);
-          }
-        }
-        setCheckingProfile(false);
-      }
+      if (!session?.user?.id) { setCheckingProfile(false); return; }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+      if (profile?.role !== 'instructor') { setCheckingProfile(false); return; }
+      const { data: instructorData } = await supabase
+        .from('instructor_profiles')
+        .select('phone, specialization, experience_years, education')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      const { data: fullProfile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', session.user.id)
+        .single();
+      const missing: string[] = [];
+      if (!fullProfile?.full_name?.trim()) missing.push('Full Name');
+      if (!fullProfile?.avatar_url) missing.push('Profile Photo');
+      if (!instructorData?.phone?.trim()) missing.push('Phone');
+      if (!instructorData?.specialization?.trim()) missing.push('Specialization');
+      if (!instructorData?.experience_years) missing.push('Years of Experience');
+      if (!instructorData?.education?.trim()) missing.push('Education');
+      if (missing.length > 0) setProfileIncomplete(true);
+      setCheckingProfile(false);
     });
   }, []);
 
@@ -188,7 +187,7 @@ export default function EditCoursePage() {
 
   const validateImageDimensions = (file: File): Promise<{ width: number; height: number } | null> => {
     return new Promise((resolve) => {
-      const img = new Image();
+      const img = new window.Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(url);
@@ -357,12 +356,12 @@ export default function EditCoursePage() {
   };
 
   const inputClass = (field: string) =>
-    `w-full rounded-lg border ${errors[field] ? 'border-rose-500' : 'border-zinc-800'} bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition`;
+    `w-full rounded-lg border ${errors[field] ? 'border-rose-500' : 'border-gray-200'} bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition`;
 
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -370,13 +369,13 @@ export default function EditCoursePage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Edit Course</h1>
-        <p className="text-zinc-400 text-sm mt-1">Modify structural and pricing parameters of the course.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Edit Course</h1>
+        <p className="text-gray-500 text-sm mt-1">Modify structural and pricing parameters of the course.</p>
       </div>
 
       {checkingProfile ? (
         <div className="flex h-48 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
       ) : profileIncomplete ? (
         <div className="rounded-2xl border border-amber-800 bg-amber-950/20 p-6 space-y-4">
@@ -391,7 +390,7 @@ export default function EditCoursePage() {
           </div>
           <Link
             href="/dashboard/instructor-profile"
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white hover:bg-amber-400 transition cursor-pointer"
           >
             Complete My Profile
           </Link>
@@ -400,12 +399,12 @@ export default function EditCoursePage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">General Information</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
+              <h2 className="text-lg font-bold text-gray-900">General Information</h2>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                     Course Title <span className="text-rose-400">*</span>
                   </label>
                   <input
@@ -418,22 +417,22 @@ export default function EditCoursePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                     Slug <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
                     value={slug}
                     readOnly
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-500 placeholder-zinc-600 outline-none cursor-not-allowed"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-400 placeholder-gray-400 outline-none cursor-not-allowed"
                   />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                      Category <span className="text-rose-400">*</span>
-                    </label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Category <span className="text-rose-400">*</span>
+                  </label>
                     <Select
                       value={category}
                       onChange={setCategory}
@@ -449,9 +448,9 @@ export default function EditCoursePage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                      Language <span className="text-rose-400">*</span>
-                    </label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Language <span className="text-rose-400">*</span>
+                  </label>
                     <input
                       type="text"
                       value={language}
@@ -463,12 +462,12 @@ export default function EditCoursePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Short Description</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Short Description <span className="text-rose-400">*</span></label>
                   <textarea
                     rows={2}
                     value={shortDescription}
                     onChange={(e) => setShortDescription(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition resize-none"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition resize-none"
                   />
                 </div>
 
@@ -476,34 +475,34 @@ export default function EditCoursePage() {
                   items={learningOutcomes}
                   onChange={setLearningOutcomes}
                   placeholder="e.g. Identify and test mobile ICs"
-                  label="Learning Outcomes"
+                  label="Learning Outcomes *"
                 />
 
                 <ListEditor
                   items={requirements}
                   onChange={setRequirements}
                   placeholder="e.g. Basic knowledge of mobile hardware"
-                  label="Requirements"
+                  label="Requirements *"
                 />
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Description</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Description</label>
                   <textarea
                     rows={6}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Pricing & Details</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
+              <h2 className="text-lg font-bold text-gray-900">Pricing & Details</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                    Base Price ($) <span className="text-rose-400">*</span>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Base Price (₹) <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -515,7 +514,7 @@ export default function EditCoursePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Discount Price ($)</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Discount Price (₹)</label>
                   <input
                     type="text"
                     placeholder="Optional"
@@ -527,7 +526,7 @@ export default function EditCoursePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                     Validity (Days) <span className="text-rose-400">*</span>
                   </label>
                   <input
@@ -535,12 +534,12 @@ export default function EditCoursePage() {
                     placeholder="e.g. 365"
                     value={validityDays}
                     onChange={(e) => setValidityDays(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                     Estimated Duration <span className="text-rose-400">*</span>
                   </label>
                   <input
@@ -548,17 +547,17 @@ export default function EditCoursePage() {
                     placeholder="e.g. 12 hours"
                     value={estimatedDuration}
                     onChange={(e) => setEstimatedDuration(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Instructor & Ratings</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
+              <h2 className="text-lg font-bold text-gray-900">Instructor & Ratings</h2>
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Instructor</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Instructor <span className="text-rose-400">*</span></label>
                   <Select
                     value={instructorId}
                     onChange={setInstructorId}
@@ -573,7 +572,7 @@ export default function EditCoursePage() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Average Rating</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Average Rating</label>
                     <input
                       type="text"
                       placeholder="0.0 - 5.0"
@@ -584,7 +583,7 @@ export default function EditCoursePage() {
                     {errors.averageRating && <p className="text-xs text-rose-400">{errors.averageRating}</p>}
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Reviews Count</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Reviews Count</label>
                     <input
                       type="text"
                       placeholder="e.g. 150"
@@ -600,13 +599,13 @@ export default function EditCoursePage() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Course Thumbnail</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
+              <h2 className="text-lg font-bold text-gray-900">Course Thumbnail <span className="text-rose-400">*</span></h2>
 
-              <div className="aspect-video w-full rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden relative flex flex-col items-center justify-center p-4">
+              <div className="aspect-video w-full rounded-xl bg-white border border-gray-200 overflow-hidden relative flex flex-col items-center justify-center p-4">
                 {thumbnailUrl ? (
                   <>
-                    <img src={thumbnailUrl} alt="Thumbnail preview" className="h-full w-full object-cover rounded-lg" />
+                    <Image src={thumbnailUrl} alt="Thumbnail preview" width={1280} height={720} className="h-full w-full object-cover rounded-lg" />
                     <button
                       type="button"
                       onClick={handleRemoveImage}
@@ -616,15 +615,15 @@ export default function EditCoursePage() {
                     </button>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center text-center text-zinc-500 space-y-2">
-                    <BookOpen className="h-10 w-10 text-zinc-700" />
+                  <div className="flex flex-col items-center text-center text-gray-400 space-y-2">
+                    <BookOpen className="h-10 w-10 text-gray-400" />
                     <span className="text-xs font-medium">No Image Uploaded</span>
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 bg-zinc-950 py-4 text-sm font-semibold text-teal-400 hover:border-teal-500/40 hover:bg-teal-500/5 transition cursor-pointer select-none">
+                <label className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 bg-white py-4 text-sm font-semibold text-blue-600 hover:border-blue-500/40 hover:bg-blue-600/5 transition cursor-pointer select-none">
                   <Upload className="h-4 w-4" />
                   Upload New Image
                   <input
@@ -635,25 +634,26 @@ export default function EditCoursePage() {
                     className="hidden"
                   />
                 </label>
+                <p className="text-xs text-gray-400 text-center mt-2">Recommended: 1280 × 720 px (16:9)</p>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Course Video</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
+              <h2 className="text-lg font-bold text-gray-900">Course Video</h2>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Video URL</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Video URL</label>
                 <input
                   type="text"
                   placeholder="https://www.youtube.com/watch?v=..."
                   value={previewVideoUrl}
                   onChange={(e) => setPreviewVideoUrl(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition"
                 />
               </div>
 
               {previewVideoUrl && (
-                <div className="aspect-video w-full rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden">
+                <div className="aspect-video w-full rounded-xl bg-white border border-gray-200 overflow-hidden">
                   {previewVideoUrl.includes('youtube.com') || previewVideoUrl.includes('youtu.be') ? (
                     <iframe
                       src={previewVideoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
@@ -674,12 +674,12 @@ export default function EditCoursePage() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Publish Settings</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
+              <h2 className="text-lg font-bold text-gray-900">Publish Settings</h2>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 block">
                     Course Level <span className="text-rose-400">*</span>
                   </label>
                   <Select
@@ -700,11 +700,11 @@ export default function EditCoursePage() {
                     type="checkbox"
                     checked={isPublished}
                     onChange={(e) => setIsPublished(e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-800 bg-zinc-950 text-teal-500 focus:ring-teal-500/20 focus:ring-offset-0 focus:ring-2"
+                    className="h-4 w-4 rounded border-gray-200 bg-white text-blue-500 focus:ring-blue-500/20 focus:ring-offset-0 focus:ring-2"
                   />
                   <div>
-                    <span className="text-sm font-semibold text-white block">Publish Course</span>
-                    <span className="text-xs text-zinc-500">Make this course visible to users</span>
+                    <span className="text-sm font-semibold text-gray-900 block">Publish Course</span>
+                    <span className="text-xs text-gray-400">Make this course visible to users</span>
                   </div>
                 </label>
 
@@ -713,20 +713,20 @@ export default function EditCoursePage() {
                     type="checkbox"
                     checked={isBestseller}
                     onChange={(e) => setIsBestseller(e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-800 bg-zinc-950 text-amber-500 focus:ring-amber-500/20 focus:ring-offset-0 focus:ring-2"
+                    className="h-4 w-4 rounded border-gray-200 bg-white text-amber-500 focus:ring-amber-500/20 focus:ring-offset-0 focus:ring-2"
                   />
                   <div>
-                    <span className="text-sm font-semibold text-white block">Bestseller</span>
-                    <span className="text-xs text-zinc-500">Mark this course as bestseller in the store</span>
+                    <span className="text-sm font-semibold text-gray-900 block">Bestseller</span>
+                    <span className="text-xs text-gray-400">Mark this course as bestseller in the store</span>
                   </div>
                 </label>
               </div>
 
-              <div className="pt-4 border-t border-zinc-800 flex flex-col gap-3">
+              <div className="pt-4 border-t border-gray-200 flex flex-col gap-3">
                 <button
                   type="submit"
                   disabled={isSaving || isUploading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-teal-500/10 active:scale-[0.98]"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 py-3.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-blue-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98]"
                 >
                   {isSaving ? (
                     <>
@@ -740,7 +740,7 @@ export default function EditCoursePage() {
 
                 <Link
                   href="/dashboard/courses"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 py-3.5 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3.5 text-sm font-semibold text-gray-500 hover:text-gray-700 transition"
                 >
                   Cancel
                 </Link>

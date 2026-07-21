@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -71,9 +71,6 @@ export default function InstructorProfilePage() {
             toast.error('Access denied. Only instructors can access this page.');
             router.push('/dashboard');
             return;
-          }
-          else{
-            router.push('/dashboard/instructor-profile');
           }
         }
 
@@ -226,12 +223,12 @@ export default function InstructorProfilePage() {
     }
   };
 
-  const inputClass = 'w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition';
+  const inputClass = 'w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition';
 
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -239,20 +236,20 @@ export default function InstructorProfilePage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">My Instructor Profile</h1>
-        <p className="text-zinc-400 text-sm mt-1">Manage your personal information and professional details.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">My Instructor Profile</h1>
+        <p className="text-gray-500 text-sm mt-1">Manage your personal information and professional details.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Basic Information</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900">Basic Information</h2>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Full Name <span className="text-rose-400">*</span></label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Full Name <span className="text-rose-400">*</span></label>
                   <input
                     type="text"
                     placeholder="Your full name"
@@ -265,7 +262,7 @@ export default function InstructorProfilePage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Phone <span className="text-rose-400">*</span></label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Phone <span className="text-rose-400">*</span></label>
                     <input
                       type="text"
                       placeholder="+1 234 567 8900"
@@ -277,7 +274,7 @@ export default function InstructorProfilePage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Specialization <span className="text-rose-400">*</span></label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Specialization <span className="text-rose-400">*</span></label>
                     <input
                       type="text"
                       placeholder="e.g. Hardware, Software, Both"
@@ -290,25 +287,25 @@ export default function InstructorProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Bio</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Bio</label>
                   <textarea
                     rows={4}
                     placeholder="Tell us about yourself, your experience and teaching philosophy..."
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition resize-none"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition resize-none"
                   />
                 </div>
               </div>
             </div>
 
             {/* Professional Details */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Professional Details</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900">Professional Details</h2>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Years of Experience <span className="text-rose-400">*</span></label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Years of Experience <span className="text-rose-400">*</span></label>
                   <input
                     type="number"
                     min="0"
@@ -321,7 +318,7 @@ export default function InstructorProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Education <span className="text-rose-400">*</span></label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Education <span className="text-rose-400">*</span></label>
                   <input
                     type="text"
                     placeholder="e.g. B.Tech in Electronics"
@@ -334,7 +331,7 @@ export default function InstructorProfilePage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Qualifications & Certifications</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Qualifications & Certifications</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -347,7 +344,7 @@ export default function InstructorProfilePage() {
                   <button
                     type="button"
                     onClick={addQualification}
-                    className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 px-4 py-3 text-xs font-semibold text-zinc-950 hover:from-teal-400 hover:to-emerald-400 transition cursor-pointer"
+                    className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3 text-xs font-semibold text-white hover:from-blue-500 hover:to-blue-400 transition cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     Add
@@ -358,13 +355,13 @@ export default function InstructorProfilePage() {
                     {qualifications.map((q, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-zinc-800 border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700"
                       >
                         {q}
                         <button
                           type="button"
                           onClick={() => removeQualification(i)}
-                          className="text-zinc-500 hover:text-rose-400 transition cursor-pointer"
+                          className="text-gray-400 hover:text-rose-400 transition cursor-pointer"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -376,12 +373,12 @@ export default function InstructorProfilePage() {
             </div>
 
             {/* Social Links */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Social Links</h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900">Social Links</h2>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">LinkedIn</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">LinkedIn</label>
                   <input
                     type="url"
                     placeholder="https://linkedin.com/in/..."
@@ -392,7 +389,7 @@ export default function InstructorProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Twitter / X</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Twitter / X</label>
                   <input
                     type="url"
                     placeholder="https://twitter.com/..."
@@ -403,7 +400,7 @@ export default function InstructorProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">YouTube</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">YouTube</label>
                   <input
                     type="url"
                     placeholder="https://youtube.com/@..."
@@ -414,7 +411,7 @@ export default function InstructorProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Website</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Website</label>
                   <input
                     type="url"
                     placeholder="https://..."
@@ -429,21 +426,21 @@ export default function InstructorProfilePage() {
 
           <div className="space-y-6">
             {/* Avatar Upload */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-              <h2 className="text-lg font-bold text-white">Profile Photo <span className="text-rose-400">*</span></h2>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6 shadow-sm">
+              <h2 className="text-lg font-bold text-gray-900">Profile Photo <span className="text-rose-400">*</span></h2>
 
               <div className="flex flex-col items-center gap-4">
-                <div className="h-32 w-32 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden flex items-center justify-center">
+                <div className="h-32 w-32 rounded-full bg-gray-100 border-2 border-gray-300 overflow-hidden flex items-center justify-center">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-4xl font-bold text-zinc-600">
+                    <span className="text-4xl font-bold text-gray-400">
                       {fullName ? fullName.charAt(0).toUpperCase() : '?'}
                     </span>
                   )}
                 </div>
 
-                <label className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 bg-zinc-950 py-4 text-sm font-semibold text-teal-400 hover:border-teal-500/40 hover:bg-teal-500/5 transition cursor-pointer select-none">
+                <label className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 bg-white py-4 text-sm font-semibold text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer select-none">
                   <Upload className="h-4 w-4" />
                   {isUploading ? 'Uploading...' : 'Upload Photo'}
                   <input
@@ -459,11 +456,11 @@ export default function InstructorProfilePage() {
             </div>
 
             {/* Save Button */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
               <button
                 type="submit"
                 disabled={isSaving || isUploading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-teal-500/10 active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 py-3.5 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-blue-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98]"
               >
                 {isSaving ? (
                   <>

@@ -28,16 +28,16 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-100 selection:bg-teal-500 selection:text-white">
+      <body className="min-h-full flex flex-col" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
         {children}
         <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
             style: {
-              background: "#18181b",
-              color: "#f4f4f5",
-              border: "1px solid #27272a",
+              background: 'var(--bg-card)',
+              color: 'var(--foreground)',
+              border: '1px solid var(--border)',
             },
           }}
         />

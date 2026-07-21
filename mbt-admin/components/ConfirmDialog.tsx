@@ -46,7 +46,7 @@ export default function ConfirmDialog({
       />
       <div
         ref={dialogRef}
-        className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
       >
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -55,24 +55,24 @@ export default function ConfirmDialog({
                 <AlertTriangle className="h-5 w-5 text-rose-400" />
               </div>
             )}
-            <h3 className="text-lg font-bold text-white">{title}</h3>
+            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            className="text-zinc-500 hover:text-zinc-300 transition cursor-pointer"
+            className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <p className="text-sm text-zinc-400 leading-relaxed mb-6">{message}</p>
+        <p className="text-sm text-gray-500 leading-relaxed mb-6">{message}</p>
 
         <div className="flex gap-3 justify-end">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-gray-700 transition cursor-pointer"
           >
             {cancelLabel}
           </button>
@@ -82,7 +82,7 @@ export default function ConfirmDialog({
             className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition cursor-pointer ${
               variant === 'danger'
                 ? 'bg-rose-600 text-white hover:bg-rose-500'
-                : 'bg-gradient-to-r from-teal-500 to-emerald-500 text-zinc-950 hover:from-teal-400 hover:to-emerald-400'
+                : 'bg-gradient-to-r from-green-500 to-emerald-500 text-zinc-950 hover:from-green-400 hover:to-emerald-400'
             }`}
           >
             {confirmLabel}

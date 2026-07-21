@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -6,9 +6,10 @@ import { supabase } from '@/app/lib/supabaseClient';
 import { apiPost, apiDelete } from '@/app/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Plus, Search, Video, Trash2, Edit3, Play, StopCircle, MoreVertical, Link as LinkIcon, Unlink } from 'lucide-react';
+import { Plus, Search, Video, Trash2, Edit3, Play, StopCircle, MoreVertical } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Pagination from '@/components/Pagination';
+import { PAGE_SIZE } from '@/app/lib/constants';
 
 interface Session {
   id: string;
@@ -27,11 +28,11 @@ interface Session {
 
 const STATUS_STYLES: Record<string, string> = {
   scheduled: 'bg-blue-500/15 text-blue-400 border-blue-500/20',
-  live: 'bg-green-500/15 text-green-400 border-green-500/20',
+  live: 'bg-blue-600/15 text-blue-400 border-blue-500/25',
   finished: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20',
   cancelled: 'bg-rose-500/15 text-rose-400 border-rose-500/20',
   recording_processing: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-  recording_ready: 'bg-teal-500/15 text-teal-400 border-teal-500/20',
+  recording_ready: 'bg-blue-600/15 text-blue-400 border-blue-500/25',
   draft: 'bg-zinc-500/15 text-zinc-500 border-zinc-500/20',
 };
 
@@ -44,9 +45,6 @@ export default function LiveClassesPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [zoomConnected, setZoomConnected] = useState<boolean | null>(null);
-
-  const PAGE_SIZE = 10;
 
   const fetchSessions = async () => {
     try {
@@ -212,12 +210,12 @@ export default function LiveClassesPage() {
     <div className="space-y-8 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Live Classes</h1>
-          <p className="text-zinc-400 text-sm mt-1">Schedule and manage Zoom sessions for courses.</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Live Classes</h1>
+          <p className="text-gray-500 text-sm mt-1">Schedule and manage Zoom sessions for courses.</p>
         </div>
         <Link
           href="/dashboard/live-classes/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition-all duration-200 hover:from-teal-400 hover:to-emerald-400 cursor-pointer shadow-lg shadow-teal-500/10 active:scale-[0.98]"
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:from-blue-500 hover:to-blue-400 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           Create Session
@@ -226,13 +224,13 @@ export default function LiveClassesPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="relative max-w-md w-full sm:w-auto sm:flex-1">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search by session title or course..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900/40 py-3 pl-10 pr-4 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-all duration-200 focus:border-teal-500 focus:bg-zinc-900/50"
+            className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all duration-200 focus:border-blue-500 focus:bg-gray-50"
           />
         </div>
         <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
@@ -242,8 +240,8 @@ export default function LiveClassesPage() {
               onClick={() => { setStatusFilter(f); setCurrentPage(1); }}
               className={`text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full border transition cursor-pointer ${
                 statusFilter === f
-                  ? 'bg-teal-500/15 text-teal-400 border-teal-500/20'
-                  : 'text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
+                  ? 'bg-blue-600/15 text-blue-400 border-blue-500/25'
+                  : 'text-gray-400 border-gray-200 hover:text-gray-600 hover:border-gray-300'
               }`}
             >
               {f === 'all' ? 'All' : f}
@@ -254,19 +252,19 @@ export default function LiveClassesPage() {
 
       {isLoading ? (
         <div className="flex h-48 items-center justify-center">
-          <span className="text-sm text-zinc-500">Loading sessions...</span>
+          <span className="text-sm text-gray-400">Loading sessions...</span>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center p-12 rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10">
-          <Video className="h-10 w-10 text-zinc-600 mb-3" />
-          <h3 className="text-lg font-bold text-white">No sessions found</h3>
-          <p className="text-zinc-500 text-sm mt-1">Schedule your first live class session.</p>
+        <div className="flex flex-col items-center justify-center text-center p-12 rounded-2xl border border-dashed border-gray-200 bg-gray-50">
+          <Video className="h-10 w-10 text-gray-400 mb-3" />
+          <h3 className="text-lg font-bold text-gray-900">No sessions found</h3>
+          <p className="text-gray-400 text-sm mt-1">Schedule your first live class session.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/20">
-          <table className="min-w-full divide-y divide-zinc-800">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead>
-              <tr className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              <tr className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                 <th className="px-6 py-4 text-left">Session</th>
                 <th className="px-6 py-4 text-left">Course</th>
                 <th className="px-6 py-4 text-left">Course Instructor</th>
@@ -278,28 +276,28 @@ export default function LiveClassesPage() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/50">
+            <tbody className="divide-y divide-gray-100">
               {paginated.map((session) => (
-                <tr key={session.id} className="group hover:bg-zinc-900/40 transition-colors">
+                <tr key={session.id} className="group hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
-                    <p className="font-semibold text-white text-sm">{session.title}</p>
+                    <p className="font-semibold text-gray-900 text-sm">{session.title}</p>
                     {session.description && (
-                      <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{session.description}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{session.description}</p>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-zinc-400">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {session.courses?.[0]?.title || '—'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-zinc-400">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {session.course_instructor_name || '—'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-zinc-400">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {session.profiles?.[0]?.full_name || '—'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-zinc-300">
+                  <td className="px-6 py-4 text-sm text-gray-700">
                     {new Date(session.start_time).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 text-sm text-zinc-400">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {session.duration} min
                   </td>
                   <td className="px-6 py-4">
@@ -307,42 +305,42 @@ export default function LiveClassesPage() {
                       {session.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-xs text-zinc-500">
+                  <td className="px-6 py-4 text-xs text-gray-400">
                     {session.created_at ? new Date(session.created_at).toLocaleString() : '—'}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="relative flex items-center justify-end">
                       <button
                         onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === session.id ? null : session.id); }}
-                        className="rounded-lg border border-zinc-800 hover:bg-zinc-800 p-2 text-zinc-400 transition cursor-pointer"
+                        className="rounded-lg border border-gray-200 hover:bg-gray-100 p-2 text-gray-500 transition cursor-pointer"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
 
                       {openMenuId === session.id && (
-                        <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-xl border border-zinc-800 bg-zinc-900 py-1.5 shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()}>
+                        <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg shadow-gray-200/50" onClick={(e) => e.stopPropagation()}>
                           {session.status !== 'cancelled' && session.status !== 'finished' && (
-                            <button onClick={() => { handleJoin(session.id); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer">
-                              <Video className="h-4 w-4 text-teal-400" /> Join
+                            <button onClick={() => { handleJoin(session.id); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition cursor-pointer">
+                              <Video className="h-4 w-4 text-blue-600" /> Join
                             </button>
                           )}
                           {session.status === 'scheduled' && (
-                            <button onClick={() => { handleStatusChange(session.id, 'live'); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer">
-                              <Play className="h-4 w-4 text-green-400" /> Start
+                            <button onClick={() => { handleStatusChange(session.id, 'live'); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition cursor-pointer">
+                              <Play className="h-4 w-4 text-blue-600" /> Start
                             </button>
                           )}
                           {session.status === 'live' && (
-                            <button onClick={() => { handleStatusChange(session.id, 'finished'); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer">
-                              <StopCircle className="h-4 w-4 text-zinc-400" /> End
+                            <button onClick={() => { handleStatusChange(session.id, 'finished'); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition cursor-pointer">
+                              <StopCircle className="h-4 w-4 text-gray-500" /> End
                             </button>
                           )}
                           {(session.status === 'scheduled' || session.status === 'draft') && (
-                            <Link href={`/dashboard/live-classes/${session.id}/edit`} onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition">
-                              <Edit3 className="h-4 w-4 text-blue-400" /> Edit
+                            <Link href={`/dashboard/live-classes/${session.id}/edit`} onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition">
+                              <Edit3 className="h-4 w-4 text-blue-600" /> Edit
                             </Link>
                           )}
                           {session.status !== 'cancelled' && session.status !== 'finished' && (
-                            <button onClick={() => { setDeleteTarget(session); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-rose-400 hover:bg-zinc-800 transition cursor-pointer">
+                            <button onClick={() => { setDeleteTarget(session); setOpenMenuId(null); }} className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-rose-400 hover:bg-gray-100 transition cursor-pointer">
                               <Trash2 className="h-4 w-4" /> Cancel
                             </button>
                           )}

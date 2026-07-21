@@ -4,7 +4,7 @@ export const courseSchema = z
   .object({
     title: z.string().min(1, 'Course Title is required.'),
     slug: z.string().min(1, 'Course Slug is required.'),
-    shortDescription: z.string().optional(),
+    shortDescription: z.string().min(1, 'Short Description is required.'),
     description: z.string().optional(),
     language: z.string().min(1, 'Language is required.'),
     level: z.string().min(1, 'Level is required.'),
@@ -20,7 +20,7 @@ export const courseSchema = z
         (v) => !v || (!isNaN(Number(v)) && Number(v) >= 0),
         'Discount Price must be a valid positive number.'
       ),
-    instructorId: z.string().optional(),
+    instructorId: z.string().min(1, 'Instructor is required.'),
     averageRating: z
       .string()
       .optional()
@@ -35,14 +35,17 @@ export const courseSchema = z
         (v) => !v || (!isNaN(Number(v)) && Number(v) >= 0 && Number.isInteger(Number(v))),
         'Reviews Count must be a valid positive integer.'
       ),
-    validityDays: z.string().optional(),
-    estimatedDuration: z.string().optional(),
+    validityDays: z
+      .string()
+      .min(1, 'Validity (Days) is required.')
+      .refine((v) => !isNaN(Number(v)) && Number(v) >= 0, 'Validity (Days) must be a valid positive number.'),
+    estimatedDuration: z.string().min(1, 'Estimated Duration is required.'),
     isPublished: z.boolean(),
-    thumbnailUrl: z.string().optional(),
+    thumbnailUrl: z.string().min(1, 'Course Thumbnail is required.'),
     previewVideoUrl: z.string().optional(),
     isBestseller: z.boolean().optional().default(false),
-    learningOutcomes: z.array(z.string()).optional().default([]),
-    requirements: z.array(z.string()).optional().default([]),
+    learningOutcomes: z.array(z.string()).min(1, 'At least one Learning Outcome is required.'),
+    requirements: z.array(z.string()).min(1, 'At least one Requirement is required.'),
   })
   .refine(
     (data) => {
@@ -50,7 +53,7 @@ export const courseSchema = z
       return Number(data.discountPrice) <= Number(data.price);
     },
     {
-      message: 'Discount Price ($) cannot be greater than Base Price ($).',
+      message: 'Discount Price (₹) cannot be greater than Base Price (₹).',
       path: ['discountPrice'],
     }
   );
