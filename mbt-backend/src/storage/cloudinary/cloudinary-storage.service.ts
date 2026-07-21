@@ -1,9 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
+import type { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
 import * as fs from 'fs';
 import { StorageProvider } from '../interfaces/storage-provider.interface';
 import { UploadResult } from '../interfaces/upload-result.interface';
+
+interface CloudinaryVideoUploadResponse extends UploadApiResponse {
+  duration?: number;
+  bit_rate?: number;
+  video?: {
+    codec?: string;
+  };
+}
 
 @Injectable()
 export class CloudinaryStorageService implements StorageProvider {
@@ -29,11 +38,13 @@ export class CloudinaryStorageService implements StorageProvider {
         resource_type: 'video' as const,
       };
 
-      const callback = (error: any, result: any) => {
+      const callback = (
+        error?: UploadApiErrorResponse,
+        result?: CloudinaryVideoUploadResponse,
+      ) => {
         if (error) {
-          const errMsg = error.message || 'Unknown upload error';
-          this.logger.error(`Cloudinary upload failed: ${errMsg}`);
-          return reject(new Error(errMsg));
+          this.logger.error(`Cloudinary upload failed: ${error.message}`);
+          return reject(new Error(error.message));
         }
         if (!result) {
           return reject(new Error('Cloudinary upload result was empty'));
@@ -52,13 +63,9 @@ export class CloudinaryStorageService implements StorageProvider {
             typeof result.duration === 'number' ? result.duration : null,
           width: typeof result.width === 'number' ? result.width : null,
           height: typeof result.height === 'number' ? result.height : null,
-          bitrate:
-            typeof result.bit_rate === 'number' ? result.bit_rate : null,
+          bitrate: typeof result.bit_rate === 'number' ? result.bit_rate : null,
           codec:
-            typeof (result.video as { codec?: string } | undefined)?.codec ===
-            'string'
-              ? (result.video as { codec?: string }).codec
-              : null,
+            typeof result.video?.codec === 'string' ? result.video.codec : null,
           thumbnailUrl: cloudinary.url(result.public_id, {
             secure: true,
             resource_type: 'video',
