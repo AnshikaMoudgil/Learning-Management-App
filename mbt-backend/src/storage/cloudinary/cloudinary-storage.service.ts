@@ -75,7 +75,7 @@ export class CloudinaryStorageService implements StorageProvider {
       };
 
       if (typeof file === 'string') {
-        cloudinary.uploader.upload(file, options, callback);
+        void cloudinary.uploader.upload(file, options, callback);
       } else {
         const uploadStream = cloudinary.uploader.upload_stream(
           options,
