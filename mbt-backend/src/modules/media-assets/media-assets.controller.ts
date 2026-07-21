@@ -12,6 +12,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { randomUUID } from 'crypto';
+import * as fs from 'fs';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { DeviceGuard } from '../../common/guards/device.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -37,6 +41,19 @@ export class MediaAssetsController {
   @Roles('admin', 'superadmin', 'instructor')
   @UseInterceptors(
     FileInterceptor('video', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const dir = './temp_uploads';
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+          }
+          cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix = randomUUID();
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
       limits: { fileSize: MAX_VIDEO_SIZE_BYTES },
       fileFilter: (_req, file, cb) => {
         if (!ALLOWED_VIDEO_MIME_TYPES.has(file.mimetype)) {
@@ -85,6 +102,19 @@ export class MediaUploadController {
   @Roles('admin', 'superadmin', 'instructor')
   @UseInterceptors(
     AnyFilesInterceptor({
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const dir = './temp_uploads';
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+          }
+          cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix = randomUUID();
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
       limits: { fileSize: MAX_VIDEO_SIZE_BYTES },
       fileFilter: (_req, file, cb) => {
         if (!ALLOWED_VIDEO_MIME_TYPES.has(file.mimetype)) {

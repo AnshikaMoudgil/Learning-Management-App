@@ -27,7 +27,7 @@ export class StorageService implements StorageProvider {
   }
 
   async upload(
-    file: Buffer,
+    file: Buffer | string,
     fileName: string,
     mimeType: string,
   ): Promise<UploadResult> {

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -104,7 +104,7 @@ export default function ChangePasswordPage() {
   if (isChecking) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -112,56 +112,56 @@ export default function ChangePasswordPage() {
   return (
     <div className="space-y-8 max-w-xl animate-in fade-in duration-300">
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Change Password</h1>
-        <p className="text-zinc-400 text-sm mt-1">Update your account login password.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Change Password</h1>
+        <p className="text-gray-500 text-sm mt-1">Update your account login password.</p>
       </div>
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 shadow-xl">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+            <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 block">
               Current Password <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+              <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type="password"
                 placeholder="Enter your current password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-teal-500"
+                className="w-full rounded-lg border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+            <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 block">
               New Password <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
-              <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+              <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type="password"
                 placeholder="Minimum 6 characters"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-teal-500"
+                className="w-full rounded-lg border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+            <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 block">
               Confirm New Password <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
-              <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+              <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type="password"
                 placeholder="Re-enter password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 pl-10 pr-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-teal-500"
+                className="w-full rounded-lg border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500"
               />
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function ChangePasswordPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-teal-500/10 active:scale-[0.98]"
+            className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-3 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-blue-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98]"
           >
             {isLoading ? (
               <>

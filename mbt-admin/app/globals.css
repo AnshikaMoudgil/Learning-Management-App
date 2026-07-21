@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
-  --foreground: #f4f4f5;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #2563eb;
+  --bg-card: #ffffff;
+  --border: #e2e8f0;
+  --text-muted: #64748b;
 }
 
 @theme inline {
@@ -26,4 +30,61 @@ body {
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.admin-input:focus {
+  border-color: #3b82f6;
+}
+.admin-input::placeholder {
+  color: #94a3b8;
 }

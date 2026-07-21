@@ -2,7 +2,7 @@ import { UploadResult } from './upload-result.interface';
 
 export interface StorageProvider {
   upload(
-    file: Buffer,
+    file: Buffer | string,
     fileName: string,
     mimeType: string,
   ): Promise<UploadResult>;

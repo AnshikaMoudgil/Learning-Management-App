@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
 
 export async function GET(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
@@ -16,9 +15,7 @@ export async function GET(request: Request) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const adminClient = getSupabaseAdmin();
 
     const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
     if (authError || !user) {
@@ -27,19 +24,31 @@ export async function GET(request: Request) {
 
     const { data: callerProfile } = await adminClient
       .from('profiles')
-      .select('role')
+      .select('role, allowed_sections')
       .eq('id', user.id)
       .maybeSingle();
 
-    const allowedRoles = ['admin', 'superadmin'];
-    if (!callerProfile || !allowedRoles.includes(callerProfile.role)) {
+    const hasAccess = callerProfile && (
+      callerProfile.role === 'superadmin' ||
+      callerProfile.role === 'admin' ||
+      (callerProfile.allowed_sections || []).includes('Device Requests')
+    );
+
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Access Denied.' }, { status: 403 });
     }
 
-    const { data: requests, error: listError } = await adminClient
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+    const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20')));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data: requests, count: totalCount, error: listError } = await adminClient
       .from('device_change_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
     if (listError) {
       return NextResponse.json({ error: listError.message }, { status: 500 });
@@ -69,7 +78,9 @@ export async function GET(request: Request) {
       reviewer: req.reviewed_by ? (profilesMap[req.reviewed_by] ?? null) : null,
     }));
 
-    return NextResponse.json({ requests: mergedRequests });
+    const response = NextResponse.json({ requests: mergedRequests, total: totalCount, page, limit });
+    response.headers.set('Cache-Control', 's-maxage=30, stale-while-revalidate=120');
+    return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }
@@ -77,7 +88,6 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
@@ -90,9 +100,7 @@ export async function PATCH(request: Request) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const adminClient = getSupabaseAdmin();
 
     const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
     if (authError || !user) {
@@ -101,12 +109,18 @@ export async function PATCH(request: Request) {
 
     const { data: callerProfile } = await adminClient
       .from('profiles')
-      .select('role')
+      .select('role, allowed_sections, allowed_actions')
       .eq('id', user.id)
       .maybeSingle();
 
-    const allowedRoles = ['admin', 'superadmin'];
-    if (!callerProfile || !allowedRoles.includes(callerProfile.role)) {
+    const hasAccess = callerProfile && (
+      callerProfile.role === 'superadmin' ||
+      callerProfile.role === 'admin' ||
+      (callerProfile.allowed_actions || []).includes('Accept / Reject Device Requests') ||
+      (callerProfile.allowed_sections || []).includes('Device Requests')
+    );
+
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Access Denied.' }, { status: 403 });
     }
 

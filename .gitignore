@@ -65,3 +65,6 @@ mbt-admin/.env*
 mbt-admin/*.tsbuildinfo
 mbt-admin/next-env.d.ts
 
+
+# videos
+mbt-backend/temp_uploads/

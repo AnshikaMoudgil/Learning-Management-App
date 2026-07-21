@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
-import { createClient } from '@supabase/supabase-js';
 
 // Helper to authenticate caller
 async function checkSuperAdmin(request: Request) {
@@ -8,17 +7,11 @@ async function checkSuperAdmin(request: Request) {
   if (!authHeader) return false;
 
   const token = authHeader.replace('Bearer ', '');
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false },
-  });
+  const adminClient = getSupabaseAdmin();
 
-  const { data: { user }, error: authError } = await client.auth.getUser(token);
+  const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
   if (authError || !user) return false;
 
-  const adminClient = getSupabaseAdmin();
   const { data: profile, error: profileError } = await adminClient
     .from('profiles')
     .select('role')

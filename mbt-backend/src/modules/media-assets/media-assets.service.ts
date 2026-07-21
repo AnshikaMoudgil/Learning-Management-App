@@ -5,8 +5,11 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 import { SupabaseService } from '../supabase/supabase.service';
 import { StorageService } from '../../storage/storage.service';
 
@@ -42,7 +45,7 @@ interface ProfileRow {
 }
 
 @Injectable()
-export class MediaAssetsService {
+export class MediaAssetsService implements OnModuleInit {
   private readonly playbackExpiresInSeconds = 45;
   private readonly logger = new Logger(MediaAssetsService.name);
 
@@ -51,8 +54,53 @@ export class MediaAssetsService {
     private readonly storageService: StorageService,
   ) {}
 
+  async onModuleInit() {
+    const tempDir = path.join(process.cwd(), 'temp_uploads');
+    if (!fs.existsSync(tempDir)) {
+      try {
+        fs.mkdirSync(tempDir, { recursive: true });
+      } catch (err) {
+        this.logger.error(`Failed to create temp_uploads directory: ${err}`);
+      }
+      return;
+    }
+
+    try {
+      const files = await fs.promises.readdir(tempDir);
+      const now = Date.now();
+      const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+
+      for (const file of files) {
+        const filePath = path.join(tempDir, file);
+        try {
+          const stats = await fs.promises.stat(filePath);
+          if (stats.mtimeMs < twentyFourHoursAgo) {
+            await fs.promises.unlink(filePath);
+            this.logger.log(`Cleaned up old temp file: ${file}`);
+          }
+        } catch (err) {
+          this.logger.error(`Error processing temp file ${file}: ${err}`);
+        }
+      }
+    } catch (err) {
+      this.logger.error(
+        `Failed to clean up temp_uploads directory on startup: ${err}`,
+      );
+    }
+  }
+
   private get db() {
     return this.supabaseService.getClient();
+  }
+
+  private getFileChecksum(filePath: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const hash = createHash('sha256');
+      const stream = fs.createReadStream(filePath);
+      stream.on('data', (data) => hash.update(data));
+      stream.on('end', () => resolve(hash.digest('hex')));
+      stream.on('error', (err) => reject(err));
+    });
   }
 
   async createVideoAsset(
@@ -64,9 +112,21 @@ export class MediaAssetsService {
       throw new BadRequestException('No video file uploaded');
     }
 
-    const checksum = createHash('sha256').update(file.buffer).digest('hex');
+    let checksum: string;
+    try {
+      checksum = await this.getFileChecksum(file.path);
+    } catch (err) {
+      await fs.promises.unlink(file.path).catch(() => {});
+      throw new InternalServerErrorException(
+        `Failed to calculate file hash: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+
     const existing = await this.findExistingAsset(checksum);
     if (existing) {
+      await fs.promises.unlink(file.path).catch(() => {});
       if (lessonId) {
         await this.attachAssetToLesson(existing.id, lessonId);
       }
@@ -88,6 +148,7 @@ export class MediaAssetsService {
       .single();
 
     if (insertError) {
+      await fs.promises.unlink(file.path).catch(() => {});
       throw new BadRequestException(insertError.message);
     }
 
@@ -96,7 +157,7 @@ export class MediaAssetsService {
 
     try {
       const uploadResult = await this.storageService.upload(
-        file.buffer,
+        file.path,
         fileName,
         file.mimetype,
       );
@@ -124,6 +185,12 @@ export class MediaAssetsService {
       this.logger.error(`Upload failed for asset ${assetId}: ${message}`);
       await this.markFailed(assetId, uploadError);
       throw new InternalServerErrorException(`Video upload failed: ${message}`);
+    } finally {
+      await fs.promises.unlink(file.path).catch((unlinkErr) => {
+        this.logger.error(
+          `Failed to delete temp file ${file.path}: ${unlinkErr}`,
+        );
+      });
     }
   }
 

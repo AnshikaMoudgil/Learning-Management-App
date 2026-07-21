@@ -9,6 +9,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
 import { StorageProvider } from '../interfaces/storage-provider.interface';
 import { UploadResult } from '../interfaces/upload-result.interface';
 
@@ -41,17 +42,29 @@ export class R2StorageService implements StorageProvider {
   }
 
   async upload(
-    file: Buffer,
+    file: Buffer | string,
     fileName: string,
     mimeType: string,
   ): Promise<UploadResult> {
     const { client, bucketName } = this.ensureClient();
     this.logger.log(`Uploading file ${fileName} to R2`);
+
+    let body: Buffer | fs.ReadStream;
+    let size: number;
+
+    if (typeof file === 'string') {
+      body = fs.createReadStream(file);
+      size = fs.statSync(file).size;
+    } else {
+      body = file;
+      size = file.length;
+    }
+
     await client.send(
       new PutObjectCommand({
         Bucket: bucketName,
         Key: fileName,
-        Body: file,
+        Body: body,
         ContentType: mimeType,
       }),
     );
@@ -62,7 +75,7 @@ export class R2StorageService implements StorageProvider {
       url: this.publicBaseUrl
         ? `${this.publicBaseUrl.replace(/\/$/, '')}/${fileName}`
         : fileName,
-      size: file.length,
+      size,
       mimeType,
     };
   }

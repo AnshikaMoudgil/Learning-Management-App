@@ -46,7 +46,7 @@ function InlineInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition ${className}`}
+      className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition ${className}`}
     />
   );
 }
@@ -72,34 +72,34 @@ function ResourceRow({
   };
 
   const getFileIcon = (type: string | null) => {
-    if (!type) return <File className="h-5 w-5 text-zinc-500" />;
+    if (!type) return <File className="h-5 w-5 text-gray-400" />;
     const t = type.toLowerCase();
     if (t.includes('pdf')) return <FileText className="h-5 w-5 text-rose-400" />;
     if (t.includes('zip') || t.includes('rar')) return <Download className="h-5 w-5 text-amber-400" />;
-    return <File className="h-5 w-5 text-teal-400" />;
+    return <File className="h-5 w-5 text-blue-600" />;
   };
 
   return (
     <>
-      <div className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/30 px-5 py-4 transition hover:border-zinc-700">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800">
+      <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-5 py-4 transition hover:border-gray-300">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
           {getFileIcon(resource.file_type)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white truncate">{resource.title}</p>
+          <p className="text-sm font-bold text-gray-900 truncate">{resource.title}</p>
           <div className="flex items-center gap-3 mt-1">
             {resource.section_title && (
-              <span className="text-xs text-teal-400 font-semibold">
+              <span className="text-xs text-blue-600 font-semibold">
                 {resource.section_title}
               </span>
             )}
             {resource.file_type && (
-              <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400 uppercase">
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 uppercase">
                 {resource.file_type}
               </span>
             )}
             {resource.file_size && (
-              <span className="text-xs text-zinc-500">{resource.file_size}</span>
+              <span className="text-xs text-gray-400">{resource.file_size}</span>
             )}
           </div>
         </div>
@@ -107,14 +107,14 @@ function ResourceRow({
           href={resource.file_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition"
+          className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 transition"
         >
           <Download className="h-3.5 w-3.5" /> Open
         </a>
         <button
           type="button"
           onClick={() => setConfirmDelete(true)}
-          className="rounded-lg p-2 text-zinc-600 hover:bg-rose-500/10 hover:text-rose-400 transition cursor-pointer"
+          className="rounded-lg p-2 text-gray-400 hover:bg-rose-500/10 hover:text-rose-400 transition cursor-pointer"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -263,7 +263,7 @@ export default function CourseResourcesPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -271,9 +271,9 @@ export default function CourseResourcesPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Resources</h1>
-        <p className="text-zinc-400 text-sm mt-1">
-          <span className="text-teal-400 font-semibold">{courseTitle}</span>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Resources</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          <span className="text-blue-600 font-semibold">{courseTitle}</span>
           {' '}— {resources.length} resource{resources.length !== 1 ? 's' : ''}
         </p>
       </div>
@@ -281,10 +281,10 @@ export default function CourseResourcesPage() {
       {/* Resources List */}
       <div className="space-y-3">
         {resources.length === 0 && !isAdding && (
-          <div className="flex flex-col items-center justify-center text-center p-16 rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10">
-            <FileText className="h-10 w-10 text-zinc-600 mb-3" />
-            <h3 className="text-lg font-bold text-white">No resources yet</h3>
-            <p className="text-zinc-500 text-sm mt-1">
+          <div className="flex flex-col items-center justify-center text-center p-16 rounded-2xl border border-dashed border-gray-200 bg-gray-50">
+            <FileText className="h-10 w-10 text-gray-400 mb-3" />
+            <h3 className="text-lg font-bold text-gray-900">No resources yet</h3>
+            <p className="text-gray-400 text-sm mt-1">
               Upload PDFs, ZIPs, slides, or other files for your students.
             </p>
           </div>
@@ -296,13 +296,13 @@ export default function CourseResourcesPage() {
 
       {/* Add Resource Form */}
       {isAdding ? (
-        <div className="rounded-2xl border border-teal-500/30 bg-teal-500/5 p-6 space-y-4">
-          <h3 className="text-sm font-bold text-white">New Resource</h3>
+        <div className="rounded-2xl border border-blue-500/30 bg-blue-600/5 p-6 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900">New Resource</h3>
           <InlineInput value={newTitle} onChange={setNewTitle} placeholder="Resource title *" />
           <InlineInput value={newFileUrl} onChange={setNewFileUrl} placeholder="File URL * (e.g. https://storage.example.com/file.pdf)" />
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Module (Optional)</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Module (Optional)</label>
               <Select
                 value={newSectionId}
                 onChange={setNewSectionId}
@@ -314,11 +314,11 @@ export default function CourseResourcesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">File Type</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">File Type</label>
               <InlineInput value={newFileType} onChange={setNewFileType} placeholder="e.g. pdf, zip, pptx" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">File Size</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">File Size</label>
               <InlineInput value={newFileSize} onChange={setNewFileSize} placeholder="e.g. 2.4 MB" />
             </div>
           </div>
@@ -333,7 +333,7 @@ export default function CourseResourcesPage() {
                 setNewFileSize('');
                 setNewFileType('');
               }}
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 transition cursor-pointer"
             >
               <X className="h-4 w-4" /> Cancel
             </button>
@@ -341,7 +341,7 @@ export default function CourseResourcesPage() {
               type="button"
               onClick={handleAdd}
               disabled={isSaving}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-2 text-sm font-semibold text-zinc-950 hover:from-teal-400 hover:to-emerald-400 transition disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2 text-sm font-semibold text-white hover:from-blue-500 hover:to-blue-400 transition disabled:opacity-50 cursor-pointer"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Add Resource
             </button>
@@ -351,7 +351,7 @@ export default function CourseResourcesPage() {
         <button
           type="button"
           onClick={() => setIsAdding(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-zinc-700 py-4 text-sm font-semibold text-zinc-500 hover:border-teal-500/40 hover:text-teal-400 hover:bg-teal-500/5 transition cursor-pointer"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 py-4 text-sm font-semibold text-gray-400 hover:border-blue-500/40 hover:text-blue-600 hover:bg-blue-600/5 transition cursor-pointer"
         >
           <Plus className="h-4 w-4" /> Add Resource
         </button>

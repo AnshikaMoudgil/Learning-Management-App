@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -103,7 +103,7 @@ export default function IntegrationsPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -111,52 +111,52 @@ export default function IntegrationsPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Integrations</h1>
-        <p className="text-zinc-400 text-sm mt-1">Configure third-party services and connections.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Integrations</h1>
+        <p className="text-gray-500 text-sm mt-1">Configure third-party services and connections.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
                 <Video className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white">Zoom</h2>
-                <p className="text-xs text-zinc-500">Live online class meetings</p>
+                <h2 className="text-lg font-bold text-gray-900">Zoom</h2>
+                <p className="text-xs text-gray-400">Live online class meetings</p>
               </div>
             </div>
             <div>
               {zoomConnected ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2.5 py-1 text-xs font-semibold text-teal-400 border border-teal-500/20">
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/10 px-2.5 py-1 text-xs font-semibold text-blue-400 border border-blue-500/25">
                   Connected
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-400 border border-zinc-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500 border border-gray-300">
                   Not Connected
                 </span>
               )}
             </div>
           </div>
 
-          <div className="space-y-4 pt-4 border-t border-zinc-800">
+          <div className="space-y-4 pt-4 border-t border-gray-200">
             {zoomConnected && (
               <div className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Connected Account</span>
-                <div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 p-3 space-y-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Connected Account</span>
+                <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400 w-16">Email:</span>
-                    <span className="text-sm font-medium text-white">{zoomEmail}</span>
+                    <span className="text-xs text-gray-400 w-16">Email:</span>
+                    <span className="text-sm font-medium text-gray-900">{zoomEmail}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400 w-16">Zoom ID:</span>
-                    <span className="text-sm font-mono text-zinc-300">{zoomUserId}</span>
+                    <span className="text-xs text-gray-400 w-16">Zoom ID:</span>
+                    <span className="text-sm font-mono text-gray-700">{zoomUserId}</span>
                   </div>
                   {zoomConnectedAt && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-zinc-400 w-16">Connected:</span>
-                      <span className="text-sm text-zinc-300">{new Date(zoomConnectedAt).toLocaleDateString()}</span>
+                      <span className="text-xs text-gray-400 w-16">Connected:</span>
+                      <span className="text-sm text-gray-700">{new Date(zoomConnectedAt).toLocaleDateString()}</span>
                     </div>
                   )}
                 </div>
@@ -168,7 +168,7 @@ export default function IntegrationsPage() {
                 <button
                   onClick={handleConnectZoom}
                   disabled={isActionLoading}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 hover:from-teal-400 hover:to-emerald-400 transition cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-sm font-semibold text-white hover:from-blue-500 hover:to-blue-400 transition cursor-pointer disabled:opacity-50"
                 >
                   <LinkIcon className="h-4 w-4" />
                   Connect
@@ -178,7 +178,7 @@ export default function IntegrationsPage() {
                   <button
                     onClick={handleConnectZoom}
                     disabled={isActionLoading}
-                    className="flex items-center gap-2 rounded-xl bg-zinc-800 border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-100 hover:bg-zinc-700 transition cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-xl bg-gray-100 border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-200 transition cursor-pointer disabled:opacity-50"
                   >
                     <LinkIcon className="h-4 w-4" />
                     Reconnect
@@ -186,7 +186,7 @@ export default function IntegrationsPage() {
                   <button
                     onClick={handleDisconnectZoom}
                     disabled={isActionLoading}
-                    className="flex items-center gap-2 rounded-xl bg-rose-5500 bg-rose-500/10 hover:bg-rose-5500 hover:bg-rose-500/20 border border-rose-500/20 px-5 py-2.5 text-sm font-semibold text-rose-400 transition cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-5 py-2.5 text-sm font-semibold text-rose-400 transition cursor-pointer disabled:opacity-50"
                   >
                     <Unlink className="h-4 w-4" />
                     Disconnect

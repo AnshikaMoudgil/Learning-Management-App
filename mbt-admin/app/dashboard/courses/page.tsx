@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
+import { useAuth } from '@/app/lib/AuthContext';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Plus, Search, BookOpen, Trash2, Edit3 } from 'lucide-react';
+import Image from 'next/image';
+import { Plus, Search, BookOpen, Trash2, Edit3, ChevronDown, X } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import Pagination from '@/components/Pagination';
-
-const PAGE_SIZE = 9;
+import Select from '@/components/Select';
+import { COURSES_PAGE_SIZE as PAGE_SIZE } from '@/app/lib/constants';
 
 interface Course {
   id: string;
@@ -26,52 +28,55 @@ interface Course {
 }
 
 export default function CoursesPage() {
+  const { role, userId } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterLevel, setFilterLevel] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterMinPrice, setFilterMinPrice] = useState('');
+  const [filterMaxPrice, setFilterMaxPrice] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
-  const [userRole, setUserRole] = useState<string>('');
 
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const uid = session?.user?.id;
-
-      let userRoleValue = '';
-      if (uid) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', uid)
-          .single();
-        userRoleValue = profile?.role || '';
-        setUserRole(userRoleValue);
-      }
+      const uid = userId;
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
       let query = supabase
         .from('courses')
-        .select('id, title, slug, price, is_published, category, level, thumbnail_url, average_rating, reviews_count, instructor_id, profiles!instructor_id ( full_name )', { count: 'exact' });        
-      if (userRoleValue === 'instructor' && uid) {
+        .select('id, title, slug, price, is_published, category, level, thumbnail_url, average_rating, reviews_count, instructor_id, profiles!instructor_id ( full_name )', { count: 'exact' });
+      if (role === 'instructor' && uid) {
         query = query.eq('created_by', uid);
       }
+      if (filterLevel) query = query.eq('level', filterLevel);
+      if (filterCategory) query = query.eq('category', filterCategory);
+      if (filterMinPrice) query = query.gte('price', parseFloat(filterMinPrice));
+      if (filterMaxPrice) query = query.lte('price', parseFloat(filterMaxPrice));
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, count, error } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
       setCourses(data || []);
+      setTotalCount(count || 0);
     } catch {
       toast.error('Failed to load courses.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, role, userId, filterLevel, filterCategory, filterMinPrice, filterMaxPrice]);
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [fetchCourses]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -91,137 +96,218 @@ export default function CoursesPage() {
     }
   };
 
-  const filteredCourses = courses.filter((course) =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (course.category && course.category.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredCourses = searchTerm
+    ? courses.filter((course) =>
+        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (course.category && course.category.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : courses;
 
-  const totalPages = Math.ceil(filteredCourses.length / PAGE_SIZE);
-  const paginatedCourses = filteredCourses.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-8 animate-in fade-in duration-200">
+      
+      {/* Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Courses</h1>
-          <p className="text-zinc-400 text-sm mt-1">Manage and edit your course curricula.</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Courses</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage and edit your course curricula.</p>
         </div>
         <Link
           href="/dashboard/courses/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition-all duration-200 hover:from-teal-400 hover:to-emerald-400 cursor-pointer shadow-lg shadow-teal-500/10 active:scale-[0.98]"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-blue-500 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           Create Course
         </Link>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-        <input
-          type="text"
-          placeholder="Search by course title or category..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-xl border border-zinc-800 bg-zinc-900/40 py-3 pl-10 pr-4 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-all duration-200 focus:border-teal-500 focus:bg-zinc-900/50"
-        />
+      {/* Search Input and Filter Toggle */}
+      <div className="flex items-center gap-3 w-full">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by course title or category..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-700 placeholder-gray-400 outline-none transition-all duration-150 focus:border-blue-500/50"
+          />
+        </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-4 py-2.5 text-sm font-medium transition cursor-pointer ${
+            showFilters ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-gray-200 bg-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
+          }`}
+        >
+          <Search className="h-4 w-4 rotate-90" />
+          Filter
+          <ChevronDown className={`h-3.5 w-3.5 ml-1 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+        </button>
       </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-1 min-w-[160px]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Level</label>
+              <Select
+                value={filterLevel}
+                onChange={(v) => { setFilterLevel(v); setCurrentPage(1); }}
+                options={[
+                  { value: '', label: 'All Levels' },
+                  { value: 'beginner', label: 'Beginner' },
+                  { value: 'intermediate', label: 'Intermediate' },
+                  { value: 'advanced', label: 'Advanced' },
+                ]}
+              />
+            </div>
+            <div className="space-y-1 min-w-[160px]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Category</label>
+              <Select
+                value={filterCategory}
+                onChange={(v) => { setFilterCategory(v); setCurrentPage(1); }}
+                options={[
+                  { value: '', label: 'All Categories' },
+                  { value: 'Hardware', label: 'Hardware' },
+                  { value: 'Software', label: 'Software' },
+                ]}
+              />
+            </div>
+            <div className="space-y-1 min-w-[120px]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Min Price</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="₹0"
+                value={filterMinPrice}
+                onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) { setFilterMinPrice(v); setCurrentPage(1); } }}
+                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                className="w-full rounded-lg border border-gray-200 bg-white py-2.5 px-3 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-blue-500 transition"
+              />
+            </div>
+            <div className="space-y-1 min-w-[120px]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Max Price</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="₹999"
+                value={filterMaxPrice}
+                onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) { setFilterMaxPrice(v); setCurrentPage(1); } }}
+                onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                className="w-full rounded-lg border border-gray-200 bg-white py-2.5 px-3 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-blue-500 transition"
+              />
+            </div>
+            <button
+              onClick={() => { setFilterLevel(''); setFilterCategory(''); setFilterMinPrice(''); setFilterMaxPrice(''); setCurrentPage(1); }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 transition cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex h-48 items-center justify-center">
-          <span className="text-sm text-zinc-500">Loading courses...</span>
+          <span className="text-sm text-gray-400">Loading courses...</span>
         </div>
-      ) : paginatedCourses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center p-12 rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10">
-          <BookOpen className="h-10 w-10 text-zinc-600 mb-3" />
-          <h3 className="text-lg font-bold text-white">No courses found</h3>
-          <p className="text-zinc-500 text-sm mt-1">Get started by creating a new course module.</p>
+      ) : filteredCourses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center text-center p-12 rounded-2xl border border-dashed border-gray-200 bg-gray-50">
+          <BookOpen className="h-10 w-10 text-gray-400 mb-3" />
+          <h3 className="text-lg font-bold text-gray-900">No courses found</h3>
+          <p className="text-gray-400 text-sm mt-1">Get started by creating a new course module.</p>
         </div>
       ) : (
         <>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {paginatedCourses.map((course) => (
+            {filteredCourses.map((course) => (
               <div
                 key={course.id}
-                className="group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/30 transition-all duration-300 hover:border-zinc-700/80 hover:bg-zinc-900/50 flex flex-col justify-between"
+                className="group flex flex-col justify-between rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
               >
-                <div className="aspect-video w-full bg-zinc-900 relative overflow-hidden border-b border-zinc-850">
+                
+                {/* Thumbnail Header Area */}
+                <div className="aspect-video w-full bg-gray-50 relative overflow-hidden border-b border-gray-200">
                   {course.thumbnail_url ? (
-                    <img
+                    <Image
                       src={course.thumbnail_url}
                       alt={course.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      width={400}
+                      height={225}
+                      className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-zinc-700">
+                    <div className="flex h-full w-full items-center justify-center text-gray-300">
                       <BookOpen className="h-10 w-10" />
                     </div>
                   )}
-                  <span className={`absolute top-3 right-3 text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full ${
+                  <span className={`absolute top-3 right-3 text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded ${
                     course.is_published
-                      ? 'bg-teal-500/15 text-teal-400 border border-teal-500/20'
-                      : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-500'
                   }`}>
                     {course.is_published ? 'Published' : 'Draft'}
                   </span>
                 </div>
 
-                <div className="p-6 flex-1 flex flex-col justify-between">
+                {/* Details Portion */}
+                <div className="p-5 flex-1 flex flex-col justify-between">
                   <div className="space-y-2">
-                    <span className="text-[10px] font-semibold text-teal-400 uppercase tracking-widest block">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest block">
                       {course.category || 'Uncategorized'}
                     </span>
-                    <h3 className="font-bold text-white line-clamp-1 group-hover:text-teal-400 transition-colors">
+                    <h3 className="font-semibold text-gray-900 text-base leading-snug line-clamp-2">
                       {course.title}
                     </h3>
-                    <div className="flex gap-2 text-xs text-zinc-500">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
                       <span className="capitalize">{course.level}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1 font-semibold text-zinc-300">
-                        ${course.price.toFixed(2)}
+                      <span className="text-blue-600">•</span>
+                      <span className="font-semibold text-gray-700">
+                        ₹{course.price.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex gap-3 text-xs text-zinc-500 mt-2">
-                      {course.average_rating > 0 && (
-                        <span className="flex items-center gap-1 text-amber-400">
-                          ★ {course.average_rating.toFixed(1)}
-                        </span>
-                      )}
-                      {course.reviews_count > 0 && (
-                        <span>({course.reviews_count} reviews)</span>
-                      )}
-                      {course.profiles?.[0]?.full_name && (
-                        <span className="text-teal-400">by {course.profiles[0].full_name}</span>
-                      )}
+                    
+                    <div className="flex items-center gap-1.5 text-xs mt-2">
+                      <span className="text-blue-600 text-sm">★</span>
+                      <span className="text-blue-600 font-semibold">
+                        {course.average_rating > 0 ? course.average_rating.toFixed(1) : '0.0'}
+                      </span>
+                      <span className="text-gray-400">
+                        ({course.reviews_count > 0 ? `${course.reviews_count} reviews` : '0 reviews'})
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-6 mt-6 border-t border-zinc-800">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/dashboard/courses/${course.id}/edit`}
-                        className="flex items-center gap-1.5 rounded-lg border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-300 transition-all cursor-pointer"
-                      >
-                        <Edit3 className="h-3.5 w-3.5" />
-                        Edit
-                      </Link>
-                    </div>
+                  {/* Actions (Edit / Delete) */}
+                  <div className="flex items-center justify-between pt-4 mt-5 border-t border-gray-200 gap-3">
+                    <Link
+                      href={`/dashboard/courses/${course.id}/edit`}
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-blue-200 hover:border-blue-400 bg-transparent py-2.5 text-xs font-semibold text-blue-600 transition-all duration-150 cursor-pointer w-full"
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                      Edit
+                    </Link>
 
                     <button
                       onClick={() => setDeleteTarget(course)}
-                      className="flex items-center gap-1.5 rounded-lg border border-zinc-800 hover:border-rose-900/30 hover:bg-rose-950/20 px-3.5 py-2 text-xs font-semibold text-rose-400 transition-all cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-red-300 hover:border-red-400 bg-transparent py-2.5 text-xs font-semibold text-red-500 transition-all duration-150 cursor-pointer w-full"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       Delete
                     </button>
                   </div>
                 </div>
+
               </div>
             ))}
           </div>
