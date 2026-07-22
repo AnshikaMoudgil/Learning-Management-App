@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'screens/splash_screen.dart';
 import 'router/app_router.dart';
@@ -136,7 +137,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryBlue),
         useMaterial3: true,
-        fontFamily: 'Poppins',
+        textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
         scaffoldBackgroundColor: AppColors.background,
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.background,

@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'MBT ',
                       style: TextStyle(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                         color: AppColors.textDark,
                       ),
                     ),
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Institute',
                       style: TextStyle(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                         color: AppColors.primaryBlue,
                       ),
                     ),

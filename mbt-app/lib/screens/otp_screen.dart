@@ -143,7 +143,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       'MBT ',
                       style: TextStyle(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                         color: AppColors.textDark,
                       ),
                     ),
@@ -151,7 +151,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       'Institute',
                       style: TextStyle(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                         color: AppColors.primaryBlue,
                       ),
                     ),

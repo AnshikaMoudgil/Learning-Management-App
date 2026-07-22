@@ -175,11 +175,16 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Notification Center',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1),
             Text(_unreadCount > 0 ? '$_unreadCount unread notifications' : 'Stay updated with important alerts',
-                style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                style: const TextStyle(fontSize: 10, color: AppColors.textLight),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1),
           ],
         ),
         actions: [
@@ -190,27 +195,6 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
               onPressed: _markAllRead,
             ),
           const CartBadge(),
-          const SizedBox(width: 8),
-          Stack(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.lightBlueBg, borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.notifications_outlined, color: AppColors.textDark, size: 18),
-              ),
-              if (_unreadCount > 0)
-                Positioned(
-                  right: 0, top: 4,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    child: Text('$_unreadCount',
-                        style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-            ],
-          ),
           const SizedBox(width: 16),
         ],
       ),
@@ -354,27 +338,24 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                 children: [
                   Row(
                     children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(notification.title,
-                                  style: TextStyle(
-                                      fontSize: 13, fontWeight: FontWeight.bold,
-                                      color: isUnread ? AppColors.textDark : AppColors.textDark),
-                                  overflow: TextOverflow.ellipsis),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: iconColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(badgeLabel,
-                                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: iconColor)),
-                            ),
-                          ],
+                      Flexible(
+                        child: Text(notification.title,
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.bold,
+                                color: AppColors.textDark),
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: iconColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(badgeLabel,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: iconColor)),
                         ),
                       ),
                     ],
@@ -388,6 +369,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(timeText, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
                 const SizedBox(height: 6),
