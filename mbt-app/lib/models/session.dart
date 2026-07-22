@@ -2,6 +2,7 @@ class LiveSession {
   final String id;
   final String courseId;
   final String instructorId;
+  final String createdBy;
   final String title;
   final String? description;
   final DateTime startTime;
@@ -19,6 +20,7 @@ class LiveSession {
     required this.id,
     required this.courseId,
     required this.instructorId,
+    required this.createdBy,
     required this.title,
     this.description,
     required this.startTime,
@@ -49,6 +51,7 @@ class LiveSession {
       id: json['id'] as String,
       courseId: json['course_id'] as String,
       instructorId: json['instructor_id'] as String,
+      createdBy: json['created_by'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
       startTime: DateTime.parse(json['start_time'] as String),

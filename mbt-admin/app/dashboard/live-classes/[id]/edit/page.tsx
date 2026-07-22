@@ -142,7 +142,7 @@ export default function EditSessionPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -152,22 +152,22 @@ export default function EditSessionPage() {
       <div>
         <Link
           href="/dashboard/live-classes"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Live Classes
         </Link>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight mt-2">Edit Session</h1>
-        <p className="text-zinc-400 text-sm mt-1">Update session details or change status.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mt-2">Edit Session</h1>
+        <p className="text-gray-500 text-sm mt-1">Update session details or change status.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 space-y-6">
-          <h2 className="text-lg font-bold text-white">Session Details</h2>
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
+          <h2 className="text-lg font-bold text-gray-900">Session Details</h2>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Course <span className="text-rose-400">*</span>
               </label>
               <Select
@@ -183,7 +183,7 @@ export default function EditSessionPage() {
 
             {sections.length > 0 && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Module (Optional)
                 </label>
                 <Select
@@ -199,42 +199,42 @@ export default function EditSessionPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Session Title <span className="text-rose-400">*</span>
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition"
+                className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Description</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Description</label>
               <textarea
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-teal-500 transition resize-none"
+                className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition resize-none"
               />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Start Date & Time <span className="text-rose-400">*</span>
                 </label>
                 <input
                   type="datetime-local"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 outline-none focus:border-teal-500 transition [color-scheme:dark]"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 outline-none focus:border-blue-500 transition"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Duration (minutes) <span className="text-rose-400">*</span>
                 </label>
                 <input
@@ -243,13 +243,13 @@ export default function EditSessionPage() {
                   max="480"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-3 px-4 text-sm text-zinc-100 outline-none focus:border-teal-500 transition"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 outline-none focus:border-blue-500 transition"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Status</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Status</label>
               <Select
                 value={status}
                 onChange={setStatus}
@@ -269,7 +269,7 @@ export default function EditSessionPage() {
           <button
             type="submit"
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:from-teal-400 hover:to-emerald-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-teal-500/10 active:scale-[0.98]"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-3 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-blue-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98]"
           >
             {isSaving ? (
               <>
@@ -286,7 +286,7 @@ export default function EditSessionPage() {
 
           <Link
             href="/dashboard/live-classes"
-            className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-6 py-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition"
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-500 hover:text-gray-700 transition"
           >
             Cancel
           </Link>

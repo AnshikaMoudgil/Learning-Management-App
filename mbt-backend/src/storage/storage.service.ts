@@ -27,7 +27,7 @@ export class StorageService implements StorageProvider {
   }
 
   async upload(
-    file: Buffer,
+    file: Buffer | string,
     fileName: string,
     mimeType: string,
   ): Promise<UploadResult> {
@@ -42,7 +42,10 @@ export class StorageService implements StorageProvider {
     return this.providerInstance.exists(fileKey);
   }
 
-  async getSignedUrl(fileKey: string): Promise<string> {
-    return this.providerInstance.getSignedUrl(fileKey);
+  async getSignedUrl(
+    fileKey: string,
+    expiresInSeconds?: number,
+  ): Promise<string> {
+    return this.providerInstance.getSignedUrl(fileKey, expiresInSeconds);
   }
 }

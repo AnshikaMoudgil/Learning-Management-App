@@ -15,6 +15,7 @@ interface SelectProps {
   placeholder?: string;
   className?: string;
   error?: string;
+  size?: 'sm' | 'md';
 }
 
 export default function Select({
@@ -24,6 +25,7 @@ export default function Select({
   placeholder = 'Select...',
   className = '',
   error,
+  size = 'md',
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
@@ -34,7 +36,8 @@ export default function Select({
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
-    const dropdownHeight = Math.min(options.length * 44 + 8, 240);
+    const optionHeight = size === 'sm' ? 32 : 44;
+    const dropdownHeight = Math.min(options.length * optionHeight + 8, 240);
 
     if (spaceBelow >= dropdownHeight) {
       setDropdownStyle({
@@ -51,7 +54,7 @@ export default function Select({
         width: `${rect.width}px`,
       });
     }
-  }, [options.length]);
+  }, [options.length, size]);
 
   useEffect(() => {
     if (isOpen) {
@@ -86,19 +89,19 @@ export default function Select({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex w-full items-center justify-between rounded-lg border ${
-          error ? 'border-rose-500' : 'border-zinc-800'
-        } bg-zinc-950 py-3 px-4 text-sm text-zinc-100 outline-none transition cursor-pointer hover:border-zinc-700`}
+          error ? 'border-rose-500' : 'border-gray-200'
+        } bg-white ${size === 'sm' ? 'py-1.5 px-3 text-xs' : 'py-3 px-4 text-sm'} text-gray-900 outline-none transition cursor-pointer hover:border-gray-300`}
       >
-        <span className={selectedOption ? 'text-zinc-100' : 'text-zinc-500'}>
+        <span className={selectedOption ? 'text-gray-900' : 'text-gray-400'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <ChevronDown className={`h-4 w-4 text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <div
           style={dropdownStyle}
-          className="z-50 rounded-xl border border-zinc-700 bg-zinc-900 py-1 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          className="z-50 rounded-xl border border-gray-200 bg-white p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
         >
           {options.map((opt) => (
             <button
@@ -108,10 +111,10 @@ export default function Select({
                 onChange(opt.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-4 py-2.5 text-left text-sm transition hover:bg-zinc-800 ${
+              className={`w-full ${size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-sm'} transition hover:bg-gray-100 rounded-lg ${
                 opt.value === value
-                  ? 'text-teal-400 bg-teal-500/10 font-semibold'
-                  : 'text-zinc-300'
+                  ? 'text-blue-600 bg-blue-50 font-semibold'
+                  : 'text-gray-700'
               }`}
             >
               {opt.label}

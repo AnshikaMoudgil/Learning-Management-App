@@ -299,4 +299,55 @@ class MyCourseService {
     );
     return result as Map<String, dynamic>;
   }
+
+  Future<List<ContinueWatchingItem>> getContinueWatching() async {
+    try {
+      final result = await _api.get('/api/v1/my-courses/continue-watching');
+      final List<dynamic> list = result is List ? result : (result['data'] as List<dynamic>? ?? []);
+      return list.map((e) => ContinueWatchingItem.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+}
+
+class ContinueWatchingItem {
+  final String lessonId;
+  final bool isCompleted;
+  final int watchedSeconds;
+  final DateTime lastWatchedAt;
+  final String lessonTitle;
+  final String videoDuration;
+  final String? sectionId;
+  final String? courseId;
+  final String courseTitle;
+  final String? courseThumbnailUrl;
+
+  ContinueWatchingItem({
+    required this.lessonId,
+    required this.isCompleted,
+    required this.watchedSeconds,
+    required this.lastWatchedAt,
+    required this.lessonTitle,
+    required this.videoDuration,
+    this.sectionId,
+    this.courseId,
+    required this.courseTitle,
+    this.courseThumbnailUrl,
+  });
+
+  factory ContinueWatchingItem.fromJson(Map<String, dynamic> json) {
+    return ContinueWatchingItem(
+      lessonId: json['lesson_id'] as String,
+      isCompleted: (json['is_completed'] ?? false) as bool,
+      watchedSeconds: (json['watched_seconds'] ?? 0) as int,
+      lastWatchedAt: json['last_watched_at'] != null ? DateTime.parse(json['last_watched_at'] as String) : DateTime.now(),
+      lessonTitle: (json['lesson_title'] ?? '') as String,
+      videoDuration: (json['video_duration'] ?? '00:00') as String,
+      sectionId: json['section_id'] as String?,
+      courseId: json['course_id'] as String?,
+      courseTitle: (json['course_title'] ?? '') as String,
+      courseThumbnailUrl: json['course_thumbnail_url'] as String?,
+    );
+  }
 }

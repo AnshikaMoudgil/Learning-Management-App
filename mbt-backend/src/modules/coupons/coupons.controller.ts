@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { DeviceGuard } from '../../common/guards/device.guard';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
@@ -10,6 +10,11 @@ import { CouponsService } from './coupons.service';
 @UseGuards(AuthGuard, DeviceGuard)
 export class CouponsController {
   constructor(private readonly couponsService: CouponsService) {}
+
+  @Get('active')
+  getActive() {
+    return this.couponsService.getActiveCoupons();
+  }
 
   @Post('validate')
   async validate(

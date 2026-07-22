@@ -16,8 +16,7 @@ class CourseDetailsScreen extends StatefulWidget {
   State<CourseDetailsScreen> createState() => _CourseDetailsScreenState();
 }
 
-class _CourseDetailsScreenState extends State<CourseDetailsScreen>
-    with SingleTickerProviderStateMixin {
+class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late final Future<Course>? _courseFuture;
   final _courseService = CourseService();
@@ -28,9 +27,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   @override
   void initState() {
     super.initState();
-    _courseFuture = widget.courseId == null
-        ? null
-        : _courseService.getCourseDetails(widget.courseId!);
+    _courseFuture = widget.courseId == null ? null : _courseService.getCourseDetails(widget.courseId!);
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       setState(() {});
@@ -50,8 +47,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       final cart = await _cartProvider.refresh();
       if (!mounted || cart == null) return;
       setState(() {
-        _isInCart =
-            cart.hardware.any((i) => i.courseId == widget.courseId) ||
+        _isInCart = cart.hardware.any((i) => i.courseId == widget.courseId) ||
             cart.software.any((i) => i.courseId == widget.courseId);
       });
     } catch (_) {}
@@ -69,9 +65,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       setState(() => _isInCart = !_isInCart);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update cart: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update cart: $e')),
+      );
     } finally {
       if (mounted) setState(() => _isCheckingCart = false);
     }
@@ -85,14 +81,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          'Course Details',
-          style: TextStyle(
-            color: AppColors.textDark,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Course Details', style: TextStyle(color: AppColors.textDark, fontSize: 18, fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
           onPressed: () => context.pop(),
@@ -110,9 +99,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             animation: WishlistProvider(),
             builder: (context, _) {
               if (widget.courseId == null) return const SizedBox();
-              final isWishlisted = WishlistProvider().isWishlisted(
-                widget.courseId!,
-              );
+              final isWishlisted = WishlistProvider().isWishlisted(widget.courseId!);
               return IconButton(
                 icon: Icon(
                   isWishlisted ? Icons.favorite : Icons.favorite_border,
@@ -132,199 +119,121 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header Image
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        image: const DecorationImage(
-                          image: AssetImage(
-                            'assets/iphone_software.png',
-                          ), // Placeholder
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            top: 12,
-                            left: 12,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade700,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'BESTSELLER',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 12,
-                            right: 12,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                'Edit Progress',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+            // Header Image
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  image: const DecorationImage(
+                    image: AssetImage('assets/iphone_software.png'), // Placeholder
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.blue.shade700, borderRadius: BorderRadius.circular(4)),
+                        child: const Text('BESTSELLER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(20)),
+                        child: const Text('Edit Progress', style: TextStyle(fontSize: 10, color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
-                  // Details Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Mobile IC Repair Complete Course',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Progress and Certificate status
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+            // Details Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Mobile IC Repair Complete Course', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  const SizedBox(height: 8),
+                  
+                  // Progress and Certificate status
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    '65% completed',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textDark,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Stack(
-                                    children: [
-                                      Container(
-                                        height: 6,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade200,
-                                          borderRadius: BorderRadius.circular(
-                                            3,
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        height: 6,
-                                        width: 200,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryBlue,
-                                          borderRadius: BorderRadius.circular(
-                                            3,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.lock_outline,
-                                    color: Colors.green.shade700,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Certificate\nLocked',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            const Text('65% completed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                            const SizedBox(height: 8),
+                            Stack(
+                              children: [
+                                Container(height: 6, decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(3))),
+                                Container(height: 6, width: 200, decoration: BoxDecoration(color: AppColors.primaryBlue, borderRadius: BorderRadius.circular(3))),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
-
-                  // Tabs
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: AppColors.primaryBlue,
-                    unselectedLabelColor: AppColors.textLight,
-                    indicatorColor: AppColors.primaryBlue,
-                    indicatorWeight: 3,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                    unselectedLabelStyle: const TextStyle(
-                      fontWeight: FontWeight.normal,
-                      fontSize: 14,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    tabs: const [
-                      Tab(text: 'Overview'),
-                      Tab(text: 'Live Classes'),
-                      Tab(text: 'Recordings'),
-                      Tab(text: 'Resources'),
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lock_outline, color: Colors.green.shade700, size: 16),
+                            const SizedBox(width: 4),
+                            Text('Certificate\nLocked', style: TextStyle(fontSize: 10, color: Colors.green.shade700, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
+                ],
+              ),
+            ),
 
-                  // Tab Content
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _buildCurrentTabContent(),
-                  ),
-                  const SizedBox(height: 40),
+            // Tabs
+            TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primaryBlue,
+              unselectedLabelColor: AppColors.textLight,
+              indicatorColor: AppColors.primaryBlue,
+              indicatorWeight: 3,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              tabs: const [
+                Tab(text: 'Overview'),
+                Tab(text: 'Live Classes'),
+                Tab(text: 'Recordings'),
+                Tab(text: 'Resources'),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Tab Content
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildCurrentTabContent(),
+            ),
+            const SizedBox(height: 40),
                 ],
               ),
             )
@@ -338,10 +247,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(
-                        snapshot.error.toString(),
-                        textAlign: TextAlign.center,
-                      ),
+                      child: Text(snapshot.error.toString(), textAlign: TextAlign.center),
                     ),
                   );
                 }
@@ -371,61 +277,27 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             ),
           ),
           const SizedBox(height: 20),
-          Text(
-            course.title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
+          Text(course.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark)),
           const SizedBox(height: 8),
-          Text(
-            course.shortDescription ?? course.description ?? '',
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textLight,
-              height: 1.5,
-            ),
-          ),
+          Text(course.shortDescription ?? course.description ?? '', style: const TextStyle(fontSize: 14, color: AppColors.textLight, height: 1.5)),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildCourseBadge(
-                Icons.access_time,
-                course.estimatedDuration ?? 'Self paced',
-              ),
-              _buildCourseBadge(
-                Icons.play_lesson_outlined,
-                '${course.totalLessons} Lessons',
-              ),
+              _buildCourseBadge(Icons.access_time, course.estimatedDuration ?? 'Self paced'),
+              _buildCourseBadge(Icons.play_lesson_outlined, '${course.totalLessons} Lessons'),
             ],
           ),
           const SizedBox(height: 20),
           if (course.learningOutcomes.isNotEmpty) ...[
-            const Text(
-              'What you\'ll learn',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
-              ),
-            ),
+            const Text('What you\'ll learn', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
             const SizedBox(height: 12),
             ...course.learningOutcomes.map(_buildCheckListItem),
             const SizedBox(height: 20),
           ],
-          const Text(
-            'Course Content',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
+          const Text('Course Content', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
           const SizedBox(height: 12),
-          ...course.sections.map(_buildSectionExpansion),
+          ...course.sections.map((s) => _buildSectionExpansion(s, course.id)),
           const SizedBox(height: 24),
           if (!enrolled) _buildCartPanel(course) else _buildResumePanel(course),
         ],
@@ -433,7 +305,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     );
   }
 
-  Widget _buildSectionExpansion(CourseSection section) {
+  Widget _buildSectionExpansion(CourseSection section, String courseId) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -441,25 +313,17 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         borderRadius: BorderRadius.circular(10),
       ),
       child: ExpansionTile(
-        title: Text(
-          section.title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
+        title: Text(section.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         children: section.lessons.map((lesson) {
           final locked = lesson.videoUrl == null && !lesson.isFreePreview;
           return ListTile(
             dense: true,
-            leading: Icon(
-              locked ? Icons.lock_outline : Icons.play_circle_outline,
-              color: locked ? Colors.grey : AppColors.primaryBlue,
-            ),
+            leading: Icon(locked ? Icons.lock_outline : Icons.play_circle_outline, color: locked ? Colors.grey : AppColors.primaryBlue),
             title: Text(lesson.title, style: const TextStyle(fontSize: 13)),
-            subtitle: lesson.videoDuration == null
-                ? null
-                : Text(
-                    lesson.videoDuration!,
-                    style: const TextStyle(fontSize: 11),
-                  ),
+            subtitle: lesson.videoDuration == null ? null : Text(lesson.videoDuration!, style: const TextStyle(fontSize: 11)),
+            onTap: lesson.isFreePreview
+                ? () => context.push('/recorded-player?lessonId=${lesson.id}&courseId=$courseId')
+                : null,
           );
         }).toList(),
       ),
@@ -481,21 +345,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Course price',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
-              Text(
-                '₹${price.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: AppColors.textDark,
-                ),
-              ),
+              const Text('Course price', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              Text('₹${price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textDark)),
             ],
           ),
           const SizedBox(height: 12),
@@ -504,34 +355,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             child: ElevatedButton.icon(
               onPressed: _isCheckingCart ? null : () => _toggleCart(course.id),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _isInCart
-                    ? Colors.grey.shade300
-                    : AppColors.primaryBlue,
+                backgroundColor: _isInCart ? Colors.grey.shade300 : AppColors.primaryBlue,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               icon: _isCheckingCart
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Icon(
-                      _isInCart ? Icons.shopping_cart : Icons.add_shopping_cart,
-                      color: _isInCart ? AppColors.textDark : Colors.white,
-                      size: 20,
-                    ),
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Icon(_isInCart ? Icons.shopping_cart : Icons.add_shopping_cart, color: _isInCart ? AppColors.textDark : Colors.white, size: 20),
               label: Text(
                 _isInCart ? ' Remove from Cart' : 'Add to Cart',
-                style: TextStyle(
-                  color: _isInCart ? AppColors.textDark : Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: _isInCart ? AppColors.textDark : Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -542,10 +375,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => context.push('/cart'),
-                  child: const Text(
-                    'View Cart & Checkout',
-                    style: TextStyle(color: AppColors.primaryBlue),
-                  ),
+                  child: const Text('View Cart & Checkout', style: TextStyle(color: AppColors.primaryBlue)),
                 ),
               ),
             ),
@@ -564,13 +394,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: const Text(
-          'Resume Learning',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        child: const Text('Resume Learning', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
+
+
 
   Widget _buildCurrentTabContent() {
     switch (_tabController.index) {
@@ -591,37 +420,19 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'About this course',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
+        const Text('About this course', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
         const SizedBox(height: 12),
         const Text(
           'Learn the complete mobile IC repair process from basics to advanced level. This course covers all important topics with practical examples.',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textLight,
-            height: 1.5,
-          ),
+          style: TextStyle(fontSize: 14, color: AppColors.textLight, height: 1.5),
         ),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () {},
-          child: const Text(
-            'Read more',
-            style: TextStyle(
-              color: AppColors.primaryBlue,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          child: const Text('Read more', style: TextStyle(color: AppColors.primaryBlue, fontSize: 14, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(height: 24),
-
+        
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -631,7 +442,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           ],
         ),
         const SizedBox(height: 24),
-
+        
         // Progress Info Card
         Container(
           padding: const EdgeInsets.all(16),
@@ -642,31 +453,17 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.military_tech_outlined,
-                color: Colors.green.shade600,
-                size: 32,
-              ),
+              Icon(Icons.military_tech_outlined, color: Colors.green.shade600, size: 32),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Complete remaining 42 lessons to unlock your certificate',
-                  style: TextStyle(fontSize: 12, color: Colors.green.shade800),
-                ),
-              ),
+                child: Text('Complete remaining 42 lessons to unlock your certificate', style: TextStyle(fontSize: 12, color: Colors.green.shade800)),
+              )
             ],
           ),
         ),
         const SizedBox(height: 24),
 
-        const Text(
-          'What you\'ll learn',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
+        const Text('What you\'ll learn', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
         const SizedBox(height: 12),
         _buildCheckListItem('Identify and test mobile ICs'),
         _buildCheckListItem('Advanced soldering techniques'),
@@ -680,36 +477,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Upcoming Live Classes',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
+        const Text('Upcoming Live Classes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
         const SizedBox(height: 16),
-        _buildLiveClassCard(
-          '14',
-          'Wed',
-          'Power IC Section - Deep Dive',
-          'Mr. Ankit Verma',
-          '07:00 PM - 08:30 PM',
-        ),
-        _buildLiveClassCard(
-          '17',
-          'Sat',
-          'CPU Reballing Techniques',
-          'Mr. Rahul Sharma',
-          '07:00 PM - 08:30 PM',
-        ),
-        _buildLiveClassCard(
-          '21',
-          'Wed',
-          'Advanced Fault Finding',
-          'Mr. Sonu Singh',
-          '07:00 PM - 08:30 PM',
-        ),
+        _buildLiveClassCard('14', 'Wed', 'Power IC Section - Deep Dive', 'Mr. Ankit Verma', '07:00 PM - 08:30 PM'),
+        _buildLiveClassCard('17', 'Sat', 'CPU Reballing Techniques', 'Mr. Rahul Sharma', '07:00 PM - 08:30 PM'),
+        _buildLiveClassCard('21', 'Wed', 'Advanced Fault Finding', 'Mr. Sonu Singh', '07:00 PM - 08:30 PM'),
         const SizedBox(height: 12),
         Center(
           child: TextButton(
@@ -717,19 +489,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Text(
-                  'View Full Schedule',
-                  style: TextStyle(
-                    color: AppColors.primaryBlue,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('View Full Schedule', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
                 SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right,
-                  color: AppColors.primaryBlue,
-                  size: 20,
-                ),
+                Icon(Icons.chevron_right, color: AppColors.primaryBlue, size: 20),
               ],
             ),
           ),
@@ -738,13 +500,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     );
   }
 
-  Widget _buildLiveClassCard(
-    String date,
-    String day,
-    String title,
-    String instructor,
-    String time,
-  ) {
+  Widget _buildLiveClassCard(String date, String day, String title, String instructor, String time) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -759,26 +515,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           // Date box
           Column(
             children: [
-              Text(
-                'MAY',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey.shade500,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                date,
-                style: const TextStyle(
-                  fontSize: 20,
-                  color: AppColors.textDark,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                day,
-                style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-              ),
+              Text('MAY', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+              Text(date, style: const TextStyle(fontSize: 20, color: AppColors.textDark, fontWeight: FontWeight.bold)),
+              Text(day, style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
             ],
           ),
           const SizedBox(width: 16),
@@ -789,47 +528,21 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const CircleAvatar(
-                      radius: 8,
-                      backgroundImage: AssetImage('assets/1.png'),
-                    ),
+                    const CircleAvatar(radius: 8, backgroundImage: AssetImage('assets/1.png')),
                     const SizedBox(width: 6),
-                    Text(
-                      instructor,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textLight,
-                      ),
-                    ),
+                    Text(instructor, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.access_time,
-                      size: 12,
-                      color: AppColors.textLight,
-                    ),
+                    const Icon(Icons.access_time, size: 12, color: AppColors.textLight),
                     const SizedBox(width: 4),
-                    Text(
-                      time,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textLight,
-                      ),
-                    ),
+                    Text(time, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
                   ],
                 ),
               ],
@@ -842,19 +555,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               onPressed: () => context.push('/live-player'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 minimumSize: const Size(60, 36),
                 padding: EdgeInsets.zero,
               ),
-              child: const Text(
-                'Join',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text('Join', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -866,49 +571,17 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Course Recordings (120)',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
+        const Text('Course Recordings (120)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
         const SizedBox(height: 16),
-        _buildRecordingCard(
-          'Introduction to Mobile IC Repair',
-          '32:45',
-          'Mr. Ankit Verma',
-          '12 May 2025',
-        ),
-        _buildRecordingCard(
-          'Basic Tools & Equipment',
-          '26:10',
-          'Mr. Ankit Verma',
-          '13 May 2025',
-        ),
-        _buildRecordingCard(
-          'Components Identification',
-          '36:20',
-          'Mr. Rahul Sharma',
-          '14 May 2025',
-        ),
-        _buildRecordingCard(
-          'Schematic Reading Basics',
-          '29:15',
-          'Mr. Rahul Sharma',
-          '15 May 2025',
-        ),
+        _buildRecordingCard('Introduction to Mobile IC Repair', '32:45', 'Mr. Ankit Verma', '12 May 2025'),
+        _buildRecordingCard('Basic Tools & Equipment', '26:10', 'Mr. Ankit Verma', '13 May 2025'),
+        _buildRecordingCard('Components Identification', '36:20', 'Mr. Rahul Sharma', '14 May 2025'),
+        _buildRecordingCard('Schematic Reading Basics', '29:15', 'Mr. Rahul Sharma', '15 May 2025'),
       ],
     );
   }
 
-  Widget _buildRecordingCard(
-    String title,
-    String duration,
-    String instructor,
-    String date,
-  ) {
+  Widget _buildRecordingCard(String title, String duration, String instructor, String date) {
     return GestureDetector(
       onTap: () => context.push('/recorded-player'),
       child: Container(
@@ -930,18 +603,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 alignment: Alignment.bottomRight,
                 child: Container(
                   margin: const EdgeInsets.all(4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    duration,
-                    style: const TextStyle(color: Colors.white, fontSize: 8),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(4)),
+                  child: Text(duration, style: const TextStyle(color: Colors.white, fontSize: 8)),
                 ),
               ),
             ),
@@ -951,40 +615,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
-                  Text(
-                    instructor,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textLight,
-                    ),
-                  ),
+                  Text(instructor, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
                   const SizedBox(height: 2),
-                  Text(
-                    date,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textLight,
-                    ),
-                  ),
+                  Text(date, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
                 ],
               ),
             ),
             IconButton(
-              icon: const Icon(
-                Icons.file_download_outlined,
-                color: AppColors.primaryBlue,
-              ),
+              icon: const Icon(Icons.file_download_outlined, color: AppColors.primaryBlue),
               onPressed: () {},
             ),
           ],
@@ -997,53 +637,18 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Course Resources',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
+        const Text('Course Resources', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
         const SizedBox(height: 16),
-        _buildResourceCard(
-          'Mobile IC Repair - Complete Notes.pdf',
-          '2.4 MB',
-          Icons.picture_as_pdf,
-          Colors.red,
-        ),
-        _buildResourceCard(
-          'Power IC Section - Handwritten Notes.pdf',
-          '1.8 MB',
-          Icons.picture_as_pdf,
-          Colors.blue,
-        ),
-        _buildResourceCard(
-          'Circuit Diagram Reference.pdf',
-          '3.2 MB',
-          Icons.grid_on,
-          Colors.green,
-        ),
-        _buildResourceCard(
-          'IC Datasheet Collection.zip',
-          '12.5 MB',
-          Icons.folder_zip,
-          Colors.amber,
-        ),
-        _buildResourceCard(
-          'Common Faults & Solutions.pdf',
-          '2.1 MB',
-          Icons.picture_as_pdf,
-          Colors.red,
-        ),
-
+        _buildResourceCard('Mobile IC Repair - Complete Notes.pdf', '2.4 MB', Icons.picture_as_pdf, Colors.red),
+        _buildResourceCard('Power IC Section - Handwritten Notes.pdf', '1.8 MB', Icons.picture_as_pdf, Colors.blue),
+        _buildResourceCard('Circuit Diagram Reference.pdf', '3.2 MB', Icons.grid_on, Colors.green),
+        _buildResourceCard('IC Datasheet Collection.zip', '12.5 MB', Icons.folder_zip, Colors.amber),
+        _buildResourceCard('Common Faults & Solutions.pdf', '2.1 MB', Icons.picture_as_pdf, Colors.red),
+        
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.indigo.shade50,
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(color: Colors.indigo.shade50, borderRadius: BorderRadius.circular(8)),
           child: const Text(
             'Resources are provided for personal learning only and cannot be shared or redistributed.',
             style: TextStyle(fontSize: 10, color: Colors.indigo),
@@ -1054,12 +659,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     );
   }
 
-  Widget _buildResourceCard(
-    String title,
-    String size,
-    IconData icon,
-    Color iconColor,
-  ) {
+  Widget _buildResourceCard(String title, String size, IconData icon, Color iconColor) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -1072,10 +672,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
             child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(width: 12),
@@ -1083,30 +680,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                 const SizedBox(height: 4),
-                Text(
-                  size,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textLight,
-                  ),
-                ),
+                Text(size, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(
-              Icons.file_download_outlined,
-              color: AppColors.primaryBlue,
-            ),
+            icon: const Icon(Icons.file_download_outlined, color: AppColors.primaryBlue),
             onPressed: () {},
           ),
         ],
@@ -1125,14 +706,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         children: [
           Icon(icon, size: 16, color: AppColors.textDark),
           const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textDark,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(text, style: const TextStyle(fontSize: 12, color: AppColors.textDark, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -1146,12 +720,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         children: [
           const Icon(Icons.check_circle, color: Colors.green, size: 18),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 14, color: AppColors.textDark),
-            ),
-          ),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 14, color: AppColors.textDark))),
         ],
       ),
     );

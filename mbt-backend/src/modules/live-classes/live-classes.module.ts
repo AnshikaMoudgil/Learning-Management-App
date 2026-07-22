@@ -5,11 +5,13 @@ import { SessionsRepository } from './sessions.repository';
 import { ZoomModule } from '../zoom/zoom.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { BullModule } from '@nestjs/bullmq';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     SupabaseModule,
     ZoomModule,
+    NotificationsModule,
     BullModule.registerQueue({ name: 'zoom-task' }),
   ],
   controllers: [SessionsController],

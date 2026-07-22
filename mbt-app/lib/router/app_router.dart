@@ -272,7 +272,11 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.recordedPlayer,
-      builder: (context, state) => const RecordedClassPlayerScreen(),
+      builder: (context, state) => RecordedClassPlayerScreen(
+        lessonId: state.uri.queryParameters['lessonId'],
+        url: state.uri.queryParameters['url'],
+        courseId: state.uri.queryParameters['courseId'],
+      ),
     ),
     GoRoute(
       path: RouteNames.downloads,

@@ -1,8 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
+import type { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import * as fs from 'fs';
 import { StorageProvider } from '../interfaces/storage-provider.interface';
 import { UploadResult } from '../interfaces/upload-result.interface';
+
+interface CloudinaryVideoUploadResponse extends UploadApiResponse {
+  duration?: number;
+  bit_rate?: number;
+  video?: {
+    codec?: string;
+  };
+}
 
 @Injectable()
 export class CloudinaryStorageService implements StorageProvider {
@@ -17,38 +27,62 @@ export class CloudinaryStorageService implements StorageProvider {
   }
 
   async upload(
-    file: Buffer,
+    file: Buffer | string,
     fileName: string,
     mimeType: string,
   ): Promise<UploadResult> {
     this.logger.log(`Uploading file ${fileName} to Cloudinary`);
     return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          public_id: fileName.split('.')[0] || fileName,
-          resource_type: 'video',
-        },
-        (error, result) => {
-          if (error) {
-            const errMsg = error.message || 'Unknown upload error';
-            this.logger.error(`Cloudinary upload failed: ${errMsg}`);
-            return reject(new Error(errMsg));
-          }
-          if (!result) {
-            return reject(new Error('Cloudinary upload result was empty'));
-          }
+      const options = {
+        public_id: fileName.split('.')[0] || fileName,
+        resource_type: 'video' as const,
+      };
 
-          resolve({
-            provider: 'cloudinary',
-            key: result.public_id,
-            url: result.secure_url,
-            size: result.bytes || file.length,
-            mimeType,
-          });
-        },
-      );
+      const callback = (
+        error?: UploadApiErrorResponse,
+        result?: CloudinaryVideoUploadResponse,
+      ) => {
+        if (error) {
+          this.logger.error(`Cloudinary upload failed: ${error.message}`);
+          return reject(new Error(error.message));
+        }
+        if (!result) {
+          return reject(new Error('Cloudinary upload result was empty'));
+        }
 
-      uploadStream.end(file);
+        const sizeFallback =
+          typeof file === 'string' ? fs.statSync(file).size : file.length;
+
+        resolve({
+          provider: 'cloudinary',
+          key: result.public_id,
+          url: result.secure_url,
+          size: result.bytes || sizeFallback,
+          mimeType,
+          duration:
+            typeof result.duration === 'number' ? result.duration : null,
+          width: typeof result.width === 'number' ? result.width : null,
+          height: typeof result.height === 'number' ? result.height : null,
+          bitrate: typeof result.bit_rate === 'number' ? result.bit_rate : null,
+          codec:
+            typeof result.video?.codec === 'string' ? result.video.codec : null,
+          thumbnailUrl: cloudinary.url(result.public_id, {
+            secure: true,
+            resource_type: 'video',
+            format: 'jpg',
+          }),
+        });
+      };
+
+      if (typeof file === 'string') {
+        void cloudinary.uploader.upload(file, options, callback);
+      } else {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          options,
+          callback,
+        );
+        uploadStream.end(file);
+      }
     });
   }
 
@@ -96,11 +130,12 @@ export class CloudinaryStorageService implements StorageProvider {
     }
   }
 
-  getSignedUrl(fileKey: string): Promise<string> {
+  getSignedUrl(fileKey: string, expiresInSeconds = 60): Promise<string> {
     const url = cloudinary.url(fileKey, {
       secure: true,
       resource_type: 'video',
       sign_url: true,
+      expires_at: Math.floor(Date.now() / 1000) + expiresInSeconds,
     });
     return Promise.resolve(url);
   }

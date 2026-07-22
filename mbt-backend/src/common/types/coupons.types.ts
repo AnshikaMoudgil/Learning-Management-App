@@ -18,6 +18,14 @@ export interface CoursePriceRow {
   is_published: boolean;
 }
 
+export interface ActiveCouponResult {
+  id: string;
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number | string;
+  expires_at: string | null;
+}
+
 export interface CouponValidationResult {
   valid: boolean;
   couponId?: string;

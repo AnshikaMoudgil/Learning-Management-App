@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
 
 // GET: List all profiles (Admin & SuperAdmin only)
 export async function GET(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
@@ -17,16 +16,16 @@ export async function GET(request: Request) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const adminClient = getSupabaseAdmin();
 
     const [
       { data: { user }, error: authError },
       { data: allProfiles, error: listError },
+      { data: authUsers, error: authListError },
     ] = await Promise.all([
       adminClient.auth.getUser(token),
-      adminClient.from('profiles').select('id, full_name, email, role, status, created_at').order('created_at', { ascending: false }),
+      adminClient.from('profiles').select('id, full_name, email, phone, role, status, created_at, allowed_sections, allowed_actions').order('created_at', { ascending: false }),
+      adminClient.auth.admin.listUsers(),
     ]);
 
     if (authError || !user) {
@@ -44,7 +43,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Access Denied.' }, { status: 403 });
     }
 
-    return NextResponse.json({ profiles: allProfiles || [] });
+    const authUserMap = new Map((authUsers?.users || []).map((u: any) => [u.id, u]));
+
+    const enrichedProfiles = (allProfiles || []).map((p) => {
+      const authUser = authUserMap.get(p.id);
+      const meta = authUser?.raw_app_meta_data || {};
+      const providers: string[] = meta.providers || [];
+      return {
+        ...p,
+        provider: providers[0] || 'email',
+        last_sign_in_at: authUser?.last_sign_in_at || null,
+      };
+    });
+
+    const response = NextResponse.json({ profiles: enrichedProfiles });
+    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
   }

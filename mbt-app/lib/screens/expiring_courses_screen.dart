@@ -1,11 +1,60 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../services/enrollments_service.dart';
 import 'package:go_router/go_router.dart';
 
-class ExpiringCoursesScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> courses;
+class ExpiringCoursesScreen extends StatefulWidget {
+  const ExpiringCoursesScreen({super.key});
 
-  const ExpiringCoursesScreen({super.key, this.courses = const []});
+  @override
+  State<ExpiringCoursesScreen> createState() => _ExpiringCoursesScreenState();
+}
+
+class _ExpiringCoursesScreenState extends State<ExpiringCoursesScreen> {
+  final EnrollmentsService _enrollmentsService = EnrollmentsService();
+
+  bool _isLoading = true;
+  List<EnrollmentItem> _expiringSoon = [];
+  List<EnrollmentItem> _alreadyExpired = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEnrollments();
+  }
+
+  Future<void> _loadEnrollments() async {
+    try {
+      final enrollments = await _enrollmentsService.getMyEnrollments();
+      final now = DateTime.now();
+      final expiringSoon = <EnrollmentItem>[];
+      final alreadyExpired = <EnrollmentItem>[];
+
+      for (final e in enrollments) {
+        if (e.validityEndAt == null) continue;
+        if (e.validityEndAt!.isBefore(now)) {
+          alreadyExpired.add(e);
+        } else if (e.validityEndAt!.difference(now).inDays <= 30) {
+          expiringSoon.add(e);
+        }
+      }
+
+      expiringSoon.sort((a, b) => a.validityEndAt!.compareTo(b.validityEndAt!));
+      alreadyExpired.sort((a, b) => b.validityEndAt!.compareTo(a.validityEndAt!));
+
+      if (mounted) {
+        setState(() {
+          _expiringSoon = expiringSoon;
+          _alreadyExpired = alreadyExpired;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  bool get _isEmpty => _expiringSoon.isEmpty && _alreadyExpired.isEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -18,13 +67,7 @@ class ExpiringCoursesScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Expiring Courses',
-          style: TextStyle(
-            color: AppColors.textDark,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Expiring Courses', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -33,16 +76,17 @@ class ExpiringCoursesScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: courses.isEmpty
-          ? _buildEmptyState()
-          : _buildPopulatedState(context),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _isEmpty
+              ? _buildEmptyState()
+              : _buildPopulatedState(),
     );
   }
 
   Widget _buildEmptyState() {
     return Column(
       children: [
-        // Success Banner
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           padding: const EdgeInsets.all(16),
@@ -59,18 +103,8 @@ class ExpiringCoursesScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text(
-                      "You're all set!",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                    Text(
-                      "None of your courses are expiring soon.",
-                      style: TextStyle(fontSize: 12, color: Colors.green),
-                    ),
+                    Text("You're all set!", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green)),
+                    Text("None of your courses are expiring soon.", style: TextStyle(fontSize: 12, color: Colors.green)),
                   ],
                 ),
               ),
@@ -90,55 +124,30 @@ class ExpiringCoursesScreen extends StatelessWidget {
                     width: 250,
                     height: 250,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.event_available,
-                        size: 120,
-                        color: Colors.green,
-                      );
+                      return const Icon(Icons.event_available, size: 120, color: Colors.green);
                     },
                   ),
                   const SizedBox(height: 24),
                   const Text(
                     'No Courses Expiring Soon',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
                   ),
                   const SizedBox(height: 12),
                   const Text(
                     'All your enrolled courses are valid.\nKeep learning and growing!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textLight,
-                      height: 1.5,
-                    ),
+                    style: TextStyle(fontSize: 14, color: AppColors.textLight, height: 1.5),
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      icon: const Icon(
-                        Icons.shopping_bag_outlined,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      label: const Text(
-                        'Explore More Courses',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                      icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+                      label: const Text('Explore More Courses', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         elevation: 0,
                       ),
                       onPressed: () {},
@@ -153,107 +162,66 @@ class ExpiringCoursesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPopulatedState(BuildContext context) {
-    // Determine the most urgent course for the banner
-    int minDays = 999;
-    for (var c in courses) {
-      if ((c['daysLeft'] ?? 999) < minDays) {
-        minDays = c['daysLeft'];
-      }
-    }
-
-    bool isUrgent = minDays < 3;
-    Color bannerColor = isUrgent ? Colors.red : Colors.orange;
-    Color bannerBg = isUrgent
-        ? Colors.red.withValues(alpha: 0.1)
-        : Colors.orange.withValues(alpha: 0.1);
-    IconData bannerIcon = isUrgent
-        ? Icons.warning_amber_rounded
-        : Icons.access_time;
-    String bannerTitle = isUrgent ? 'Action Required!' : "Don't lose access!";
-    String bannerSubtitle = isUrgent
-        ? 'Your course is expiring soon. Renew now to avoid\nlosing access.'
-        : 'Renew before your course expires to keep learning\nseamlessly.';
-    IconData bannerRightIcon = isUrgent
-        ? Icons.notifications_active
-        : Icons.calendar_today;
+  Widget _buildPopulatedState() {
+    final allCourses = [..._expiringSoon, ..._alreadyExpired];
+    final hasExpiringSoon = _expiringSoon.isNotEmpty;
+    final hasAlreadyExpired = _alreadyExpired.isNotEmpty;
+    final minDays = _expiringSoon.isNotEmpty
+        ? DateTime.now().difference(_expiringSoon.first.validityEndAt!).inDays.abs()
+        : 999;
+    final isUrgent = _expiringSoon.isNotEmpty && minDays < 3;
 
     return Column(
       children: [
-        // Alert Banner
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: bannerBg,
+            color: isUrgent ? Colors.red.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(bannerIcon, color: bannerColor, size: 28),
+              Icon(isUrgent ? Icons.warning_amber_rounded : Icons.access_time,
+                  color: isUrgent ? Colors.red : Colors.orange, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      bannerTitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: bannerColor,
-                      ),
-                    ),
+                    Text(isUrgent ? 'Action Required!' : "Don't lose access!",
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,
+                            color: isUrgent ? Colors.red : Colors.orange)),
                     const SizedBox(height: 4),
                     Text(
-                      bannerSubtitle,
-                      style: TextStyle(fontSize: 11, color: bannerColor),
+                      isUrgent
+                          ? 'Your course is expiring soon. Renew now to avoid\nlosing access.'
+                          : 'Renew before your course expires to keep learning\nseamlessly.',
+                      style: TextStyle(fontSize: 11, color: isUrgent ? Colors.red : Colors.orange),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                bannerRightIcon,
-                color: bannerColor.withValues(alpha: 0.5),
-                size: 40,
-              ),
+              Icon(isUrgent ? Icons.notifications_active : Icons.calendar_today,
+                  color: (isUrgent ? Colors.red : Colors.orange).withValues(alpha: 0.5), size: 40),
             ],
           ),
         ),
 
-        // Sort Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Showing ${courses.length} courses',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textLight,
-                ),
-              ),
+              Text('Showing ${allCourses.length} courses',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
               Row(
                 children: const [
-                  Text(
-                    'Sort by: ',
-                    style: TextStyle(fontSize: 12, color: AppColors.textLight),
-                  ),
-                  Text(
-                    'Soonest Expiring',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 16,
-                    color: AppColors.textDark,
-                  ),
+                  Text('Sort by: ', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                  Text('Soonest Expiring',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textDark),
                 ],
               ),
             ],
@@ -261,19 +229,36 @@ class ExpiringCoursesScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Course List
         Expanded(
-          child: ListView.separated(
+          child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            itemCount: courses.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              return _buildCourseCard(courses[index]);
-            },
+            children: [
+              if (hasExpiringSoon) ...[
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text('Expiring Soon',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                ),
+                ..._expiringSoon.map((e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildCourseCard(e, isExpired: false),
+                    )),
+              ],
+              if (hasAlreadyExpired) ...[
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12, top: 8),
+                  child: Text('Already Expired',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                ),
+                ..._alreadyExpired.map((e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildCourseCard(e, isExpired: true),
+                    )),
+              ],
+            ],
           ),
         ),
 
-        // Info Banner at Bottom
         Container(
           margin: const EdgeInsets.all(20),
           padding: const EdgeInsets.all(16),
@@ -284,33 +269,17 @@ class ExpiringCoursesScreen extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.info_outline,
-                color: AppColors.primaryBlue,
-                size: 20,
-              ),
+              const Icon(Icons.info_outline, color: AppColors.primaryBlue, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text(
-                      'Why renew?',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ),
+                    Text('Why renew?',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
                     SizedBox(height: 4),
-                    Text(
-                      'Renew your course to continue learning without interruption\nand retain your progress.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textDark,
-                        height: 1.5,
-                      ),
-                    ),
+                    Text('Renew your course to continue learning without interruption\nand retain your progress.',
+                        style: TextStyle(fontSize: 11, color: AppColors.textDark, height: 1.5)),
                   ],
                 ),
               ),
@@ -321,11 +290,16 @@ class ExpiringCoursesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCourseCard(Map<String, dynamic> course) {
-    int daysLeft = course['daysLeft'] ?? 0;
-    bool isUrgent = daysLeft < 3;
-    Color badgeColor = isUrgent ? Colors.red : Colors.orange;
-    Color buttonColor = isUrgent ? Colors.red : AppColors.primaryBlue;
+  Widget _buildCourseCard(EnrollmentItem course, {required bool isExpired}) {
+    final daysLeft = isExpired
+        ? 0
+        : course.validityEndAt != null
+            ? DateTime.now().difference(course.validityEndAt!).inDays.abs()
+            : 0;
+    final isUrgent = !isExpired && daysLeft < 3;
+    final badgeColor = isExpired ? Colors.red : (isUrgent ? Colors.red : Colors.orange);
+    final buttonColor = isExpired ? Colors.red : (isUrgent ? Colors.red : AppColors.primaryBlue);
+    final daysText = isExpired ? 'Expired' : 'Expires in $daysLeft day${daysLeft > 1 ? 's' : ''}!';
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -338,7 +312,7 @@ class ExpiringCoursesScreen extends StatelessWidget {
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          ),
+          )
         ],
       ),
       child: Column(
@@ -346,7 +320,6 @@ class ExpiringCoursesScreen extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Thumbnail
               Stack(
                 children: [
                   Container(
@@ -355,9 +328,11 @@ class ExpiringCoursesScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.grey.shade900,
-                      image: course['thumbnail'] != null
+                      image: course.thumbnailUrl != null
                           ? DecorationImage(
-                              image: AssetImage(course['thumbnail']),
+                              image: course.thumbnailUrl!.startsWith('http')
+                                  ? NetworkImage(course.thumbnailUrl!) as ImageProvider
+                                  : AssetImage(course.thumbnailUrl!) as ImageProvider,
                               fit: BoxFit.cover,
                             )
                           : null,
@@ -367,47 +342,32 @@ class ExpiringCoursesScreen extends StatelessWidget {
                     top: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                       decoration: BoxDecoration(
                         color: badgeColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Expires in $daysLeft day${daysLeft > 1 ? 's' : ''}!',
-                        style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                        daysText,
+                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(width: 16),
-              // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      course['title'] ?? '',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
-                      ),
+                      course.title ?? '',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
@@ -417,41 +377,22 @@ class ExpiringCoursesScreen extends StatelessWidget {
                         children: const [
                           Icon(Icons.star, color: Colors.orange, size: 10),
                           SizedBox(width: 4),
-                          Text(
-                            'Premium',
-                            style: TextStyle(
-                              color: Colors.orange,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          Text('Premium', style: TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Expiry Date',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textLight,
-                      ),
-                    ),
+                    const Text('Expiry Date', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 12,
-                          color: AppColors.textDark,
-                        ),
+                        const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textDark),
                         const SizedBox(width: 6),
                         Text(
-                          course['expiryDate'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
-                          ),
+                          course.validityEndAt != null
+                              ? '${course.validityEndAt!.day}/${course.validityEndAt!.month}/${course.validityEndAt!.year}'
+                              : '',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textDark),
                         ),
                       ],
                     ),
@@ -463,36 +404,26 @@ class ExpiringCoursesScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1, color: AppColors.border),
           const SizedBox(height: 16),
-          // Action Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '$daysLeft day${daysLeft > 1 ? 's' : ''} remaining',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: badgeColor,
-                ),
+                isExpired ? 'Expired' : '$daysLeft day${daysLeft > 1 ? 's' : ''} remaining',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: badgeColor),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: buttonColor,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 0,
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
                   minimumSize: const Size(0, 36),
                 ),
                 onPressed: () {},
-                child: const Text(
-                  'Renew Now',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                child: Text(
+                  isExpired ? 'Renew Access' : 'Renew Now',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
             ],

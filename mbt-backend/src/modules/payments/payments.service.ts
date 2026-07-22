@@ -14,6 +14,7 @@ import { Queue } from 'bullmq';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CouponsService } from '../coupons/coupons.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { RazorpayService } from './razorpay.service';
 import type { CourseRow, PaymentRow } from '../../common/types/payments.types';
 
@@ -26,6 +27,7 @@ export class PaymentsService {
     private readonly supabaseService: SupabaseService,
     private readonly couponsService: CouponsService,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly notificationsService: NotificationsService,
     private readonly razorpayService: RazorpayService,
     private readonly configService: ConfigService,
     @InjectQueue('invoices-queue') private readonly invoicesQueue: Queue,
@@ -267,7 +269,7 @@ export class PaymentsService {
     this.assertRazorpayPaymentMatchesPendingPayment(payment, razorpayPayment);
 
     try {
-      return await this.completePayment(input);
+      return await this.completePayment(input, payment.user_id);
     } catch (err) {
       this.logger.error(
         `Payment verification succeeded but enrollment failed: ${(err as Error).message}`,
@@ -343,11 +345,14 @@ export class PaymentsService {
     }
 
     try {
-      await this.completePayment({
-        razorpayOrderId: orderId,
-        razorpayPaymentId: paymentId,
-        razorpaySignature: signature,
-      });
+      await this.completePayment(
+        {
+          razorpayOrderId: orderId,
+          razorpayPaymentId: paymentId,
+          razorpaySignature: signature,
+        },
+        payment.user_id,
+      );
     } catch (err) {
       this.logger.error(
         `Webhook enrollment failed for order ${orderId}: ${(err as Error).message}`,
@@ -367,11 +372,14 @@ export class PaymentsService {
     return { received: true, processed: true };
   }
 
-  private async completePayment(input: {
-    razorpayOrderId: string;
-    razorpayPaymentId: string;
-    razorpaySignature: string;
-  }) {
+  private async completePayment(
+    input: {
+      razorpayOrderId: string;
+      razorpayPaymentId: string;
+      razorpaySignature: string;
+    },
+    userId: string,
+  ) {
     const result = await this.enrollmentsService.enrollFromPayment(
       input.razorpayOrderId,
       input.razorpayPaymentId,
@@ -380,6 +388,12 @@ export class PaymentsService {
     const resultData = result as { paymentId?: string } | null;
     if (resultData?.paymentId) {
       await this.queueInvoiceGeneration(resultData.paymentId);
+      await this.notificationsService.notify(userId, {
+        type: 'payment_confirmation',
+        title: 'Payment Successful',
+        body: `Your payment was successful. Receipt #${resultData.paymentId.slice(-8).toUpperCase()}`,
+        data: { payment_id: resultData.paymentId },
+      });
     }
     return result;
   }

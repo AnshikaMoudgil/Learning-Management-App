@@ -41,7 +41,7 @@ export class RolesGuard implements CanActivate {
     const { data: profileRow, error } = await this.supabaseService
       .getClient()
       .from('profiles')
-      .select('role')
+      .select('role, allowed_sections, allowed_actions')
       .eq('id', userId)
       .maybeSingle();
 
@@ -49,13 +49,34 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User profile not found');
     }
 
-    const profile = profileRow as { role: string };
-    if (!requiredRoles.includes(profile.role as UserRole)) {
-      throw new ForbiddenException(
-        `Requires one of roles: ${requiredRoles.join(', ')}`,
-      );
+    const profile = profileRow as {
+      role: string;
+      allowed_sections?: string[];
+      allowed_actions?: string[];
+    };
+
+    // If role is superadmin, grant access to everything
+    if (profile.role === 'superadmin') {
+      return true;
     }
 
-    return true;
+    // Check if role matches required roles directly
+    if (requiredRoles.includes(profile.role as UserRole)) {
+      return true;
+    }
+
+    // Check dynamic section / action authorization
+    const path = request.path || '';
+    if (path.includes('/devices/admin')) {
+      const hasSection = profile.allowed_sections?.includes('Device Requests');
+      const hasAction = profile.allowed_actions?.includes('Accept / Reject Device Requests');
+      if (hasSection || hasAction) {
+        return true;
+      }
+    }
+
+    throw new ForbiddenException(
+      `Requires one of roles: ${requiredRoles.join(', ')} or specific permissions`,
+    );
   }
 }

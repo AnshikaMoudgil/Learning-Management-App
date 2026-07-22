@@ -25,6 +25,9 @@ import { ZoomQueuesModule } from './modules/queues/zoom-queues.module';
 import { StorageModule } from './storage/storage.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { MyCoursesModule } from './modules/my-courses/my-courses.module';
+import { MediaAssetsModule } from './modules/media-assets/media-assets.module';
+import { VideoModule } from './modules/video/video.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -89,8 +92,10 @@ import { MyCoursesModule } from './modules/my-courses/my-courses.module';
     StorageModule,
     WishlistModule,
     MyCoursesModule,
+    MediaAssetsModule,
+    VideoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

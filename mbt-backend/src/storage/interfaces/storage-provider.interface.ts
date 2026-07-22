@@ -2,7 +2,7 @@ import { UploadResult } from './upload-result.interface';
 
 export interface StorageProvider {
   upload(
-    file: Buffer,
+    file: Buffer | string,
     fileName: string,
     mimeType: string,
   ): Promise<UploadResult>;
@@ -11,6 +11,6 @@ export interface StorageProvider {
 
   exists(fileKey: string): Promise<boolean>;
 
-  getSignedUrl(fileKey: string): Promise<string>;
+  getSignedUrl(fileKey: string, expiresInSeconds?: number): Promise<string>;
 }
 export const STORAGE_PROVIDER_TOKEN = 'STORAGE_PROVIDER_TOKEN';
