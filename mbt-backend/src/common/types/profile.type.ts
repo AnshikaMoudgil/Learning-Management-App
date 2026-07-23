@@ -16,4 +16,6 @@ export interface Profile {
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
+  allowed_sections: string[] | null;
+  allowed_actions: string[] | null;
 }

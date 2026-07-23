@@ -4,6 +4,9 @@ import { Profile } from '../../common/types/profile.type';
 
 @Injectable()
 export class UsersRepository {
+  private readonly PROFILE_COLUMNS =
+    'id, full_name, avatar_url, phone, email, role, status, about, is_active, last_login_at, created_at, allowed_sections, allowed_actions';
+
   constructor(private supabaseService: SupabaseService) {}
 
   private get db() {
@@ -13,7 +16,7 @@ export class UsersRepository {
   async findById(userId: string): Promise<Profile | null> {
     const { data, error } = await this.db
       .from('profiles')
-      .select('*')
+      .select(this.PROFILE_COLUMNS)
       .eq('id', userId)
       .maybeSingle();
 
@@ -32,7 +35,7 @@ export class UsersRepository {
       .from('profiles')
       .update(updates as never)
       .eq('id', userId)
-      .select()
+      .select(this.PROFILE_COLUMNS)
       .single();
 
     if (error) {
@@ -49,7 +52,7 @@ export class UsersRepository {
     const { data, error } = await this.db
       .from('profiles')
       .insert({ id: userId, ...profile } as never)
-      .select()
+      .select(this.PROFILE_COLUMNS)
       .single();
 
     if (error) {
@@ -66,7 +69,7 @@ export class UsersRepository {
     const { data, error } = await this.db
       .from('profiles')
       .upsert({ id: userId, ...profile } as never, { onConflict: 'id' })
-      .select()
+      .select(this.PROFILE_COLUMNS)
       .single();
 
     if (error) {
@@ -81,7 +84,7 @@ export class UsersRepository {
       .from('profiles')
       .update({ avatar_url: url } as never)
       .eq('id', userId)
-      .select()
+      .select(this.PROFILE_COLUMNS)
       .single();
 
     if (error) {
