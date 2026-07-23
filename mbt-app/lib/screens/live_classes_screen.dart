@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/api_client.dart';
+import '../services/notification_service.dart';
 import '../models/session.dart';
 import 'home_dashboard.dart';
 import 'my_learning_screen.dart';
@@ -19,9 +20,11 @@ class LiveClassesScreen extends StatefulWidget {
 class _LiveClassesScreenState extends State<LiveClassesScreen> {
   int _selectedTab = 0;
   final ApiClient _api = ApiClient();
+  final NotificationService _notificationService = NotificationService();
   List<LiveSession> _sessions = [];
   bool _loading = true;
   String? _error;
+  int _unreadNotifications = 0;
   DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
   int? _selectedDay = DateTime.now().day;
 
@@ -29,6 +32,18 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
   void initState() {
     super.initState();
     _fetchSessions();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final count = await _notificationService.getUnreadCount();
+    if (mounted) setState(() => _unreadNotifications = count);
+  }
+
+  Future<void> _openNotifications() async {
+    await context.push('/notifications');
+    await _notificationService.markAllRead();
+    _loadUnreadCount();
   }
 
   Future<void> _fetchSessions() async {
@@ -142,28 +157,29 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
                   Icons.notifications_outlined,
                   color: AppColors.textDark,
                 ),
-                onPressed: () => context.push('/notifications'),
+                onPressed: _openNotifications,
               ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: const Text(
-                    '3',
-                    style: TextStyle(color: Colors.white, fontSize: 10),
-                    textAlign: TextAlign.center,
+              if (_unreadNotifications > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$_unreadNotifications',
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(width: 8),

@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 import { NotificationDeliveryService } from './notification-delivery.service';
+import { UpdateNotificationSettingsDto } from './dto/update-settings.dto';
 
 export type NotificationType =
   | 'session_created'
@@ -195,4 +196,94 @@ export class NotificationsService {
       .eq('user_id', userId)
       .eq('is_read', false);
   }
+
+  async getSettings(userId: string): Promise<Record<string, boolean>> {
+    const { data, error } = await this.db
+      .from('notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.error(`Failed to fetch settings: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+
+    if (data) {
+      return mapRowToSettings(data);
+    }
+
+    // Lazy create default settings row
+    const defaultRow = {
+      user_id: userId,
+      live_class_reminders: true,
+      course_expiry_alerts: true,
+      payment_confirmations: true,
+      device_transfer_status: true,
+      promotional_marketing: true,
+      push_notifications: true,
+      email: true,
+      sms: true,
+    };
+
+    const { data: newRow, error: insertError } = await this.db
+      .from('notification_settings')
+      .insert(defaultRow as never)
+      .select()
+      .single();
+
+    if (insertError) {
+      this.logger.error(`Failed to create default settings: ${insertError.message}`);
+      throw new BadRequestException(insertError.message);
+    }
+
+    return mapRowToSettings(newRow);
+  }
+
+  async updateSettings(
+    userId: string,
+    dto: UpdateNotificationSettingsDto,
+  ): Promise<Record<string, boolean>> {
+    const row = mapSettingsToRow(dto);
+    row.updated_at = new Date().toISOString();
+
+    const { data, error } = await this.db
+      .from('notification_settings')
+      .upsert({ user_id: userId, ...row } as never, { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    if (error) {
+      this.logger.error(`Failed to update settings: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+
+    return mapRowToSettings(data);
+  }
+}
+
+function mapRowToSettings(row: any) {
+  return {
+    liveClassReminders: row.live_class_reminders,
+    courseExpiryAlerts: row.course_expiry_alerts,
+    paymentConfirmations: row.payment_confirmations,
+    deviceTransferStatus: row.device_transfer_status,
+    promotionalMarketing: row.promotional_marketing,
+    pushNotifications: row.push_notifications,
+    email: row.email,
+    sms: row.sms,
+  };
+}
+
+function mapSettingsToRow(dto: any) {
+  const row: any = {};
+  if (dto.liveClassReminders !== undefined) row.live_class_reminders = dto.liveClassReminders;
+  if (dto.courseExpiryAlerts !== undefined) row.course_expiry_alerts = dto.courseExpiryAlerts;
+  if (dto.paymentConfirmations !== undefined) row.payment_confirmations = dto.paymentConfirmations;
+  if (dto.deviceTransferStatus !== undefined) row.device_transfer_status = dto.deviceTransferStatus;
+  if (dto.promotionalMarketing !== undefined) row.promotional_marketing = dto.promotionalMarketing;
+  if (dto.pushNotifications !== undefined) row.push_notifications = dto.pushNotifications;
+  if (dto.email !== undefined) row.email = dto.email;
+  if (dto.sms !== undefined) row.sms = dto.sms;
+  return row;
 }

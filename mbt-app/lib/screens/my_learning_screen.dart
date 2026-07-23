@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../services/enrollments_service.dart';
+import '../services/notification_service.dart';
 
 class MyLearningScreen extends StatefulWidget {
   const MyLearningScreen({Key? key}) : super(key: key);
@@ -14,11 +15,25 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
   bool _isGridView = true;
   late Future<List<EnrollmentItem>> _enrollmentsFuture;
   final _enrollmentsService = EnrollmentsService();
+  final NotificationService _notificationService = NotificationService();
+  int _unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
     _enrollmentsFuture = _enrollmentsService.getMyEnrollments();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final count = await _notificationService.getUnreadCount();
+    if (mounted) setState(() => _unreadNotifications = count);
+  }
+
+  Future<void> _openNotifications() async {
+    await context.push('/notifications');
+    await _notificationService.markAllRead();
+    _loadUnreadCount();
   }
 
   void _refreshEnrollments() {
@@ -45,7 +60,7 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
         ),
         actions: [
           IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
-          _buildIconBadge(Icons.notifications_outlined, '3', Colors.red, () => context.push('/notifications')),
+          _buildIconBadge(Icons.notifications_outlined, '$_unreadNotifications', Colors.red, _openNotifications),
           const SizedBox(width: 16),
         ],
       ),
@@ -180,20 +195,22 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
   }
 
   Widget _buildIconBadge(IconData icon, String count, Color badgeColor, VoidCallback onTap) {
+    final showBadge = count != '0' && count.isNotEmpty;
     return Stack(
       alignment: Alignment.center,
       children: [
         IconButton(icon: Icon(icon, color: AppColors.textDark), onPressed: onTap),
-        Positioned(
-          right: 8,
-          top: 8,
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
-            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-            child: Text(count, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-          ),
-        )
+        if (showBadge)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(count, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            ),
+          )
       ],
     );
   }

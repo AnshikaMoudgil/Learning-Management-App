@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/notification_service.dart';
+import '../services/fcm_service.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/cart_badge.dart';
 
@@ -311,6 +312,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     return GestureDetector(
       onTap: () {
         if (isUnread) _markRead(notification.id);
+        final data = Map<String, dynamic>.from(notification.data ?? {});
+        data.putIfAbsent('type', () => notification.type);
+        FcmService.handleNotificationData(data);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

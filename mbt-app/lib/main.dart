@@ -81,6 +81,18 @@ class _MyAppState extends State<MyApp> {
       if (event == AuthChangeEvent.initialSession ||
           event == AuthChangeEvent.signedIn) {
         if (event == AuthChangeEvent.initialSession) {
+          if (session == null) {
+            // No active session on startup — show onboarding after splash delay
+            await Future.delayed(const Duration(milliseconds: 2500));
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+              _navigateTo(RouteNames.onboarding);
+            }
+            return;
+          }
+          // Has a session on startup — small delay for splash screen visibility
           await Future.delayed(const Duration(milliseconds: 2500));
         }
 
@@ -110,13 +122,6 @@ class _MyAppState extends State<MyApp> {
             }
           } catch (e) {
             _showErrorAndLogout(e.toString());
-          }
-        } else {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            _navigateTo(RouteNames.onboarding);
           }
         }
       }

@@ -21,6 +21,7 @@ class SessionsService {
   }
 
   Future<Map<String, dynamic>> joinSession(String sessionId) async {
-    return _api.post('/sessions/$sessionId/join') as Map<String, dynamic>;
+    final result = await _api.post('/sessions/$sessionId/join');
+    return result as Map<String, dynamic>;
   }
 }

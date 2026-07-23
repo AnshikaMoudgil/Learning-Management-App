@@ -1,4 +1,4 @@
-﻿import {
+import {
   Body,
   Controller,
   Get,
@@ -15,6 +15,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { NotificationsService } from './notifications.service';
+import { UpdateNotificationSettingsDto } from './dto/update-settings.dto';
 
 @Controller('notifications')
 @UseGuards(AuthGuard)
@@ -85,5 +86,19 @@ export class NotificationsController {
       });
     }
     return { success: true };
+  }
+
+  @Get('settings')
+  async getSettings(@Request() req: AuthenticatedRequest) {
+    return this.notificationsService.getSettings(req.user.id);
+  }
+
+  @Patch('settings')
+  @HttpCode(200)
+  async updateSettings(
+    @Request() req: AuthenticatedRequest,
+    @Body() body: UpdateNotificationSettingsDto,
+  ) {
+    return this.notificationsService.updateSettings(req.user.id, body);
   }
 }

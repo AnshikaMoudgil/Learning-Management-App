@@ -39,7 +39,10 @@ export const courseSchema = z
       .string()
       .min(1, 'Validity (Days) is required.')
       .refine((v) => !isNaN(Number(v)) && Number(v) >= 0, 'Validity (Days) must be a valid positive number.'),
-    estimatedDuration: z.string().min(1, 'Estimated Duration is required.'),
+    estimatedDuration: z
+      .string()
+      .min(1, 'Estimated Duration is required.')
+      .refine((v) => !isNaN(Number(v)) && Number(v) >= 0, 'Estimated Duration must be a valid positive number.'),
     isPublished: z.boolean(),
     thumbnailUrl: z.string().min(1, 'Course Thumbnail is required.'),
     previewVideoUrl: z.string().optional(),

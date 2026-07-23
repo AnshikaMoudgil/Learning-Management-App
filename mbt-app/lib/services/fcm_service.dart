@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../router/app_router.dart';
 import 'profile_service.dart';
 
@@ -168,7 +169,10 @@ class FcmService {
 
   Future<void> disposeToken() async {
     try {
-      await _profileService.unbindDeviceFcm();
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session?.accessToken != null) {
+        await _profileService.unbindDeviceFcm();
+      }
       await _fcm.deleteToken();
       _initialized = false;
       if (kDebugMode) {
@@ -188,6 +192,7 @@ class FcmService {
 
     final String? type = data['type'];
     final String? courseId = data['courseId'];
+    final String? courseIdsStr = data['course_ids'];
     final String? lessonId = data['lessonId'];
 
     if (courseId != null && courseId.isNotEmpty) {
@@ -210,7 +215,27 @@ class FcmService {
       return;
     }
 
+    if (type == 'expiry_alert' || type == 'expiry_expired') {
+      if (courseIdsStr != null && courseIdsStr.isNotEmpty) {
+        final firstId = courseIdsStr.split(',').first.trim();
+        if (firstId.isNotEmpty) {
+          appRouter.push('${RouteNames.course}?id=$firstId');
+          return;
+        }
+      }
+      appRouter.push(RouteNames.expiringCourses);
+      return;
+    }
+
     // Default fallback to notifications list
     appRouter.push(RouteNames.notifications);
+  }
+
+  static void handleNotificationData(Map<String, dynamic>? data) {
+    if (data == null || data.isEmpty) {
+      appRouter.push(RouteNames.notifications);
+      return;
+    }
+    FcmService()._handleRouting(data);
   }
 }

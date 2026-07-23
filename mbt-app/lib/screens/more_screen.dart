@@ -4,10 +4,36 @@ import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/cart_badge.dart';
 import '../services/profile_service.dart';
+import '../services/notification_service.dart';
 import '../models/profile.dart';
 
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends StatefulWidget {
   const MoreScreen({Key? key}) : super(key: key);
+
+  @override
+  State<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends State<MoreScreen> {
+  final NotificationService _notificationService = NotificationService();
+  int _unreadNotifications = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final count = await _notificationService.getUnreadCount();
+    if (mounted) setState(() => _unreadNotifications = count);
+  }
+
+  Future<void> _openNotifications() async {
+    await context.push('/notifications');
+    await _notificationService.markAllRead();
+    _loadUnreadCount();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +76,7 @@ class MoreScreen extends StatelessWidget {
                     const CartBadge(),
                     const SizedBox(width: 12),
                     GestureDetector(
-                      onTap: () => context.push('/notifications'),
+                      onTap: _openNotifications,
                       child: Stack(
                         children: [
                           Container(
@@ -65,25 +91,26 @@ class MoreScreen extends StatelessWidget {
                               size: 20,
                             ),
                           ),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Text(
-                                '3',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
+                          if (_unreadNotifications > 0)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '$_unreadNotifications',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -95,103 +122,79 @@ class MoreScreen extends StatelessWidget {
               // Profile Card
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: FutureBuilder<Profile>(
-                  future: ProfileService().getProfile(),
-                  builder: (context, snapshot) {
-                    final profile = snapshot.data;
-                    final user = Supabase.instance.client.auth.currentUser;
+                child: ValueListenableBuilder<int>(
+                  valueListenable: ProfileService().profileUpdateNotifier,
+                  builder: (context, _, __) {
+                    return FutureBuilder<Profile>(
+                      future: ProfileService().getProfile(),
+                      builder: (context, snapshot) {
+                        final profile = snapshot.data;
+                        final user = Supabase.instance.client.auth.currentUser;
 
-                    return InkWell(
-                      onTap: () => context.push('/edit-profile'),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
+                        return InkWell(
+                          onTap: () => context.push('/edit-profile'),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 28,
-                              backgroundColor: const Color(0xFF0038FF),
-                              backgroundImage: profile?.avatarUrl != null
-                                  ? NetworkImage(profile!.avatarUrl!)
-                                  : null,
-                              child: profile?.avatarUrl == null
-                                  ? const Icon(
-                                      Icons.person,
-                                      color: Colors.white,
-                                      size: 28,
-                                    )
-                                  : null,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.border),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    profile?.fullName ??
-                                        user?.userMetadata?['custom_full_name'] ??
-                                        'Learner',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textDark,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    user?.phone ??
-                                        user?.email ??
-                                        'Update Profile',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textLight,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF3F0FF),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(
-                                          Icons.workspace_premium,
-                                          size: 12,
-                                          color: Color(0xFF6C3FE8),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: const Color(0xFF0038FF),
+                                  backgroundImage: profile?.avatarUrl != null
+                                      ? NetworkImage(profile!.avatarUrl!)
+                                      : null,
+                                  child: profile?.avatarUrl == null
+                                      ? const Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 28,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        profile?.fullName ??
+                                            user?.userMetadata?['custom_full_name'] ??
+                                            'Learner',
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textDark,
                                         ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Premium Learner',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF6C3FE8),
-                                          ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        user?.phone ??
+                                            user?.email ??
+                                            'Update Profile',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textLight,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  color: AppColors.textLight,
+                                ),
+                              ],
                             ),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: AppColors.textLight,
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),

@@ -29,11 +29,62 @@ export class NotificationDeliveryService {
     try {
       const db = this.supabaseService.getClient();
 
-      // Retrieve all active FCM tokens for the targeted users
+      // Retrieve notification settings for the targeted users
+      const { data: settingsList, error: settingsError } = await db
+        .from('notification_settings')
+        .select('*')
+        .in('user_id', userIds);
+
+      if (settingsError) {
+        this.logger.error(`Failed to fetch notification settings: ${settingsError.message}`);
+      }
+
+      // Filter userIds based on their preferences
+      const allowedUserIds = userIds.filter((userId) => {
+        const userSettings: any = settingsList?.find((s: any) => s.user_id === userId);
+        if (!userSettings) return true; // Default to true if no settings row exists yet
+
+        // 1. Check if push notifications are enabled globally
+        if (userSettings.push_notifications === false) return false;
+
+        // 2. Check specific category preference
+        const type = payload.type;
+        if (
+          type === 'session_live' ||
+          type === 'session_created' ||
+          type === 'session_updated' ||
+          type === 'reminder_24h' ||
+          type === 'reminder_1h' ||
+          type === 'reminder_10min'
+        ) {
+          return userSettings.live_class_reminders !== false;
+        }
+        if (type === 'expiry_alert' || type === 'expiry_expired') {
+          return userSettings.course_expiry_alerts !== false;
+        }
+        if (type === 'payment_confirmation') {
+          return userSettings.payment_confirmations !== false;
+        }
+        if (type === 'device_login') {
+          return userSettings.device_transfer_status !== false;
+        }
+        if (type === 'announcement') {
+          return userSettings.promotional_marketing !== false;
+        }
+
+        return true;
+      });
+
+      if (allowedUserIds.length === 0) {
+        this.logger.log(`All targeted users have push notifications disabled for type: ${payload.type}`);
+        return;
+      }
+
+      // Retrieve all active FCM tokens for the filtered targeted users
       const { data: devices, error } = await db
         .from('devices')
         .select('fcm_token')
-        .in('user_id', userIds)
+        .in('user_id', allowedUserIds)
         .eq('is_active', true)
         .not('fcm_token', 'is', null);
 

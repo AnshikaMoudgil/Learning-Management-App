@@ -4,11 +4,32 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import '../models/profile.dart';
 import 'api_client.dart';
 
+typedef ProfileUpdateCallback = void Function();
+
 class ProfileService {
   final ApiClient _api = ApiClient();
+
+  final List<ProfileUpdateCallback> _onProfileUpdated = [];
+  final ValueNotifier<int> profileUpdateNotifier = ValueNotifier<int>(0);
+
+  void addUpdateListener(ProfileUpdateCallback callback) {
+    _onProfileUpdated.add(callback);
+  }
+
+  void removeUpdateListener(ProfileUpdateCallback callback) {
+    _onProfileUpdated.remove(callback);
+  }
+
+  void _notifyProfileUpdated() {
+    profileUpdateNotifier.value++;
+    for (final cb in _onProfileUpdated) {
+      cb();
+    }
+  }
 
   Future<Profile> getProfile() async {
     final result = await _api.get('/api/v1/users/me');
@@ -71,16 +92,37 @@ class ProfileService {
         if (about != null) 'about': about,
       },
     );
+    _notifyProfileUpdated();
     return Profile.fromJson(result);
   }
 
   Future<void> bindDevice(String userId, {String? fcmToken}) async {
     final fingerprint = await _getDeviceFingerprint();
+    final deviceName = await _getDeviceName();
     await _api.post('/api/v1/devices/bind', body: {
       'fingerprint': fingerprint,
-      'platform': kIsWeb ? 'web' : (Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'other'),
+      'platform': deviceName,
       if (fcmToken != null) 'fcmToken': fcmToken,
     });
+  }
+
+  Future<String> _getDeviceName() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      if (kIsWeb) {
+        final webInfo = await deviceInfo.webBrowserInfo;
+        final browser = webInfo.browserName.toString();
+        final os = webInfo.platform ?? '';
+        return os.isNotEmpty ? '$browser on $os' : browser;
+      } else if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return '${androidInfo.brand} ${androidInfo.model}';
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return iosInfo.model;
+      }
+    } catch (_) {}
+    return 'Unknown Device';
   }
 
   Future<void> unbindDeviceFcm() async {
@@ -103,9 +145,11 @@ class ProfileService {
 
   Future<void> uploadAvatar(Uint8List bytes, String fileName) async {
     await _api.uploadFile('/api/v1/users/me/photo', 'photo', bytes, fileName);
+    _notifyProfileUpdated();
   }
 
   Future<void> deleteAvatar() async {
     await _api.delete('/api/v1/users/me/photo');
+    _notifyProfileUpdated();
   }
 }

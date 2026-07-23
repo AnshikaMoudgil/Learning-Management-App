@@ -75,6 +75,14 @@ export class DeviceGuard implements CanActivate {
       }
     }
 
+    // Update last_seen_at for the device making this request
+    await this.supabaseService
+      .getClient()
+      .from('devices')
+      .update({ last_seen_at: new Date().toISOString() } as never)
+      .eq('user_id', userId)
+      .eq('fingerprint', deviceFingerprint as string);
+
     return true;
   }
 }

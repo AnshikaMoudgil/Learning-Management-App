@@ -284,7 +284,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildCourseBadge(Icons.access_time, course.estimatedDuration ?? 'Self paced'),
+              _buildCourseBadge(Icons.access_time, '${course.estimatedDuration ?? 'Self paced'} Hours'),
               _buildCourseBadge(Icons.play_lesson_outlined, '${course.totalLessons} Lessons'),
             ],
           ),

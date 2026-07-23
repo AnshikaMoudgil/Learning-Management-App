@@ -429,18 +429,18 @@ export class MediaAssetsService implements OnModuleInit {
       throw new ForbiddenException('Media asset is not attached to a lesson');
     }
 
-    const { data: enrollment, error: enrollmentError } = await this.db
+    const { data: enrollments, error: enrollmentError } = await this.db
       .from('enrollments')
       .select('id')
       .eq('user_id', userId)
       .eq('status', 'active')
       .in('course_id', courseIds)
-      .maybeSingle();
+      .limit(1);
 
     if (enrollmentError) {
       throw new BadRequestException(enrollmentError.message);
     }
-    if (!enrollment) {
+    if (!enrollments?.length) {
       throw new ForbiddenException('You are not enrolled for this media asset');
     }
   }

@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
 import '../services/profile_service.dart';
-import '../models/profile.dart';
 import 'package:go_router/go_router.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -27,10 +27,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isSaving = false;
   String? _existingAvatarUrl;
 
+  String? _nameError;
+  String? _phoneError;
+  String? _emailError;
+
   bool _phoneReadOnly = false;
   bool _emailReadOnly = false;
   String _countryCode = '+91';
   final List<String> _countryCodes = ['+20', '+91'];
+
+  static const int _bioMaxChars = 1000;
 
   @override
   void initState() {
@@ -104,37 +110,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _saveProfile() async {
     final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter your name')));
-      return;
-    }
-
     final phone = _phoneController.text.trim();
-    if (!_phoneReadOnly && phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your phone number')),
-      );
-      return;
-    }
-
     final email = _emailController.text.trim();
-    if (!_emailReadOnly && email.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter your email')));
-      return;
+    final bio = _bioController.text.trim();
+
+    setState(() {
+      _nameError = null;
+      _phoneError = null;
+      _emailError = null;
+    });
+
+    bool hasError = false;
+
+    if (name.isEmpty) {
+      setState(() => _nameError = 'Full name is required');
+      hasError = true;
+    } else if (RegExp(r'^[0-9\s]+$').hasMatch(name)) {
+      setState(() => _nameError = 'Name must contain at least one letter');
+      hasError = true;
     }
 
-    if (!_emailReadOnly &&
-        email.isNotEmpty &&
-        !RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email)) {
+    if (!_phoneReadOnly) {
+      if (phone.isEmpty) {
+        setState(() => _phoneError = 'Phone number is required');
+        hasError = true;
+      } else if (!RegExp(r'^\d+$').hasMatch(phone)) {
+        setState(() => _phoneError = 'Only numbers allowed');
+        hasError = true;
+      }
+    }
+
+    if (!_emailReadOnly) {
+      if (email.isEmpty) {
+        setState(() => _emailError = 'Email address is required');
+        hasError = true;
+      } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email)) {
+        setState(() => _emailError = 'Please enter a valid email address');
+        hasError = true;
+      }
+    }
+
+    if (bio.length > _bioMaxChars) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
+        const SnackBar(content: Text('Bio must not exceed 1000 characters')),
       );
       return;
     }
+
+    if (hasError) return;
 
     setState(() => _isSaving = true);
     try {
@@ -239,20 +262,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: AppColors.primaryBlue,
-                      backgroundImage: _avatarBytes != null
-                          ? MemoryImage(_avatarBytes!)
-                          : (_existingAvatarUrl != null
-                                    ? NetworkImage(_existingAvatarUrl!)
-                                    : null)
-                                as ImageProvider?,
-                      child:
-                          (_avatarBytes == null && _existingAvatarUrl == null)
-                          ? const Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: 50,
+                      child: _avatarBytes != null
+                          ? ClipOval(
+                              child: Image.memory(
+                                _avatarBytes!,
+                                fit: BoxFit.cover,
+                                width: 100,
+                                height: 100,
+                              ),
                             )
-                          : null,
+                          : _existingAvatarUrl != null
+                              ? ClipOval(
+                                  child: Image.network(
+                                    _existingAvatarUrl!,
+                                    fit: BoxFit.cover,
+                                    width: 100,
+                                    height: 100,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 50,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 50,
+                                ),
                     ),
                     Positioned(
                       bottom: 0,
@@ -378,12 +415,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               'Full Name',
               _nameController,
               icon: Icons.person_outline,
+              required: true,
+              errorText: _nameError,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]')),
+              ],
             ),
             const SizedBox(height: 16),
 
-            _buildLabel('Phone Number'),
+            _buildLabel('Phone Number', required: true),
             const SizedBox(height: 8),
-            _buildPhoneField(),
+            _buildPhoneField(errorText: _phoneError),
             const SizedBox(height: 16),
 
             _buildEditableField(
@@ -392,10 +434,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               readOnly: _emailReadOnly,
+              required: true,
+              errorText: _emailError,
             ),
             const SizedBox(height: 16),
 
-            _buildEditableField('Bio', _bioController, maxLines: 3),
+            _buildEditableField('Bio', _bioController, maxLines: 3, maxLength: _bioMaxChars),
             const SizedBox(height: 40),
 
             SizedBox(
@@ -450,68 +494,99 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildPhoneField() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(8),
-        color: _phoneReadOnly ? const Color(0xFFF5F5F5) : null,
-      ),
-      child: Row(
-        children: [
+  Widget _buildPhoneField({String? errorText}) {
+    final borderColor = errorText != null ? Colors.red : AppColors.border;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: borderColor),
+            borderRadius: BorderRadius.circular(8),
+            color: _phoneReadOnly ? const Color(0xFFF5F5F5) : null,
+          ),
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _countryCode,
+                    items: _countryCodes
+                        .map(
+                          (code) => DropdownMenuItem(
+                            value: code,
+                            child: Text(
+                              code,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: _phoneReadOnly
+                        ? null
+                        : (val) {
+                            if (val != null) setState(() => _countryCode = val);
+                          },
+                    isDense: true,
+                  ),
+                ),
+              ),
+              Container(width: 1, height: 24, color: borderColor),
+              Expanded(
+                child: TextField(
+                  controller: _phoneController,
+                  readOnly: _phoneReadOnly,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  decoration: InputDecoration(
+                    hintText: 'Enter your mobile number',
+                    hintStyle: TextStyle(color: AppColors.textLight, fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (errorText != null)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _countryCode,
-                items: _countryCodes
-                    .map(
-                      (code) => DropdownMenuItem(
-                        value: code,
-                        child: Text(
-                          code,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _phoneReadOnly
-                    ? null
-                    : (val) {
-                        if (val != null) setState(() => _countryCode = val);
-                      },
-                isDense: true,
-              ),
+            padding: const EdgeInsets.only(top: 4, left: 12),
+            child: Text(
+              errorText,
+              style: const TextStyle(fontSize: 11, color: Colors.red),
             ),
           ),
-          Container(width: 1, height: 24, color: AppColors.border),
-          Expanded(
-            child: TextField(
-              controller: _phoneController,
-              readOnly: _phoneReadOnly,
-              decoration: const InputDecoration(
-                hintText: 'Enter your mobile number',
-                hintStyle: TextStyle(color: AppColors.textLight, fontSize: 14),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 16),
-              ),
-              keyboardType: TextInputType.phone,
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(String text, {bool required = false}) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textDark,
+      child: RichText(
+        text: TextSpan(
+          text: text,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textDark,
+          ),
+          children: required
+              ? [
+                  const TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ]
+              : null,
         ),
       ),
     );
@@ -522,30 +597,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     TextEditingController controller, {
     IconData? icon,
     int maxLines = 1,
+    int? maxLength,
     TextInputType? keyboardType,
     bool readOnly = false,
+    bool required = false,
+    String? errorText,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
+        _buildLabel(label, required: required),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           maxLines: maxLines,
+          maxLength: maxLength,
+          maxLengthEnforcement: maxLength != null
+              ? MaxLengthEnforcement.enforced
+              : MaxLengthEnforcement.none,
           keyboardType: keyboardType,
           readOnly: readOnly,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             prefixIcon: icon != null
                 ? Icon(icon, size: 18, color: AppColors.textLight)
                 : null,
+            errorText: errorText,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 12,
@@ -561,6 +639,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: AppColors.primaryBlue),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
             ),
             filled: readOnly,
             fillColor: readOnly ? const Color(0xFFF5F5F5) : null,

@@ -623,7 +623,6 @@ class _PaymentBottomSheet extends StatefulWidget {
 }
 
 class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
-  int _selectedMethod = 0;
   final _paymentService = PaymentService();
   final _couponController = TextEditingController();
 
@@ -937,71 +936,6 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
               ),
 
               const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Pay Using',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildPaymentMethod(
-                        0,
-                        'UPI / QR',
-                        'Pay using any UPI app',
-                        Icons.qr_code,
-                        true,
-                      ),
-                      const Divider(height: 1, color: Colors.white12),
-                      _buildPaymentMethod(
-                        1,
-                        'Card',
-                        'Visa, Mastercard, Rupay & more',
-                        Icons.credit_card,
-                        false,
-                      ),
-                      const Divider(height: 1, color: Colors.white12),
-                      _buildPaymentMethod(
-                        2,
-                        'Net Banking',
-                        'All major banks supported',
-                        Icons.account_balance,
-                        false,
-                      ),
-                      const Divider(height: 1, color: Colors.white12),
-                      _buildPaymentMethod(
-                        3,
-                        'Wallet',
-                        'Pay using wallet balance',
-                        Icons.account_balance_wallet,
-                        false,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
               if (_paymentError != null) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1141,97 +1075,4 @@ class _PaymentBottomSheetState extends State<_PaymentBottomSheet> {
     );
   }
 
-  Widget _buildPaymentMethod(
-    int index,
-    String title,
-    String subtitle,
-    IconData icon,
-    bool showBadges,
-  ) {
-    final isSelected = _selectedMethod == index;
-    return InkWell(
-      onTap: () => setState(() => _selectedMethod = index),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? AppColors.primaryBlue : Colors.grey,
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryBlue,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Colors.grey, fontSize: 10),
-                  ),
-                ],
-              ),
-            ),
-            if (showBadges)
-              Row(
-                children: [
-                  _buildDummyBadge(Colors.green, 'GPay'),
-                  const SizedBox(width: 4),
-                  _buildDummyBadge(Colors.blue, 'Paytm'),
-                  const SizedBox(width: 4),
-                  _buildDummyBadge(Colors.purple, 'PhonePe'),
-                ],
-              )
-            else
-              Icon(icon, color: Colors.grey, size: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDummyBadge(Color color, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 8,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
 }

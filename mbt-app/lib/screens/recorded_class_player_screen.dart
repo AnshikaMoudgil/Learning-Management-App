@@ -18,6 +18,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
   final MyCourseService _courseService = MyCourseService();
   List<MyCourseLesson> _allLessons = [];
   int _currentIndex = 0;
+  bool _isEnrolled = false;
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
       setState(() {
         _allLessons = flat;
         _currentIndex = idx >= 0 ? idx : 0;
+        _isEnrolled = content.enrollment.status == 'active';
       });
     } catch (_) {}
   }
@@ -280,6 +282,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
   }
 
   Widget _buildBottomControls() {
+    if (!_isEnrolled) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(

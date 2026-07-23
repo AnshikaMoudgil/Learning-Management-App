@@ -76,17 +76,6 @@ export class CartService {
   async removeItem(userId: string, courseId: string) {
     const cartId = await this.getOrCreateCartId(userId);
 
-    const { data: existing } = await this.db
-      .from('cart_items')
-      .select('id')
-      .eq('cart_id', cartId)
-      .eq('course_id', courseId)
-      .maybeSingle();
-
-    if (!existing) {
-      throw new NotFoundException('Cart item not found');
-    }
-
     const { error } = await this.db
       .from('cart_items')
       .delete()

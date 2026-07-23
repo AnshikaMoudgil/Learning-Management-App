@@ -540,11 +540,13 @@ export default function EditCoursePage() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Estimated Duration <span className="text-rose-400">*</span>
+                    Estimated Duration (hours) <span className="text-rose-400">*</span>
                   </label>
                   <input
-                    type="text"
-                    placeholder="e.g. 12 hours"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="e.g. 35"
                     value={estimatedDuration}
                     onChange={(e) => setEstimatedDuration(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition"
