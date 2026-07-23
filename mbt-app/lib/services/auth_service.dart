@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 import 'api_client.dart';
 
 class AuthService {
@@ -87,7 +86,10 @@ class AuthService {
     } catch (_) {}
 
     final prefs = await SharedPreferences.getInstance();
+    final savedFingerprint = prefs.getString('device_fingerprint');
     await prefs.clear();
-    await prefs.setString('device_fingerprint', const Uuid().v4());
+    if (savedFingerprint != null) {
+      await prefs.setString('device_fingerprint', savedFingerprint);
+    }
   }
 }

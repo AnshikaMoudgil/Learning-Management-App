@@ -1,5 +1,7 @@
-﻿import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+
+import { NotificationDeliveryService } from './notification-delivery.service';
 
 export type NotificationType =
   | 'session_created'
@@ -35,7 +37,10 @@ interface NotificationRow {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly deliveryService: NotificationDeliveryService,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -70,13 +75,27 @@ export class NotificationsService {
       data: payload.data ?? null,
     };
 
-    const { error } = await this.db.from('notifications').insert(row as never);
+    const { data, error } = await this.db
+      .from('notifications')
+      .insert(row as never)
+      .select()
+      .single();
 
     if (error) {
       this.logger.error(
         `Failed to insert notification for user ${userId}: ${error.message}`,
       );
+      return;
     }
+
+    // Trigger push notification delivery asynchronously
+    this.deliveryService.deliverNotification([userId], {
+      notificationId: (data as any)?.id,
+      type: payload.type,
+      title: payload.title,
+      body: payload.body,
+      data: payload.data,
+    }).catch(err => this.logger.error(`Push delivery error: ${err.message}`));
   }
 
   async notifyAll(payload: NotificationPayload): Promise<void> {
@@ -99,7 +118,10 @@ export class NotificationsService {
       data: payload.data ?? null,
     }));
 
-    const { error } = await this.db.from('notifications').insert(rows as never);
+    const { data, error } = await this.db
+      .from('notifications')
+      .insert(rows as never)
+      .select();
 
     if (error) {
       this.logger.error(
@@ -109,6 +131,19 @@ export class NotificationsService {
       this.logger.log(
         `Sent "${payload.type}" notification to ${userIds.length} users`,
       );
+      
+      // Deliver push notifications asynchronously
+      if (data && data.length > 0) {
+        data.forEach((notification: any) => {
+          this.deliveryService.deliverNotification([notification.user_id], {
+            notificationId: notification.id,
+            type: payload.type,
+            title: payload.title,
+            body: payload.body,
+            data: payload.data,
+          }).catch(err => this.logger.error(`Push delivery error for ${notification.user_id}: ${err.message}`));
+        });
+      }
     }
   }
 

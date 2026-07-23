@@ -3,17 +3,36 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'screens/splash_screen.dart';
 import 'router/app_router.dart';
 
 import 'services/profile_service.dart';
 import 'services/auth_service.dart';
+import 'services/fcm_service.dart';
 import 'theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: ".env");
+
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: 'AIzaSyA9AvLo32W2D0-JpGdO7-4yd-rjyKjMQ34',
+        appId: '1:1080778754825:web:0794c073915cd6a6c861d8',
+        messagingSenderId: '1080778754825',
+        projectId: 'mbt-app-9576b',
+        storageBucket: 'mbt-app-9576b.firebasestorage.app',
+      ),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
@@ -52,6 +71,7 @@ class _MyAppState extends State<MyApp> {
       final event = data.event;
 
       if (event == AuthChangeEvent.signedOut) {
+        FcmService().disposeToken();
         if (mounted) {
           appRouter.go(RouteNames.login);
         }
@@ -75,6 +95,8 @@ class _MyAppState extends State<MyApp> {
             } else {
               try {
                 await profileService.bindDevice(session.user.id);
+                // Initialize FCM and bind token
+                await FcmService().init(session.user.id);
               } catch (e) {
                 if (e.toString().contains('bound to another device')) {
                   _navigateTo(RouteNames.deviceBlocked);

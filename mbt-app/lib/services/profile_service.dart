@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,9 +74,20 @@ class ProfileService {
     return Profile.fromJson(result);
   }
 
-  Future<void> bindDevice(String userId) async {
+  Future<void> bindDevice(String userId, {String? fcmToken}) async {
     final fingerprint = await _getDeviceFingerprint();
-    await _api.post('/api/v1/devices/bind', body: {'fingerprint': fingerprint});
+    await _api.post('/api/v1/devices/bind', body: {
+      'fingerprint': fingerprint,
+      'platform': kIsWeb ? 'web' : (Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'other'),
+      if (fcmToken != null) 'fcmToken': fcmToken,
+    });
+  }
+
+  Future<void> unbindDeviceFcm() async {
+    final fingerprint = await _getDeviceFingerprint();
+    await _api.post('/api/v1/devices/unbind-fcm', body: {
+      'fingerprint': fingerprint,
+    });
   }
 
   Future<String> _getDeviceFingerprint() async {

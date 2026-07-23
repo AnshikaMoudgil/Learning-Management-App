@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1080778754825",
+    "project_id": "mbt-app-9576b",
+    "storage_bucket": "mbt-app-9576b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1080778754825:android:0794c073915cd6a6c861d8",
+        "android_client_info": {
+          "package_name": "com.tensorik.mbt_lms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9AvLo32W2D0-JpGdO7-4yd-rjyKjMQ34"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
