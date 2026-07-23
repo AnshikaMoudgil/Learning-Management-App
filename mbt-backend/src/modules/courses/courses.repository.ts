@@ -146,9 +146,15 @@ export class CoursesRepository {
       lessons: lessonsBySection[section.id] ?? [],
     }));
 
+    const totalLessons = detailSections.reduce(
+      (sum, section) => sum + section.lessons.length,
+      0,
+    );
+
     return {
       ...course,
       sections: detailSections,
+      total_lessons: totalLessons,
       enrollment: this.toEnrollmentState(enrollment),
     };
   }

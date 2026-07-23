@@ -35,9 +35,10 @@ export class DevicesService {
     userId: string,
     fingerprint: string,
     platform?: string,
+    fcmToken?: string,
   ): Promise<Device> {
     if (!this.deviceCheckEnabled) {
-      return this.devicesRepository.upsertDevice(userId, fingerprint, platform);
+      return this.devicesRepository.upsertDevice(userId, fingerprint, platform, fcmToken);
     }
 
     const existing = await this.devicesRepository.findByUserAndFingerprint(
@@ -46,7 +47,7 @@ export class DevicesService {
     );
 
     if (existing) {
-      return this.devicesRepository.upsertDevice(userId, fingerprint, platform);
+      return this.devicesRepository.upsertDevice(userId, fingerprint, platform, fcmToken);
     }
 
     const anyDevice = await this.devicesRepository.findAnyByUserId(userId);
@@ -63,6 +64,7 @@ export class DevicesService {
           userId,
           fingerprint,
           platform,
+          fcmToken,
         );
         await this.notificationsService.notify(userId, {
           type: 'device_login',
@@ -82,6 +84,7 @@ export class DevicesService {
       userId,
       fingerprint,
       platform,
+      fcmToken,
     );
     await this.notificationsService.notify(userId, {
       type: 'device_login',
@@ -196,5 +199,13 @@ export class DevicesService {
       );
 
     return !!approved;
+  }
+
+  async unbindFcmToken(userId: string, fingerprint: string): Promise<void> {
+    await this.devicesRepository.unbindFcmToken(userId, fingerprint);
+  }
+
+  async nullifyFcmToken(token: string): Promise<void> {
+    await this.devicesRepository.nullifyFcmToken(token);
   }
 }

@@ -96,6 +96,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     checkAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+        setValue((prev) => {
+          if (!prev.isAuthorized) return prev;
+          return {
+            ...prev,
+            accessToken: session?.access_token ?? prev.accessToken,
+          };
+        });
+      }
+      if (event === 'SIGNED_OUT') {
+        setValue((prev) => ({
+          ...prev,
+          accessToken: null,
+          isAuthorized: false,
+        }));
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [router]);
 
   if (value.isLoading) {

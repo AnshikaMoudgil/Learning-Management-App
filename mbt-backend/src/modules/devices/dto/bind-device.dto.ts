@@ -8,4 +8,8 @@ export class BindDeviceDto {
   @IsString()
   @IsOptional()
   platform?: string;
+
+  @IsString()
+  @IsOptional()
+  fcmToken?: string;
 }

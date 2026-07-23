@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import '../services/notification_service.dart';
+import '../models/notification_settings.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({Key? key}) : super(key: key);
@@ -11,14 +13,17 @@ class NotificationSettingsScreen extends StatefulWidget {
 }
 
 class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+  final _notificationService = NotificationService();
+  bool _isLoading = true;
+
   bool _liveClassReminders = true;
   bool _courseExpiryAlerts = true;
   bool _paymentConfirmations = true;
   bool _deviceTransferStatus = true;
-  bool _promotionalMarketing = false;
+  bool _promotionalMarketing = true;
   bool _pushNotifications = true;
   bool _email = true;
-  bool _sms = false;
+  bool _sms = true;
 
   @override
   void initState() {
@@ -27,6 +32,36 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   }
 
   Future<void> _loadPreferences() async {
+    try {
+      final backendSettings = await _notificationService.getNotificationSettings();
+      if (backendSettings != null && mounted) {
+        setState(() {
+          _liveClassReminders = backendSettings.liveClassReminders;
+          _courseExpiryAlerts = backendSettings.courseExpiryAlerts;
+          _paymentConfirmations = backendSettings.paymentConfirmations;
+          _deviceTransferStatus = backendSettings.deviceTransferStatus;
+          _promotionalMarketing = backendSettings.promotionalMarketing;
+          _pushNotifications = backendSettings.pushNotifications;
+          _email = backendSettings.email;
+          _sms = backendSettings.sms;
+          _isLoading = false;
+        });
+
+        // Sync to local shared preferences for offline fallback
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('notif_live_class', _liveClassReminders);
+        await prefs.setBool('notif_expiry', _courseExpiryAlerts);
+        await prefs.setBool('notif_payment', _paymentConfirmations);
+        await prefs.setBool('notif_device', _deviceTransferStatus);
+        await prefs.setBool('notif_promo', _promotionalMarketing);
+        await prefs.setBool('notif_push', _pushNotifications);
+        await prefs.setBool('notif_email', _email);
+        await prefs.setBool('notif_sms', _sms);
+        return;
+      }
+    } catch (_) {}
+
+    // Fallback to local shared preferences
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
@@ -34,10 +69,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         _courseExpiryAlerts = prefs.getBool('notif_expiry') ?? true;
         _paymentConfirmations = prefs.getBool('notif_payment') ?? true;
         _deviceTransferStatus = prefs.getBool('notif_device') ?? true;
-        _promotionalMarketing = prefs.getBool('notif_promo') ?? false;
+        _promotionalMarketing = prefs.getBool('notif_promo') ?? true;
         _pushNotifications = prefs.getBool('notif_push') ?? true;
         _email = prefs.getBool('notif_email') ?? true;
-        _sms = prefs.getBool('notif_sms') ?? false;
+        _sms = prefs.getBool('notif_sms') ?? true;
+        _isLoading = false;
       });
     }
   }
@@ -45,9 +81,24 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   Future<void> _savePreference(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
+
+    // Sync full settings object to backend
+    final settings = NotificationSettings(
+      liveClassReminders: _liveClassReminders,
+      courseExpiryAlerts: _courseExpiryAlerts,
+      paymentConfirmations: _paymentConfirmations,
+      deviceTransferStatus: _deviceTransferStatus,
+      promotionalMarketing: _promotionalMarketing,
+      pushNotifications: _pushNotifications,
+      email: _email,
+      sms: _sms,
+    );
+
+    await _notificationService.updateNotificationSettings(settings);
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preferences saved'), duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Preferences saved'), duration: Duration(seconds: 1)),
       );
     }
   }
@@ -63,7 +114,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         title: const Text('Notification Settings', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
       ),
-      body: ListView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
         padding: const EdgeInsets.all(20),
         children: [
           const Text('Notification Categories', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),

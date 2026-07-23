@@ -91,7 +91,8 @@ export class SessionsService {
     if (!session) {
       throw new NotFoundException('Session not found');
     }
-    if (session.instructor_id !== instructorId) {
+    const isAdmin = await this.isAdminOrSuperadmin(instructorId);
+    if (session.instructor_id !== instructorId && !isAdmin) {
       throw new ForbiddenException('Not authorized to update this session');
     }
 
@@ -143,7 +144,8 @@ export class SessionsService {
     if (!session) {
       throw new NotFoundException('Session not found');
     }
-    if (session.instructor_id !== instructorId) {
+    const isAdmin = await this.isAdminOrSuperadmin(instructorId);
+    if (session.instructor_id !== instructorId && !isAdmin) {
       throw new ForbiddenException('Not authorized to cancel this session');
     }
 

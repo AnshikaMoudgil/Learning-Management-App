@@ -17,6 +17,7 @@ import 'course_progress_screen.dart';
 import 'expiring_courses_screen.dart';
 import 'continue_watching_screen.dart';
 import 'notifications_screen.dart';
+import 'meeting_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import '../services/coupon_service.dart';
@@ -55,6 +56,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   void initState() {
     super.initState();
     _loadAllData();
+    _profileService.addUpdateListener(_onProfileUpdated);
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted) return;
       final itemCount = _bannerItemCount;
@@ -79,6 +81,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     _autoPlayTimer?.cancel();
     _couponCycleTimer?.cancel();
     _pageController.dispose();
+    _profileService.removeUpdateListener(_onProfileUpdated);
     super.dispose();
   }
 
@@ -104,6 +107,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
       ]);
     } catch (_) {}
     if (mounted) setState(() => _isLoading = false);
+  }
+
+  void _onProfileUpdated() {
+    _loadProfile();
   }
 
   Future<void> _loadProfile() async {
@@ -174,7 +181,18 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundImage: _profile?.avatarUrl != null ? NetworkImage(_profile!.avatarUrl!) as ImageProvider : const AssetImage('assets/1.png'),
+                      backgroundColor: Colors.grey.shade200,
+                      child: _profile?.avatarUrl != null
+                          ? ClipOval(
+                              child: Image.network(
+                                _profile!.avatarUrl!,
+                                fit: BoxFit.cover,
+                                width: 48,
+                                height: 48,
+                                errorBuilder: (_, __, ___) => Image.asset('assets/1.png', fit: BoxFit.cover, width: 48, height: 48),
+                              ),
+                            )
+                          : Image.asset('assets/1.png', fit: BoxFit.cover, width: 48, height: 48),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -240,8 +258,35 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         isLive: session.status == 'live',
                         timeText: session.startTime.toLocal().toString().substring(0, 16),
                         durationText: '${session.duration} min',
-                        onJoin: () {
-                          context.push('/live-player');
+                        onJoin: () async {
+                          if (session.status == 'live') {
+                            try {
+                              final joinData = await SessionsService().joinSession(session.id);
+                              if (!context.mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MeetingScreen(
+                                    meetingNumber: joinData['meeting_number'],
+                                    password: joinData['password'] ?? '',
+                                    joinUrl: joinData['join_url'],
+                                    signature: joinData['signature'],
+                                    displayName: joinData['display_name'],
+                                    zoomAppKey: joinData['zoom_app_key'],
+                                  ),
+                                ),
+                              );
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                              );
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('This session has not started yet.')),
+                            );
+                          }
                         },
                       );
                     }).toList();
@@ -365,7 +410,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           final enrollment = _enrollments[index];
                           return GestureDetector(
                             onTap: () {
-                              context.push('/course?id=${enrollment.courseId}');
+                              context.push('/course-progress?id=${enrollment.courseId}');
                             },
                             child: Padding(
                               padding: const EdgeInsets.only(right: 16),

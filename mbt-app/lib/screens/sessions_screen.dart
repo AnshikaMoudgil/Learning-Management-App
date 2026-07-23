@@ -1,4 +1,4 @@
-import 'package:flutter/material';
+import 'package:flutter/material.dart';
 import '../models/session.dart';
 import '../services/sessions_service.dart';
 import 'meeting_screen.dart';

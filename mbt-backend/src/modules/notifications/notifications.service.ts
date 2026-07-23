@@ -1,5 +1,8 @@
-﻿import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+
+import { NotificationDeliveryService } from './notification-delivery.service';
+import { UpdateNotificationSettingsDto } from './dto/update-settings.dto';
 
 export type NotificationType =
   | 'session_created'
@@ -31,11 +34,32 @@ interface NotificationRow {
   data: Record<string, string> | null;
 }
 
+interface NotificationInsertResult {
+  id: string;
+  user_id: string;
+}
+
+interface NotificationSettingsRow {
+  user_id: string;
+  live_class_reminders: boolean;
+  course_expiry_alerts: boolean;
+  payment_confirmations: boolean;
+  device_transfer_status: boolean;
+  promotional_marketing: boolean;
+  push_notifications: boolean;
+  email: boolean;
+  sms: boolean;
+  updated_at?: string;
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly deliveryService: NotificationDeliveryService,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -70,18 +94,32 @@ export class NotificationsService {
       data: payload.data ?? null,
     };
 
-    const { error } = await this.db.from('notifications').insert(row as never);
+    const { data, error } = await this.db
+      .from('notifications')
+      .insert(row as never)
+      .select()
+      .single();
 
     if (error) {
       this.logger.error(
         `Failed to insert notification for user ${userId}: ${error.message}`,
       );
+      return;
     }
+
+    // Trigger push notification delivery asynchronously
+    this.deliveryService.deliverNotification([userId], {
+      notificationId: (data as NotificationInsertResult | null)?.id,
+      type: payload.type,
+      title: payload.title,
+      body: payload.body,
+      data: payload.data,
+    }).catch((err: Error) => this.logger.error(`Push delivery error: ${err.message}`));
   }
 
   async notifyAll(payload: NotificationPayload): Promise<void> {
     const { data: profiles } = await this.db.from('profiles').select('id');
-    const userIds = (profiles ?? []).map((p: { id: string }) => p.id);
+    const userIds = ((profiles ?? []) as { id: string }[]).map((p) => p.id);
     await this.notifyMany(userIds, payload);
   }
 
@@ -99,7 +137,10 @@ export class NotificationsService {
       data: payload.data ?? null,
     }));
 
-    const { error } = await this.db.from('notifications').insert(rows as never);
+    const { data, error } = await this.db
+      .from('notifications')
+      .insert(rows as never)
+      .select();
 
     if (error) {
       this.logger.error(
@@ -109,6 +150,19 @@ export class NotificationsService {
       this.logger.log(
         `Sent "${payload.type}" notification to ${userIds.length} users`,
       );
+      
+      // Deliver push notifications asynchronously
+      if (data && data.length > 0) {
+        (data as NotificationInsertResult[]).forEach((notification) => {
+          this.deliveryService.deliverNotification([notification.user_id], {
+            notificationId: notification.id,
+            type: payload.type,
+            title: payload.title,
+            body: payload.body,
+            data: payload.data,
+          }).catch((err: Error) => this.logger.error(`Push delivery error for ${notification.user_id}: ${err.message}`));
+        });
+      }
     }
   }
 
@@ -160,4 +214,94 @@ export class NotificationsService {
       .eq('user_id', userId)
       .eq('is_read', false);
   }
+
+  async getSettings(userId: string): Promise<Record<string, boolean>> {
+    const { data, error } = await this.db
+      .from('notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.error(`Failed to fetch settings: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+
+    if (data) {
+      return mapRowToSettings(data as NotificationSettingsRow);
+    }
+
+    // Lazy create default settings row
+    const defaultRow = {
+      user_id: userId,
+      live_class_reminders: true,
+      course_expiry_alerts: true,
+      payment_confirmations: true,
+      device_transfer_status: true,
+      promotional_marketing: true,
+      push_notifications: true,
+      email: true,
+      sms: true,
+    };
+
+    const { data: newRow, error: insertError } = await this.db
+      .from('notification_settings')
+      .insert(defaultRow as never)
+      .select()
+      .single();
+
+    if (insertError) {
+      this.logger.error(`Failed to create default settings: ${insertError.message}`);
+      throw new BadRequestException(insertError.message);
+    }
+
+    return mapRowToSettings(newRow as NotificationSettingsRow);
+  }
+
+  async updateSettings(
+    userId: string,
+    dto: UpdateNotificationSettingsDto,
+  ): Promise<Record<string, boolean>> {
+    const row = mapSettingsToRow(dto);
+    row.updated_at = new Date().toISOString();
+
+    const { data, error } = await this.db
+      .from('notification_settings')
+      .upsert({ user_id: userId, ...row } as never, { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    if (error) {
+      this.logger.error(`Failed to update settings: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+
+    return mapRowToSettings(data as NotificationSettingsRow);
+  }
+}
+
+function mapRowToSettings(row: NotificationSettingsRow): Record<string, boolean> {
+  return {
+    liveClassReminders: row.live_class_reminders,
+    courseExpiryAlerts: row.course_expiry_alerts,
+    paymentConfirmations: row.payment_confirmations,
+    deviceTransferStatus: row.device_transfer_status,
+    promotionalMarketing: row.promotional_marketing,
+    pushNotifications: row.push_notifications,
+    email: row.email,
+    sms: row.sms,
+  };
+}
+
+function mapSettingsToRow(dto: UpdateNotificationSettingsDto): Partial<NotificationSettingsRow> {
+  const row: Partial<NotificationSettingsRow> = {};
+  if (dto.liveClassReminders !== undefined) row.live_class_reminders = dto.liveClassReminders;
+  if (dto.courseExpiryAlerts !== undefined) row.course_expiry_alerts = dto.courseExpiryAlerts;
+  if (dto.paymentConfirmations !== undefined) row.payment_confirmations = dto.paymentConfirmations;
+  if (dto.deviceTransferStatus !== undefined) row.device_transfer_status = dto.deviceTransferStatus;
+  if (dto.promotionalMarketing !== undefined) row.promotional_marketing = dto.promotionalMarketing;
+  if (dto.pushNotifications !== undefined) row.push_notifications = dto.pushNotifications;
+  if (dto.email !== undefined) row.email = dto.email;
+  if (dto.sms !== undefined) row.sms = dto.sms;
+  return row;
 }

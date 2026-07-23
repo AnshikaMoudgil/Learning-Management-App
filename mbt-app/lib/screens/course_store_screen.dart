@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../models/course.dart';
 import '../services/course_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/cart_badge.dart';
 import '../services/wishlist_provider.dart';
 
@@ -16,8 +17,10 @@ class CourseStoreScreen extends StatefulWidget {
 class _CourseStoreScreenState extends State<CourseStoreScreen> {
   String? _selectedCategory;
   final _courseService = CourseService();
+  final NotificationService _notificationService = NotificationService();
   late Future<List<Course>> _popularCoursesFuture;
   late Future<List<Course>> _newlyAddedFuture;
+  int _unreadNotifications = 0;
 
   final List<Map<String, dynamic>> _categories = [
     {'icon': Icons.grid_view_rounded, 'name': 'All', 'color': Colors.blue},
@@ -49,6 +52,18 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     super.initState();
     _popularCoursesFuture = _courseService.getCourses(limit: 6);
     _newlyAddedFuture = _courseService.getCourses(limit: 10);
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final count = await _notificationService.getUnreadCount();
+    if (mounted) setState(() => _unreadNotifications = count);
+  }
+
+  Future<void> _openNotifications() async {
+    await context.push('/notifications');
+    await _notificationService.markAllRead();
+    _loadUnreadCount();
   }
 
   void _filterByCategory(String? category) {
@@ -120,9 +135,9 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                     const SizedBox(width: 16),
                     _buildIconBadge(
                       Icons.notifications_outlined,
-                      '0',
+                      '$_unreadNotifications',
                       Colors.red,
-                      () => context.push('/notifications'),
+                      _openNotifications,
                     ),
                   ],
                 ),

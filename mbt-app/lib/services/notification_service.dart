@@ -1,4 +1,5 @@
 import 'api_client.dart';
+import '../models/notification_settings.dart';
 
 class AppNotification {
   final String id;
@@ -92,5 +93,28 @@ class NotificationService {
     } catch (_) {
       return false;
     }
+  }
+
+  Future<NotificationSettings?> getNotificationSettings() async {
+    try {
+      final result = await _api.get('/notifications/settings');
+      if (result != null) {
+        return NotificationSettings.fromJson(Map<String, dynamic>.from(result as Map));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<NotificationSettings?> updateNotificationSettings(NotificationSettings settings) async {
+    try {
+      final result = await _api.patch(
+        '/notifications/settings',
+        body: settings.toJson(),
+      );
+      if (result != null) {
+        return NotificationSettings.fromJson(Map<String, dynamic>.from(result as Map));
+      }
+    } catch (_) {}
+    return null;
   }
 }

@@ -77,6 +77,7 @@ export class DevicesRepository {
     userId: string,
     fingerprint: string,
     platform?: string,
+    fcmToken?: string,
   ): Promise<Device> {
     const { data, error } = await this.db
       .from('devices')
@@ -84,6 +85,7 @@ export class DevicesRepository {
         user_id: userId,
         fingerprint,
         platform: platform ?? null,
+        fcm_token: fcmToken ?? null,
       } as never)
       .select()
       .single();
@@ -114,17 +116,22 @@ export class DevicesRepository {
     userId: string,
     fingerprint: string,
     platform?: string,
+    fcmToken?: string,
   ): Promise<Device> {
+    const updateObj: Record<string, any> = {
+      user_id: userId,
+      fingerprint,
+      platform: platform ?? null,
+      is_active: true,
+      last_seen_at: new Date().toISOString(),
+    };
+    if (fcmToken !== undefined) {
+      updateObj.fcm_token = fcmToken;
+    }
     const { data, error } = await this.db
       .from('devices')
       .upsert(
-        {
-          user_id: userId,
-          fingerprint,
-          platform: platform ?? null,
-          is_active: true,
-          last_seen_at: new Date().toISOString(),
-        } as never,
+        updateObj as never,
         { onConflict: 'user_id, fingerprint' },
       )
       .select()
@@ -294,5 +301,28 @@ export class DevicesRepository {
     }
 
     return data as DeviceChangeRequest;
+  }
+
+  async unbindFcmToken(userId: string, fingerprint: string): Promise<void> {
+    const { error } = await this.db
+      .from('devices')
+      .update({ fcm_token: null } as never)
+      .eq('user_id', userId)
+      .eq('fingerprint', fingerprint);
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async nullifyFcmToken(token: string): Promise<void> {
+    const { error } = await this.db
+      .from('devices')
+      .update({ fcm_token: null } as never)
+      .eq('fcm_token', token);
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 }

@@ -234,16 +234,12 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
             decoration: BoxDecoration(
               color: isCurrent
                   ? Colors.green.withOpacity(0.1)
-                  : Colors.grey.withOpacity(0.1),
+                  : Colors.orange.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              device.platform?.toLowerCase().contains('ios') == true
-                  ? Icons.phone_iphone
-                  : device.platform?.toLowerCase().contains('android') == true
-                  ? Icons.android
-                  : Icons.devices,
-              color: isCurrent ? Colors.green : AppColors.textLight,
+              _deviceIcon(device.platform),
+              color: isCurrent ? Colors.green : Colors.orange,
               size: 24,
             ),
           ),
@@ -252,25 +248,49 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isCurrent)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'Current Device',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    if (isCurrent)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Current Device',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    if (!isCurrent) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Replaced',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 4),
                 Text(
                   'Device • ${device.fingerprint.substring(0, 8)}...',
@@ -308,7 +328,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Last seen: ${_formatDate(device.lastSeenAt)}',
+                      isCurrent
+                          ? 'Active now'
+                          : 'Last seen: ${_formatDate(device.lastSeenAt)}',
                       style: const TextStyle(
                         fontSize: 10,
                         color: AppColors.textLight,
@@ -338,6 +360,22 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
         ],
       ),
     );
+  }
+
+  IconData _deviceIcon(String? platform) {
+    final p = platform?.toLowerCase() ?? '';
+    if (p.contains('iphone') || p.contains('ipad') || p.contains('ios')) {
+      return Icons.phone_iphone;
+    }
+    if (p.contains('samsung') || p.contains('pixel') || p.contains('oneplus') ||
+        p.contains('xiaomi') || p.contains('motorola') || p.contains('android')) {
+      return Icons.android;
+    }
+    if (p.contains('chrome') || p.contains('firefox') || p.contains('safari') ||
+        p.contains('edge') || p.contains('windows') || p.contains('macintosh')) {
+      return Icons.desktop_windows;
+    }
+    return Icons.devices;
   }
 
   String _formatDate(DateTime dt) {

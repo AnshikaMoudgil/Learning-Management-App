@@ -34,7 +34,10 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<void> removeItem(String courseId) async {
-    await _cartService.removeItem(courseId);
-    await refresh();
+    try {
+      await _cartService.removeItem(courseId);
+    } finally {
+      await refresh();
+    }
   }
 }
