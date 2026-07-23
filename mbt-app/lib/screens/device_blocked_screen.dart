@@ -38,7 +38,7 @@ class DeviceBlockedScreen extends StatelessWidget {
               Text(
                 message ??
                     'This account is already bound to another device. '
-                    'You can request a device change from the admin.',
+                        'You can request a device change from the admin.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,

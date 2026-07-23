@@ -12,12 +12,25 @@ class NotificationsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('Notifications', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Notifications',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
       ),
       body: Center(
-        child: Text('No new notifications.', style: TextStyle(color: AppColors.textLight)),
+        child: Text(
+          'No new notifications.',
+          style: TextStyle(color: AppColors.textLight),
+        ),
       ),
     );
   }

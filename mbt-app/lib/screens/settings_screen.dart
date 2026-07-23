@@ -15,24 +15,46 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('Settings', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Settings',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           const CartBadge(),
           IconButton(
             icon: Stack(
               children: [
-                const Icon(Icons.notifications_outlined, color: AppColors.textDark),
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: AppColors.textDark,
+                ),
                 Positioned(
                   right: 0,
                   top: 0,
                   child: Container(
                     padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                    child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 8), textAlign: TextAlign.center),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
+                    child: const Text(
+                      '3',
+                      style: TextStyle(color: Colors.white, fontSize: 8),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                )
+                ),
               ],
             ),
             onPressed: () {},
@@ -45,10 +67,13 @@ class SettingsScreen extends StatelessWidget {
           children: [
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text('Manage your preferences and account settings', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
+              child: Text(
+                'Manage your preferences and account settings',
+                style: TextStyle(color: AppColors.textLight, fontSize: 14),
+              ),
             ),
             const SizedBox(height: 16),
-            
+
             // Preferences section
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -58,26 +83,58 @@ class SettingsScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildListTile(Icons.language, 'Language', 'Choose your preferred app language', const Color(0xFF8B5CF6), trailingText: 'English'),
+                  _buildListTile(
+                    Icons.language,
+                    'Language',
+                    'Choose your preferred app language',
+                    const Color(0xFF8B5CF6),
+                    trailingText: 'English',
+                  ),
                   _buildDivider(),
-                  _buildListTile(Icons.notifications_none, 'Notifications', 'Manage notification preferences', const Color(0xFFF59E0B)),
+                  _buildListTile(
+                    Icons.notifications_none,
+                    'Notifications',
+                    'Manage notification preferences',
+                    const Color(0xFFF59E0B),
+                  ),
                   _buildDivider(),
-                  _buildListTile(Icons.link, 'Linked Accounts', 'Connect and manage third-party accounts', const Color(0xFF10B981)),
+                  _buildListTile(
+                    Icons.link,
+                    'Linked Accounts',
+                    'Connect and manage third-party accounts',
+                    const Color(0xFF10B981),
+                  ),
                   _buildDivider(),
-                  _buildListTile(Icons.devices, 'Device', 'Manage your devices and sessions', const Color(0xFF3B82F6)),
+                  _buildListTile(
+                    Icons.devices,
+                    'Device',
+                    'Manage your devices and sessions',
+                    const Color(0xFF3B82F6),
+                  ),
                   _buildDivider(),
-                  _buildListTile(Icons.shield_outlined, 'Privacy', 'Manage your privacy and data', const Color(0xFF8B5CF6)),
+                  _buildListTile(
+                    Icons.shield_outlined,
+                    'Privacy',
+                    'Manage your privacy and data',
+                    const Color(0xFF8B5CF6),
+                  ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 24),
-              child: Text('More', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
+              child: Text(
+                'More',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
-            
+
             // More section
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -87,21 +144,51 @@ class SettingsScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildListTile(Icons.credit_card, 'Payment Methods', 'Manage your saved payment methods', AppColors.textLight, isMuted: true),
+                  _buildListTile(
+                    Icons.credit_card,
+                    'Payment Methods',
+                    'Manage your saved payment methods',
+                    AppColors.textLight,
+                    isMuted: true,
+                  ),
                   _buildDivider(),
-                  _buildListTile(Icons.help_outline, 'Help & Support', 'Get help and contact support', AppColors.primaryBlue, isMuted: true),
+                  _buildListTile(
+                    Icons.help_outline,
+                    'Help & Support',
+                    'Get help and contact support',
+                    AppColors.primaryBlue,
+                    isMuted: true,
+                  ),
                   _buildDivider(),
-                  _buildListTile(Icons.info_outline, 'About', 'App info, terms and policies', const Color(0xFFEC4899), isMuted: true),
+                  _buildListTile(
+                    Icons.info_outline,
+                    'About',
+                    'App info, terms and policies',
+                    const Color(0xFFEC4899),
+                    isMuted: true,
+                  ),
                   _buildDivider(),
-                  _buildListTile(Icons.logout, 'Logout', 'Sign out from your account', const Color(0xFFEF4444), isMuted: true, onTap: () async {
-                     await Supabase.instance.client.auth.signOut();
-                  }),
+                  _buildListTile(
+                    Icons.logout,
+                    'Logout',
+                    'Sign out from your account',
+                    const Color(0xFFEF4444),
+                    isMuted: true,
+                    onTap: () async {
+                      await Supabase.instance.client.auth.signOut();
+                    },
+                  ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            const Center(child: Text('App Version 1.0.0', style: TextStyle(color: AppColors.textLight, fontSize: 12))),
+            const Center(
+              child: Text(
+                'App Version 1.0.0',
+                style: TextStyle(color: AppColors.textLight, fontSize: 12),
+              ),
+            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -110,7 +197,15 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildListTile(IconData icon, String title, String subtitle, Color iconColor, {String? trailingText, bool isMuted = false, VoidCallback? onTap}) {
+  Widget _buildListTile(
+    IconData icon,
+    String title,
+    String subtitle,
+    Color iconColor, {
+    String? trailingText,
+    bool isMuted = false,
+    VoidCallback? onTap,
+  }) {
     return InkWell(
       onTap: onTap ?? () {},
       child: Padding(
@@ -120,7 +215,9 @@ class SettingsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isMuted ? AppColors.background : iconColor.withOpacity(0.1),
+                color: isMuted
+                    ? AppColors.background
+                    : iconColor.withOpacity(0.1),
                 border: isMuted ? Border.all(color: AppColors.border) : null,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -131,17 +228,40 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 15)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(color: AppColors.textLight, fontSize: 12)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.textLight,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             ),
             if (trailingText != null) ...[
-              Text(trailingText, style: const TextStyle(color: AppColors.textLight, fontSize: 13)),
+              Text(
+                trailingText,
+                style: const TextStyle(
+                  color: AppColors.textLight,
+                  fontSize: 13,
+                ),
+              ),
               const SizedBox(width: 8),
             ],
-            const Icon(Icons.arrow_forward_ios, color: AppColors.textLight, size: 16),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: AppColors.textLight,
+              size: 16,
+            ),
           ],
         ),
       ),

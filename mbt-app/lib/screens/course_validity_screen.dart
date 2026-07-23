@@ -21,8 +21,18 @@ class CourseValidityScreen extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
-            Text('Course Validity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-            Text('Manage and extend your course access', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+            Text(
+              'Course Validity',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
+              ),
+            ),
+            Text(
+              'Manage and extend your course access',
+              style: TextStyle(fontSize: 10, color: AppColors.textLight),
+            ),
           ],
         ),
         actions: [
@@ -33,15 +43,33 @@ class CourseValidityScreen extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.only(top: 8),
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.lightBlueBg, borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.notifications_outlined, color: AppColors.textDark, size: 18),
+                decoration: BoxDecoration(
+                  color: AppColors.lightBlueBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.notifications_outlined,
+                  color: AppColors.textDark,
+                  size: 18,
+                ),
               ),
               Positioned(
-                right: 0, top: 4,
+                right: 0,
+                top: 4,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold)),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text(
+                    '3',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 7,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -70,28 +98,64 @@ class CourseValidityScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), shape: BoxShape.circle),
-                    child: const Icon(Icons.access_time, color: Colors.deepOrange, size: 22),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.access_time,
+                      color: Colors.deepOrange,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text('Courses Expiring Soon', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                        Text(
+                          'Courses Expiring Soon',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
                         SizedBox(height: 2),
-                        Text('Renew your courses to continue learning\nwithout interruption.', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                        Text(
+                          'Renew your courses to continue learning\nwithout interruption.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textLight,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   OutlinedButton.icon(
                     onPressed: () {},
-                    icon: const Icon(Icons.visibility_outlined, size: 14, color: AppColors.textDark),
-                    label: const Text('View All Courses', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                    icon: const Icon(
+                      Icons.visibility_outlined,
+                      size: 14,
+                      color: AppColors.textDark,
+                    ),
+                    label: const Text(
+                      'View All Courses',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.textDark),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       minimumSize: Size.zero,
                     ),
                   ),
@@ -103,7 +167,14 @@ class CourseValidityScreen extends StatelessWidget {
             // Expiring Soon
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Expiring Soon', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              child: Text(
+                'Expiring Soon',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             _buildExpiringCourse(
@@ -150,11 +221,30 @@ class CourseValidityScreen extends StatelessWidget {
             // Expiring in 30+ Days
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Expiring in 30+ Days', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              child: Text(
+                'Expiring in 30+ Days',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
-            _buildLaterCourse('Python for Data Science', 'By DataCamp', 'Valid till: 28 Jul 2024', '50', const Color(0xFF3776AB)),
-            _buildLaterCourse('Node.js Backend Development', 'By Dev Academy', 'Valid till: 16 Aug 2024', '69', const Color(0xFF8BC34A)),
+            _buildLaterCourse(
+              'Python for Data Science',
+              'By DataCamp',
+              'Valid till: 28 Jul 2024',
+              '50',
+              const Color(0xFF3776AB),
+            ),
+            _buildLaterCourse(
+              'Node.js Backend Development',
+              'By Dev Academy',
+              'Valid till: 16 Aug 2024',
+              '69',
+              const Color(0xFF8BC34A),
+            ),
             const SizedBox(height: 16),
 
             // Why Renew Early
@@ -167,19 +257,40 @@ class CourseValidityScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lightbulb_outline, size: 18, color: AppColors.primaryBlue),
+                  const Icon(
+                    Icons.lightbulb_outline,
+                    size: 18,
+                    color: AppColors.primaryBlue,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text('Why renew early?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                        Text(
+                          'Why renew early?',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
                         SizedBox(height: 2),
-                        Text('Renewing early ensures uninterrupted access, progress retention, and access to new updates.', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                        Text(
+                          'Renewing early ensures uninterrupted access, progress retention, and access to new updates.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textLight,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.textLight, size: 18),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textLight,
+                    size: 18,
+                  ),
                 ],
               ),
             ),
@@ -198,28 +309,58 @@ class CourseValidityScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: const Color(0xFF43A047).withOpacity(0.15), shape: BoxShape.circle),
-                    child: const Icon(Icons.card_giftcard, color: Color(0xFF43A047), size: 20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF43A047).withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.card_giftcard,
+                      color: Color(0xFF43A047),
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text('Renew Now & Get More!', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                        Text(
+                          'Renew Now & Get More!',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
                         SizedBox(height: 2),
-                        Text('Renew any course before expiry and get 10% OFF\non your next course.', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                        Text(
+                          'Renew any course before expiry and get 10% OFF\non your next course.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textLight,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE8F5E9),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFF43A047)),
                     ),
-                    child: const Text('10% OFF', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF43A047))),
+                    child: const Text(
+                      '10% OFF',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF43A047),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -234,11 +375,24 @@ class CourseValidityScreen extends StatelessWidget {
                 height: 48,
                 child: OutlinedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.visibility_outlined, size: 18, color: AppColors.primaryBlue),
-                  label: const Text('View All My Courses', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                  icon: const Icon(
+                    Icons.visibility_outlined,
+                    size: 18,
+                    color: AppColors.primaryBlue,
+                  ),
+                  label: const Text(
+                    'View All My Courses',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.primaryBlue),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -250,7 +404,19 @@ class CourseValidityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExpiringCourse(BuildContext context, String title, String author, String progress, String validTill, String days, Color daysColor, bool showRenew, String iconText, Color iconTextColor, double progressValue) {
+  Widget _buildExpiringCourse(
+    BuildContext context,
+    String title,
+    String author,
+    String progress,
+    String validTill,
+    String days,
+    Color daysColor,
+    bool showRenew,
+    String iconText,
+    Color iconTextColor,
+    double progressValue,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(14),
@@ -269,7 +435,15 @@ class CourseValidityScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Text(iconText, textAlign: TextAlign.center, style: TextStyle(color: iconTextColor, fontSize: 10, fontWeight: FontWeight.bold)),
+              child: Text(
+                iconText,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: iconTextColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -277,9 +451,22 @@ class CourseValidityScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(author, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                Text(
+                  author,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textLight,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
@@ -288,20 +475,39 @@ class CourseValidityScreen extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: progressValue,
                         backgroundColor: AppColors.lightBlueBg,
-                        valueColor: const AlwaysStoppedAnimation(AppColors.primaryBlue),
+                        valueColor: const AlwaysStoppedAnimation(
+                          AppColors.primaryBlue,
+                        ),
                         minHeight: 4,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(progress, style: const TextStyle(fontSize: 9, color: AppColors.primaryBlue, fontWeight: FontWeight.w500)),
+                    Text(
+                      progress,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined, size: 10, color: AppColors.textLight),
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 10,
+                      color: AppColors.textLight,
+                    ),
                     const SizedBox(width: 4),
-                    Text(validTill, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
+                    Text(
+                      validTill,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: AppColors.textLight,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -317,9 +523,22 @@ class CourseValidityScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Text('Expires in', style: TextStyle(fontSize: 8, color: daysColor)),
-                    Text(days, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: daysColor)),
-                    Text('Days', style: TextStyle(fontSize: 8, color: daysColor)),
+                    Text(
+                      'Expires in',
+                      style: TextStyle(fontSize: 8, color: daysColor),
+                    ),
+                    Text(
+                      days,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: daysColor,
+                      ),
+                    ),
+                    Text(
+                      'Days',
+                      style: TextStyle(fontSize: 8, color: daysColor),
+                    ),
                   ],
                 ),
               ),
@@ -333,11 +552,20 @@ class CourseValidityScreen extends StatelessWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: daysColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       elevation: 0,
                     ),
-                    child: const Text('Renew Now', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                    child: const Text(
+                      'Renew Now',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -348,7 +576,13 @@ class CourseValidityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLaterCourse(String title, String author, String validTill, String days, Color iconColor) {
+  Widget _buildLaterCourse(
+    String title,
+    String author,
+    String validTill,
+    String days,
+    Color iconColor,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(14),
@@ -373,15 +607,38 @@ class CourseValidityScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(author, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                Text(
+                  author,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textLight,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined, size: 10, color: AppColors.textLight),
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 10,
+                      color: AppColors.textLight,
+                    ),
                     const SizedBox(width: 4),
-                    Text(validTill, style: const TextStyle(fontSize: 9, color: AppColors.textLight)),
+                    Text(
+                      validTill,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: AppColors.textLight,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -389,9 +646,22 @@ class CourseValidityScreen extends StatelessWidget {
           ),
           Column(
             children: [
-              Text('Expires in', style: TextStyle(fontSize: 8, color: Colors.grey[600])),
-              Text(days, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-              Text('Days', style: TextStyle(fontSize: 8, color: Colors.grey[600])),
+              Text(
+                'Expires in',
+                style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+              ),
+              Text(
+                days,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+              Text(
+                'Days',
+                style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+              ),
             ],
           ),
           const SizedBox(width: 4),

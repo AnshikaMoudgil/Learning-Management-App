@@ -19,18 +19,33 @@ class _ProfileCoursesScreenState extends State<ProfileCoursesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('My Courses', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'My Courses',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () => context.push('/search')),
+          IconButton(
+            icon: const Icon(Icons.search, color: AppColors.textDark),
+            onPressed: () => context.push('/search'),
+          ),
         ],
       ),
       body: Column(
         children: [
           Container(
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+              border: Border(
+                bottom: BorderSide(color: AppColors.border, width: 1),
+              ),
             ),
             child: Row(
               children: [
@@ -107,7 +122,7 @@ class _ProfileCoursesScreenState extends State<ProfileCoursesScreen> {
                     color: Colors.blue,
                     isPrimaryBtn: false,
                   ),
-                ]
+                ],
               ],
             ),
           ),
@@ -124,7 +139,12 @@ class _ProfileCoursesScreenState extends State<ProfileCoursesScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: isSelected ? AppColors.primaryBlue : Colors.transparent, width: 2)),
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                width: 2,
+              ),
+            ),
           ),
           child: Center(
             child: Text(
@@ -175,27 +195,61 @@ class _ProfileCoursesScreenState extends State<ProfileCoursesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                  maxLines: 2,
+                ),
                 const SizedBox(height: 8),
-                Text('$progressPercent% Complete', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                Text(
+                  '$progressPercent% Complete',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textLight,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('$completedLessons / $totalLessons lessons', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                    Text(
+                      '$completedLessons / $totalLessons lessons',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textLight,
+                      ),
+                    ),
                     ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isPrimaryBtn ? AppColors.primaryBlue : Colors.white,
-                        foregroundColor: isPrimaryBtn ? Colors.white : AppColors.primaryBlue,
-                        side: isPrimaryBtn ? null : const BorderSide(color: AppColors.primaryBlue),
+                        backgroundColor: isPrimaryBtn
+                            ? AppColors.primaryBlue
+                            : Colors.white,
+                        foregroundColor: isPrimaryBtn
+                            ? Colors.white
+                            : AppColors.primaryBlue,
+                        side: isPrimaryBtn
+                            ? null
+                            : const BorderSide(color: AppColors.primaryBlue),
                         elevation: 0,
                         minimumSize: const Size(80, 32),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                      child: Text(buttonText, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    )
+                      child: Text(
+                        buttonText,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],

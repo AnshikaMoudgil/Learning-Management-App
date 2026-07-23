@@ -19,7 +19,10 @@ class OtpScreen extends StatefulWidget {
 
 class _OtpScreenState extends State<OtpScreen> {
   bool _isLoading = false;
-  final List<TextEditingController> _controllers = List.generate(6, (index) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
 
   @override
@@ -68,7 +71,9 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _verifyOtp() async {
     final code = _controllers.map((c) => c.text).join();
     if (code.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter all 6 digits')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter all 6 digits')),
+      );
       return;
     }
 
@@ -78,7 +83,9 @@ class _OtpScreenState extends State<OtpScreen> {
       // Navigation is now handled globally in main.dart via onAuthStateChange
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -87,17 +94,21 @@ class _OtpScreenState extends State<OtpScreen> {
 
   Future<void> _resendOtp() async {
     if (_timerSeconds > 0) return;
-    
+
     setState(() => _isLoading = true);
     try {
       await _authService.sendOtp(widget.phone);
       _startTimer();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('OTP Resent Successfully')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('OTP Resent Successfully')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error resending OTP: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error resending OTP: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -128,47 +139,108 @@ class _OtpScreenState extends State<OtpScreen> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('MBT ', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                    Text('Institute', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                    Text(
+                      'MBT ',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    Text(
+                      'Institute',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primaryBlue,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text('Learn Today, Lead Tomorrow', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
+                const Text(
+                  'Learn Today, Lead Tomorrow',
+                  style: TextStyle(color: AppColors.textLight, fontSize: 14),
+                ),
                 const SizedBox(height: 40),
-                
-                const Text('Verify your phone number', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+
+                const Text(
+                  'Verify your phone number',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                const Text('Enter the 6-digit OTP sent to', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
+                const Text(
+                  'Enter the 6-digit OTP sent to',
+                  style: TextStyle(color: AppColors.textLight, fontSize: 14),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(widget.phone, style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(
+                      widget.phone,
+                      style: const TextStyle(
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.edit, color: AppColors.primaryBlue, size: 16),
+                    const Icon(
+                      Icons.edit,
+                      color: AppColors.primaryBlue,
+                      size: 16,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 32),
-                
+
                 // OTP Boxes
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(6, (index) => _buildOtpBox(index)),
                 ),
                 const SizedBox(height: 24),
-                
+
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.verified_user_outlined, size: 16, color: AppColors.primaryBlue),
+                    Icon(
+                      Icons.verified_user_outlined,
+                      size: 16,
+                      color: AppColors.primaryBlue,
+                    ),
                     SizedBox(width: 8),
-                    Text('OTP is valid for ', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
-                    Text('02:00', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
-                    Text(' minutes', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                    Text(
+                      'OTP is valid for ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                      ),
+                    ),
+                    Text(
+                      '02:00',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      ' minutes',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 32),
-                
+
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -176,64 +248,122 @@ class _OtpScreenState extends State<OtpScreen> {
                     onPressed: _isLoading ? null : _verifyOtp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBlue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 0,
                     ),
-                    child: _isLoading 
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Verify & Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                              Text(
+                                'Verify & Continue',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
                               SizedBox(width: 8),
-                              Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                              Icon(
+                                Icons.arrow_forward,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ],
                           ),
                   ),
                 ),
                 const SizedBox(height: 40),
-                
-                const Text('Didn\'t receive the OTP?', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
+
+                const Text(
+                  'Didn\'t receive the OTP?',
+                  style: TextStyle(color: AppColors.textLight, fontSize: 14),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.refresh, color: AppColors.primaryBlue, size: 18),
+                    const Icon(
+                      Icons.refresh,
+                      color: AppColors.primaryBlue,
+                      size: 18,
+                    ),
                     const SizedBox(width: 4),
                     InkWell(
                       onTap: _timerSeconds == 0 ? _resendOtp : null,
-                      child: Text('Resend OTP', style: TextStyle(color: _timerSeconds == 0 ? AppColors.primaryBlue : AppColors.textLight, fontWeight: FontWeight.bold, fontSize: 14)),
+                      child: Text(
+                        'Resend OTP',
+                        style: TextStyle(
+                          color: _timerSeconds == 0
+                              ? AppColors.primaryBlue
+                              : AppColors.textLight,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Text(
-                      '00:${_timerSeconds.toString().padLeft(2, '0')}', 
-                      style: const TextStyle(color: AppColors.textLight, fontSize: 14)
+                      '00:${_timerSeconds.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 32),
-                
+
                 const Row(
                   children: [
                     Expanded(child: Divider(color: AppColors.border)),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('OR', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          color: AppColors.textLight,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                     Expanded(child: Divider(color: AppColors.border)),
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 TextButton.icon(
                   onPressed: () => context.pop(),
-                  icon: const Icon(Icons.phone_outlined, color: AppColors.primaryBlue, size: 18),
-                  label: const Text('Change Phone Number', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.w600)),
+                  icon: const Icon(
+                    Icons.phone_outlined,
+                    color: AppColors.primaryBlue,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Change Phone Number',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 40),
-                
+
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -242,9 +372,19 @@ class _OtpScreenState extends State<OtpScreen> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.lock_outline, size: 14, color: AppColors.primaryBlue),
+                      Icon(
+                        Icons.lock_outline,
+                        size: 14,
+                        color: AppColors.primaryBlue,
+                      ),
                       SizedBox(width: 8),
-                      Text('Your data is safe and secure with us.', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
+                      Text(
+                        'Your data is safe and secure with us.',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textLight,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -264,7 +404,9 @@ class _OtpScreenState extends State<OtpScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: index == 5 ? AppColors.primaryBlue : AppColors.border),
+        border: Border.all(
+          color: index == 5 ? AppColors.primaryBlue : AppColors.border,
+        ),
       ),
       child: Center(
         child: TextField(
@@ -273,7 +415,11 @@ class _OtpScreenState extends State<OtpScreen> {
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 1,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textDark,
+          ),
           decoration: const InputDecoration(
             counterText: '',
             border: InputBorder.none,

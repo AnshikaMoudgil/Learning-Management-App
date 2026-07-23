@@ -9,7 +9,8 @@ class WebRazorpay {
     required String name,
     required String description,
     required String orderId,
-    required void Function(String paymentId, String orderId, String signature) onSuccess,
+    required void Function(String paymentId, String orderId, String signature)
+    onSuccess,
     required void Function(String error) onError,
   }) {
     final razorpay = js_util.getProperty(html.window, 'Razorpay');

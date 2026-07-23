@@ -9,7 +9,7 @@ class InvoiceDetailScreen extends StatefulWidget {
   final String invoiceId;
 
   const InvoiceDetailScreen({Key? key, required this.invoiceId})
-      : super(key: key);
+    : super(key: key);
 
   @override
   State<InvoiceDetailScreen> createState() => _InvoiceDetailScreenState();
@@ -42,8 +42,18 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -56,9 +66,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open PDF')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Could not open PDF')));
         }
       }
     } catch (e) {
@@ -93,7 +103,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.download_outlined, color: AppColors.primaryBlue),
+            icon: const Icon(
+              Icons.download_outlined,
+              color: AppColors.primaryBlue,
+            ),
             onPressed: () {},
           ),
         ],
@@ -112,11 +125,18 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Failed to load invoice',
-                      style: TextStyle(color: AppColors.textLight, fontSize: 14),
+                      style: TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -160,20 +180,20 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
     final statusColor = isPaid
         ? const Color(0xFF22C55E)
         : isRefunded
-            ? Colors.red
-            : Colors.orange;
+        ? Colors.red
+        : Colors.orange;
 
     final statusBg = isPaid
         ? const Color(0xFFDCFCE7)
         : isRefunded
-            ? Colors.red.withOpacity(0.1)
-            : Colors.orange.withOpacity(0.1);
+        ? Colors.red.withOpacity(0.1)
+        : Colors.orange.withOpacity(0.1);
 
     final statusIcon = isPaid
         ? Icons.check_circle_outline
         : isRefunded
-            ? Icons.cancel_outlined
-            : Icons.hourglass_empty;
+        ? Icons.cancel_outlined
+        : Icons.hourglass_empty;
 
     return _card(
       child: Column(
@@ -190,8 +210,11 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                   color: AppColors.lightBlueBg,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.receipt_long_outlined,
-                    color: AppColors.primaryBlue, size: 22),
+                child: const Icon(
+                  Icons.receipt_long_outlined,
+                  color: AppColors.primaryBlue,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -221,8 +244,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
               ),
               // Status badge
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg,
                   borderRadius: BorderRadius.circular(20),
@@ -249,8 +274,11 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.calendar_today_outlined,
-                  size: 14, color: AppColors.textLight),
+              const Icon(
+                Icons.calendar_today_outlined,
+                size: 14,
+                color: AppColors.textLight,
+              ),
               const SizedBox(width: 6),
               Text(
                 'Issued: ${_formatDate(invoice.issuedAt)}',
@@ -287,8 +315,11 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
               color: AppColors.primaryBlue,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.business_center_rounded,
-                color: Colors.white, size: 24),
+            child: const Icon(
+              Icons.business_center_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -304,12 +335,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (email != null)
-                  _infoRow(Icons.email_outlined, email),
-                if (phone != null)
-                  _infoRow(Icons.phone_outlined, phone),
-                if (website != null)
-                  _infoRow(Icons.language_outlined, website),
+                if (email != null) _infoRow(Icons.email_outlined, email),
+                if (phone != null) _infoRow(Icons.phone_outlined, phone),
+                if (website != null) _infoRow(Icons.language_outlined, website),
                 if (taxNumber != null)
                   _infoRow(Icons.receipt_outlined, 'Tax: $taxNumber'),
               ],
@@ -355,8 +383,11 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
               color: AppColors.lightBlueBg,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.person_outline,
-                color: AppColors.primaryBlue, size: 22),
+            child: const Icon(
+              Icons.person_outline,
+              color: AppColors.primaryBlue,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -385,7 +416,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                   Text(
                     email,
                     style: const TextStyle(
-                        fontSize: 12, color: AppColors.textLight),
+                      fontSize: 12,
+                      color: AppColors.textLight,
+                    ),
                   ),
               ],
             ),
@@ -414,8 +447,11 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                   color: AppColors.lightBlueBg,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.shopping_cart_outlined,
-                    color: AppColors.primaryBlue, size: 17),
+                child: const Icon(
+                  Icons.shopping_cart_outlined,
+                  color: AppColors.primaryBlue,
+                  size: 17,
+                ),
               ),
               const SizedBox(width: 10),
               const Text(
@@ -454,7 +490,8 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
 
   Widget _buildItemTile(Invoice invoice, InvoiceItem item) {
     // Pick an icon color based on type
-    final isDigital = item.itemType.toLowerCase().contains('course') ||
+    final isDigital =
+        item.itemType.toLowerCase().contains('course') ||
         item.itemType.toLowerCase().contains('class');
     final iconBg = isDigital
         ? const Color(0xFFDCFCE7)
@@ -538,20 +575,24 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
   }
 
   Widget _dashedDivider() {
-    return LayoutBuilder(builder: (context, constraints) {
-      final dashWidth = 6.0;
-      final dashSpace = 4.0;
-      final totalWidth = constraints.maxWidth;
-      final count = (totalWidth / (dashWidth + dashSpace)).floor();
-      return Row(
-        children: List.generate(count, (_) {
-          return Row(children: [
-            Container(width: dashWidth, height: 1, color: AppColors.border),
-            SizedBox(width: dashSpace),
-          ]);
-        }),
-      );
-    });
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final dashWidth = 6.0;
+        final dashSpace = 4.0;
+        final totalWidth = constraints.maxWidth;
+        final count = (totalWidth / (dashWidth + dashSpace)).floor();
+        return Row(
+          children: List.generate(count, (_) {
+            return Row(
+              children: [
+                Container(width: dashWidth, height: 1, color: AppColors.border),
+                SizedBox(width: dashSpace),
+              ],
+            );
+          }),
+        );
+      },
+    );
   }
 
   // ── Totals Section ────────────────────────────────────────────────────────────
@@ -559,8 +600,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
     return _card(
       child: Column(
         children: [
-          _buildTotalRow('Subtotal',
-              _formatCurrency(invoice.currency, invoice.subtotal)),
+          _buildTotalRow(
+            'Subtotal',
+            _formatCurrency(invoice.currency, invoice.subtotal),
+          ),
           if (invoice.discount > 0) ...[
             const SizedBox(height: 8),
             _buildTotalRow(
@@ -572,7 +615,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
           if (invoice.tax > 0) ...[
             const SizedBox(height: 8),
             _buildTotalRow(
-                'Tax', _formatCurrency(invoice.currency, invoice.tax)),
+              'Tax',
+              _formatCurrency(invoice.currency, invoice.tax),
+            ),
           ],
           const SizedBox(height: 12),
           const Divider(height: 1, color: AppColors.border),
@@ -608,12 +653,14 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
       children: [
         Text(
           label,
-          style: labelStyle ??
+          style:
+              labelStyle ??
               const TextStyle(fontSize: 13, color: AppColors.textLight),
         ),
         Text(
           value,
-          style: valueStyle ??
+          style:
+              valueStyle ??
               TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -645,8 +692,11 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                   color: Colors.white.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.sync_alt_rounded,
-                    color: Colors.white, size: 16),
+                child: const Icon(
+                  Icons.sync_alt_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -685,12 +735,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
           foregroundColor: AppColors.primaryBlue,
           side: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
           ),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
     );

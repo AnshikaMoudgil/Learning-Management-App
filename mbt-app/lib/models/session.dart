@@ -1,4 +1,4 @@
-﻿class LiveSession {
+class LiveSession {
   final String id;
   final String courseId;
   final String instructorId;
@@ -36,9 +36,13 @@
   });
 
   factory LiveSession.fromJson(Map<String, dynamic> json) {
-    final meeting = json['live_session_meetings'] != null && json['live_session_meetings'].isNotEmpty
+    final meeting =
+        json['live_session_meetings'] != null &&
+            json['live_session_meetings'].isNotEmpty
         ? json['live_session_meetings'][0]
-        : (json['live_session_meetings'] is Map ? json['live_session_meetings'] : null);
+        : (json['live_session_meetings'] is Map
+              ? json['live_session_meetings']
+              : null);
 
     final course = json['courses'] as Map<String, dynamic>?;
     final profile = json['profiles'] as Map<String, dynamic>?;
@@ -54,8 +58,12 @@
       duration: json['duration'] as int,
       status: json['status'] as String,
       meetingId: meeting != null ? meeting['meeting_id'] as String? : null,
-      recordingStatus: meeting != null ? meeting['recording_status'] as String? : null,
-      recordingUrl: meeting != null ? meeting['recording_url'] as String? : null,
+      recordingStatus: meeting != null
+          ? meeting['recording_status'] as String?
+          : null,
+      recordingUrl: meeting != null
+          ? meeting['recording_url'] as String?
+          : null,
       courseName: course?['title'] as String?,
       courseImageUrl: course?['thumbnail_url'] as String?,
       instructorName: profile?['full_name'] as String?,

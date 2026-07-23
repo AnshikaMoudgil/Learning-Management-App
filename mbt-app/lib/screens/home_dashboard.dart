@@ -161,7 +161,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.lightBlueBg,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -184,19 +184,24 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              Text('Hi, ${_profile?.fullName ?? 'Learner'}!', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                              const SizedBox(width: 4),
-                              const Text('👋', style: TextStyle(fontSize: 18)),
+                              Text('Welcome, ${_profile?.fullName ?? 'Learner'}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                             ],
                           ),
                           const SizedBox(height: 2),
-                          Text(_profile?.email ?? 'Keep learning, keep growing.', style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+                          const Text('Keep learning, keep growing.', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
                         ],
                       ),
                     ),
                     Stack(
                       children: [
-                        IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
+                        IconButton(
+                          icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark),
+                          onPressed: () async {
+                            await context.push('/notifications');
+                            await _notificationService.markAllRead();
+                            _loadNotifications();
+                          },
+                        ),
                         if (_unreadNotifications > 0)
                           Positioned(
                             right: 8,
@@ -378,24 +383,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ),
               const SizedBox(height: 24),
 
-              // Recent Recordings
-              _buildSectionHeader('Recent Recordings', onViewAll: () {
-                context.push('/recent-recordings');
-              }),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _buildRecordingTile('assets/iphone_hardware.png', 'Charging Port Repair Live Session', 'iPhone Repair Course', 'Yesterday • 1.2K views', '1:12:34'),
-                    const SizedBox(height: 12),
-                    _buildRecordingTile('assets/iphone_software.png', 'Face ID Not Working - Troubleshooting', 'iPhone Repair Course', '2 days ago • 980 views', '48:20'),
-                    const SizedBox(height: 12),
-                    _buildRecordingTile('assets/android_hardware.png', 'Board Level Shorting Explained', 'Advanced Repair Course', '3 days ago • 1.1K views', '1:05:11'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
               // Action Cards (Progress & Expiring)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -534,8 +521,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
               const SizedBox(height: 24),
 
               // Notifications
-              _buildSectionHeader('Notifications', onViewAll: () {
-                context.push('/notifications');
+              _buildSectionHeader('Notifications', onViewAll: () async {
+                await context.push('/notifications');
+                await _notificationService.markAllRead();
+                _loadNotifications();
               }),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -724,7 +713,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             const SizedBox(height: 4),
             Row(
               children: [
-                Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                Flexible(child: Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 14), overflow: TextOverflow.ellipsis)),
                 const SizedBox(width: 4),
                 const Icon(Icons.verified, color: Colors.blueAccent, size: 14),
               ],
@@ -778,11 +767,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textDark)),
           if (onViewAll != null)
             GestureDetector(
               onTap: onViewAll,
-              child: const Text('View All', style: TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
+              child: const Text('View All', style: TextStyle(fontSize: 14, color: AppColors.primaryBlue, fontWeight: FontWeight.bold)),
             ),
         ],
       ),
@@ -903,7 +892,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 12),
                 LinearProgressIndicator(
                   value: progress / 100,
@@ -925,65 +914,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
-  Widget _buildRecordingTile(String image, String title, String subtitle, String details, String duration) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 100,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(image: AssetImage(image), fit: BoxFit.cover),
-                ),
-              ),
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Center(child: Icon(Icons.play_circle_outline, color: Colors.white, size: 24)),
-                ),
-              ),
-              Positioned(
-                bottom: 4,
-                right: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(4)),
-                  child: Text(duration, style: const TextStyle(color: Colors.white, fontSize: 8)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                const SizedBox(height: 2),
-                Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
-                const SizedBox(height: 2),
-                Text(details, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
-              ],
-            ),
-          ),
-          IconButton(icon: const Icon(Icons.file_download_outlined, color: AppColors.primaryBlue), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.more_vert, color: AppColors.textLight), onPressed: () => context.push('/more')),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildNotificationItem(IconData icon, Color iconColor, String title, String description, String time) {
     return Container(
@@ -1012,12 +943,15 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                    Text(time, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                    Expanded(
+                      child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(time, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(description, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+                Text(description, style: const TextStyle(fontSize: 13, color: AppColors.textLight)),
               ],
             ),
           ),

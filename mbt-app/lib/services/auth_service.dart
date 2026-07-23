@@ -32,18 +32,24 @@ class AuthService {
       throw Exception('Google Sign-In was cancelled by the user.');
     }
 
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
     final String? idToken = googleAuth.idToken;
     final String? accessToken = googleAuth.accessToken;
 
     if (idToken == null) {
-      throw Exception('No ID Token found. Make sure GOOGLE_WEB_CLIENT_ID is provided in .env.');
+      throw Exception(
+        'No ID Token found. Make sure GOOGLE_WEB_CLIENT_ID is provided in .env.',
+      );
     }
 
-    final result = await _api.post('/api/v1/auth/google', body: {
-      'idToken': idToken,
-      if (accessToken != null) 'accessToken': accessToken,
-    });
+    final result = await _api.post(
+      '/api/v1/auth/google',
+      body: {
+        'idToken': idToken,
+        if (accessToken != null) 'accessToken': accessToken,
+      },
+    );
 
     if (result != null && result['refreshToken'] != null) {
       await _supabase.auth.setSession(
@@ -60,10 +66,10 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> verifyOtp(String phone, String token) async {
-    final result = await _api.post('/api/v1/auth/verify-otp', body: {
-      'phone': phone,
-      'token': token,
-    });
+    final result = await _api.post(
+      '/api/v1/auth/verify-otp',
+      body: {'phone': phone, 'token': token},
+    );
 
     if (result != null && result['refreshToken'] != null) {
       await _supabase.auth.setSession(

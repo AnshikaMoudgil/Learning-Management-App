@@ -11,14 +11,24 @@ class DownloadsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text('Downloads', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Downloads',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.download_done_outlined, size: 120, color: AppColors.primaryBlue),
+            const Icon(
+              Icons.download_done_outlined,
+              size: 120,
+              color: AppColors.primaryBlue,
+            ),
             const SizedBox(height: 24),
             const Text(
               'No downloads yet',

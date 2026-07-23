@@ -45,14 +45,18 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
-            Text('Device Security',
-                style: TextStyle(
-                  color: AppColors.textDark,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                )),
-            Text('Manage your active devices and sessions',
-                style: TextStyle(color: AppColors.textLight, fontSize: 10)),
+            Text(
+              'Device Security',
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              'Manage your active devices and sessions',
+              style: TextStyle(color: AppColors.textLight, fontSize: 10),
+            ),
           ],
         ),
       ),
@@ -66,17 +70,21 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Active Devices',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                        )),
+                    const Text(
+                      'Active Devices',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     const Text(
                       'These are the devices currently logged in to your account.',
-                      style:
-                          TextStyle(fontSize: 12, color: AppColors.textLight),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                      ),
                     ),
                     const SizedBox(height: 16),
 
@@ -117,8 +125,11 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                                   color: Colors.white,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.swap_horiz,
-                                    color: AppColors.primaryBlue, size: 20),
+                                child: const Icon(
+                                  Icons.swap_horiz,
+                                  color: AppColors.primaryBlue,
+                                  size: 20,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               const Expanded(
@@ -152,7 +163,8 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.primaryBlue,
                                 side: const BorderSide(
-                                    color: AppColors.primaryBlue),
+                                  color: AppColors.primaryBlue,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -169,8 +181,11 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Icon(Icons.lock_outline,
-                            size: 16, color: AppColors.textLight),
+                        Icon(
+                          Icons.lock_outline,
+                          size: 16,
+                          color: AppColors.textLight,
+                        ),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -201,9 +216,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCurrent
-              ? Colors.green.withOpacity(0.3)
-              : AppColors.border,
+          color: isCurrent ? Colors.green.withOpacity(0.3) : AppColors.border,
         ),
         boxShadow: [
           BoxShadow(
@@ -228,8 +241,8 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
               device.platform?.toLowerCase().contains('ios') == true
                   ? Icons.phone_iphone
                   : device.platform?.toLowerCase().contains('android') == true
-                      ? Icons.android
-                      : Icons.devices,
+                  ? Icons.android
+                  : Icons.devices,
               color: isCurrent ? Colors.green : AppColors.textLight,
               size: 24,
             ),
@@ -241,17 +254,22 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
               children: [
                 if (isCurrent)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text('Current Device',
-                        style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Current Device',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 const SizedBox(height: 4),
                 Text(
@@ -265,26 +283,36 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.computer,
-                        size: 12, color: AppColors.textLight),
+                    const Icon(
+                      Icons.computer,
+                      size: 12,
+                      color: AppColors.textLight,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       device.platform ?? 'Unknown platform',
                       style: const TextStyle(
-                          fontSize: 10, color: AppColors.textLight),
+                        fontSize: 10,
+                        color: AppColors.textLight,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.access_time,
-                        size: 12, color: AppColors.textLight),
+                    const Icon(
+                      Icons.access_time,
+                      size: 12,
+                      color: AppColors.textLight,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Last seen: ${_formatDate(device.lastSeenAt)}',
                       style: const TextStyle(
-                          fontSize: 10, color: AppColors.textLight),
+                        fontSize: 10,
+                        color: AppColors.textLight,
+                      ),
                     ),
                   ],
                 ),
@@ -293,17 +321,19 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
           ),
           if (isCurrent)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.green.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text('Active',
-                  style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Active',
+                style: TextStyle(
+                  color: Colors.green,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
         ],
       ),

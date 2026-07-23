@@ -29,12 +29,28 @@ class _PopularCoursesScreenState extends State<PopularCoursesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('Popular Courses', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Popular Courses',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
         actions: [
           const CartBadge(),
-          IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
+          IconButton(
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: AppColors.textDark,
+            ),
+            onPressed: () => context.push('/notifications'),
+          ),
         ],
       ),
       body: FutureBuilder<List<Course>>(
@@ -50,7 +66,12 @@ class _PopularCoursesScreenState extends State<PopularCoursesScreen> {
                 children: [
                   Icon(Icons.menu_book, size: 48, color: Colors.grey.shade300),
                   const SizedBox(height: 12),
-                  Text(snapshot.hasError ? 'Failed to load courses' : 'No courses found', style: const TextStyle(color: AppColors.textLight)),
+                  Text(
+                    snapshot.hasError
+                        ? 'Failed to load courses'
+                        : 'No courses found',
+                    style: const TextStyle(color: AppColors.textLight),
+                  ),
                 ],
               ),
             );
@@ -60,15 +81,37 @@ class _PopularCoursesScreenState extends State<PopularCoursesScreen> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('${courses.length} Courses', style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+                    Text(
+                      '${courses.length} Courses',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                      ),
+                    ),
                     Row(
                       children: const [
-                        Text('Sorted by: ', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
-                        Text('Popularity', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                        Text(
+                          'Sorted by: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textLight,
+                          ),
+                        ),
+                        Text(
+                          'Popularity',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
                         Icon(Icons.keyboard_arrow_down, size: 16),
                       ],
                     ),
@@ -89,7 +132,7 @@ class _PopularCoursesScreenState extends State<PopularCoursesScreen> {
                     return _buildCourseCard(courses[index]);
                   },
                 ),
-              )
+              ),
             ],
           );
         },
@@ -113,14 +156,27 @@ class _PopularCoursesScreenState extends State<PopularCoursesScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   image: course.thumbnailUrl != null
-                      ? DecorationImage(image: NetworkImage(course.thumbnailUrl!), fit: BoxFit.cover)
+                      ? DecorationImage(
+                          image: NetworkImage(course.thumbnailUrl!),
+                          fit: BoxFit.cover,
+                        )
                       : null,
-                  color: course.thumbnailUrl == null ? Colors.grey.shade200 : null,
+                  color: course.thumbnailUrl == null
+                      ? Colors.grey.shade200
+                      : null,
                 ),
                 child: course.thumbnailUrl == null
-                    ? const Center(child: Icon(Icons.menu_book, color: Colors.grey, size: 32))
+                    ? const Center(
+                        child: Icon(
+                          Icons.menu_book,
+                          color: Colors.grey,
+                          size: 32,
+                        ),
+                      )
                     : null,
               ),
             ),
@@ -129,22 +185,52 @@ class _PopularCoursesScreenState extends State<PopularCoursesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(course.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(
+                    course.title,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 8,
-                        backgroundImage: course.instructorAvatarUrl != null ? NetworkImage(course.instructorAvatarUrl!) : null,
-                        child: course.instructorAvatarUrl == null ? const Icon(Icons.person, size: 10, color: Colors.grey) : null,
+                        backgroundImage: course.instructorAvatarUrl != null
+                            ? NetworkImage(course.instructorAvatarUrl!)
+                            : null,
+                        child: course.instructorAvatarUrl == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 10,
+                                color: Colors.grey,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(course.instructorName ?? 'Instructor', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                            Text(course.instructorSpecialization ?? '', style: const TextStyle(fontSize: 7, color: AppColors.textLight)),
+                            Text(
+                              course.instructorName ?? 'Instructor',
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            Text(
+                              course.instructorSpecialization ?? '',
+                              style: const TextStyle(
+                                fontSize: 7,
+                                color: AppColors.textLight,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -155,22 +241,43 @@ class _PopularCoursesScreenState extends State<PopularCoursesScreen> {
                     children: [
                       const Icon(Icons.star, color: Colors.orange, size: 12),
                       const SizedBox(width: 4),
-                      Text('${course.averageRating.toStringAsFixed(1)} (${course.reviewsCount})', style: const TextStyle(fontSize: 9, color: AppColors.textDark, fontWeight: FontWeight.bold)),
+                      Text(
+                        '${course.averageRating.toStringAsFixed(1)} (${course.reviewsCount})',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Text('₹${course.effectivePrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      Text(
+                        '₹${course.effectivePrice.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
                       if (course.hasDiscount) ...[
                         const SizedBox(width: 8),
-                        Text('₹${course.price.toStringAsFixed(0)}', style: const TextStyle(fontSize: 10, color: AppColors.textLight, decoration: TextDecoration.lineThrough)),
+                        Text(
+                          '₹${course.price.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textLight,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
                       ],
                     ],
-                  )
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

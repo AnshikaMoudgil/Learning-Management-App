@@ -53,7 +53,9 @@ class EnrollmentsService {
 
   Future<List<EnrollmentItem>> getMyEnrollments() async {
     final result = await _api.get('/api/v1/enrollments');
-    final List<dynamic> data = result is Map ? (result['data'] as List<dynamic>?) ?? [] : (result as List<dynamic>);
+    final List<dynamic> data = result is Map
+        ? (result['data'] as List<dynamic>?) ?? []
+        : (result as List<dynamic>);
     return data
         .map((e) => EnrollmentItem.fromJson(e as Map<String, dynamic>))
         .toList();

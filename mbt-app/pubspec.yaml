@@ -47,6 +47,7 @@ dependencies:
   url_launcher: ^6.3.0
   video_player: ^2.9.2
   chewie: ^1.10.0
+  google_fonts: ^8.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

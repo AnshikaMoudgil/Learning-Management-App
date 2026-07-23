@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material';
+import 'package:flutter/material';
 import '../models/session.dart';
 import '../services/sessions_service.dart';
 import 'meeting_screen.dart';
@@ -63,7 +63,7 @@ class _SessionsScreenState extends State<SessionsScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshSessions,
-          )
+          ),
         ],
       ),
       body: FutureBuilder<List<LiveSession>>(
@@ -74,7 +74,9 @@ class _SessionsScreenState extends State<SessionsScreen> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No live sessions scheduled for this course.'));
+            return const Center(
+              child: Text('No live sessions scheduled for this course.'),
+            );
           }
 
           final sessions = snapshot.data!;
@@ -83,9 +85,11 @@ class _SessionsScreenState extends State<SessionsScreen> {
             itemCount: sessions.length,
             itemBuilder: (context, index) {
               final session = sessions[index];
-              final canJoin = session.status == 'live' ||
+              final canJoin =
+                  session.status == 'live' ||
                   (session.status == 'scheduled' &&
-                      session.startTime.difference(DateTime.now()).inMinutes <= 10);
+                      session.startTime.difference(DateTime.now()).inMinutes <=
+                          10);
 
               return Card(
                 margin: const EdgeInsets.bottom(16),
@@ -108,10 +112,17 @@ class _SessionsScreenState extends State<SessionsScreen> {
                       ],
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(width: 8),
                           Text(
-                            session.startTime.toLocal().toString().substring(0, 16),
+                            session.startTime.toLocal().toString().substring(
+                              0,
+                              16,
+                            ),
                             style: const TextStyle(color: Colors.grey),
                           ),
                         ],
@@ -119,7 +130,11 @@ class _SessionsScreenState extends State<SessionsScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                          const Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             '${session.duration} mins',
@@ -134,22 +149,30 @@ class _SessionsScreenState extends State<SessionsScreen> {
                           Chip(
                             label: Text(
                               session.status.toUpperCase(),
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
                             ),
                             backgroundColor: session.status == 'live'
                                 ? Colors.green
                                 : session.status == 'finished'
-                                    ? Colors.blueGrey
-                                    : session.status == 'cancelled'
-                                        ? Colors.red
-                                        : Colors.blue,
+                                ? Colors.blueGrey
+                                : session.status == 'cancelled'
+                                ? Colors.red
+                                : Colors.blue,
                           ),
-                          if (session.status != 'cancelled' && session.status != 'finished' && session.status != 'recording_ready')
+                          if (session.status != 'cancelled' &&
+                              session.status != 'finished' &&
+                              session.status != 'recording_ready')
                             ElevatedButton(
-                              onPressed: canJoin ? () => _joinSession(session) : null,
+                              onPressed: canJoin
+                                  ? () => _joinSession(session)
+                                  : null,
                               child: const Text('Join'),
                             ),
-                          if (session.status == 'recording_ready' && session.recordingUrl != null)
+                          if (session.status == 'recording_ready' &&
+                              session.recordingUrl != null)
                             ElevatedButton.icon(
                               onPressed: () {
                                 // Open recording playback logic
@@ -158,7 +181,7 @@ class _SessionsScreenState extends State<SessionsScreen> {
                               label: const Text('Watch Recording'),
                             ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),

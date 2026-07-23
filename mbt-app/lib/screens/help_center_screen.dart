@@ -12,8 +12,18 @@ class HelpCenterScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('Help Center', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Help Center',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
       ),
       body: Column(
@@ -30,9 +40,16 @@ class HelpCenterScreen extends StatelessWidget {
               ),
               child: const TextField(
                 decoration: InputDecoration(
-                  icon: Icon(Icons.search, color: AppColors.textLight, size: 20),
+                  icon: Icon(
+                    Icons.search,
+                    color: AppColors.textLight,
+                    size: 20,
+                  ),
                   hintText: 'Search for help articles...',
-                  hintStyle: TextStyle(fontSize: 12, color: AppColors.textLight),
+                  hintStyle: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textLight,
+                  ),
                   border: InputBorder.none,
                 ),
               ),
@@ -40,30 +57,70 @@ class HelpCenterScreen extends StatelessWidget {
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('Categories', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            child: Text(
+              'Categories',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: ListView(
               children: [
-                _buildHelpCategory(Icons.person_outline, 'Account & Login', '12 Articles', Colors.blue),
-                _buildHelpCategory(Icons.payment, 'Payments & Refunds', '10 Articles', Colors.green),
-                _buildHelpCategory(Icons.devices, 'Device Transfer', '8 Articles', Colors.blueAccent),
-                _buildHelpCategory(Icons.sensors, 'Live Classes', '15 Articles', Colors.red),
-                _buildHelpCategory(Icons.workspace_premium, 'Certificates', '7 Articles', Colors.orange),
+                _buildHelpCategory(
+                  Icons.person_outline,
+                  'Account & Login',
+                  '12 Articles',
+                  Colors.blue,
+                ),
+                _buildHelpCategory(
+                  Icons.payment,
+                  'Payments & Refunds',
+                  '10 Articles',
+                  Colors.green,
+                ),
+                _buildHelpCategory(
+                  Icons.devices,
+                  'Device Transfer',
+                  '8 Articles',
+                  Colors.blueAccent,
+                ),
+                _buildHelpCategory(
+                  Icons.sensors,
+                  'Live Classes',
+                  '15 Articles',
+                  Colors.red,
+                ),
+                _buildHelpCategory(
+                  Icons.workspace_premium,
+                  'Certificates',
+                  '7 Articles',
+                  Colors.orange,
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHelpCategory(IconData icon, String title, String subtitle, Color color) {
+  Widget _buildHelpCategory(
+    IconData icon,
+    String title,
+    String subtitle,
+    Color color,
+  ) {
     return Column(
       children: [
         ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 8,
+          ),
           leading: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -72,8 +129,18 @@ class HelpCenterScreen extends StatelessWidget {
             ),
             child: Icon(icon, color: color, size: 24),
           ),
-          title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-          subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+          ),
           trailing: const Icon(Icons.chevron_right, color: AppColors.textLight),
           onTap: () {},
         ),

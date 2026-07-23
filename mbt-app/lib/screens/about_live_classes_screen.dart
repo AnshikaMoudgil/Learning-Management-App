@@ -12,8 +12,18 @@ class AboutLiveClassesScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('About Live Classes', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'About Live Classes',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
       ),
       body: ListView(
@@ -23,25 +33,29 @@ class AboutLiveClassesScreen extends StatelessWidget {
             icon: Icons.security,
             color: Colors.purple,
             title: 'Secure & Seamless',
-            description: 'Join live classes with one tap using our secure SSO-powered Zoom integration.',
+            description:
+                'Join live classes with one tap using our secure SSO-powered Zoom integration.',
           ),
           _buildFeatureCard(
             icon: Icons.forum_outlined,
             color: Colors.green,
             title: 'Interactive Learning',
-            description: 'Ask questions, interact with instructors and learn in real-time.',
+            description:
+                'Ask questions, interact with instructors and learn in real-time.',
           ),
           _buildFeatureCard(
             icon: Icons.event_busy,
             color: Colors.orange,
             title: 'Missed a Class?',
-            description: 'All live classes are recorded. Watch them anytime in the Recordings section.',
+            description:
+                'All live classes are recorded. Watch them anytime in the Recordings section.',
           ),
           _buildFeatureCard(
             icon: Icons.edit_calendar,
             color: Colors.blue,
             title: 'Add to Calendar',
-            description: 'Never miss a class. Add sessions to your calendar and get timely reminders.',
+            description:
+                'Never miss a class. Add sessions to your calendar and get timely reminders.',
           ),
         ],
       ),
@@ -61,7 +75,13 @@ class AboutLiveClassesScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,12 +99,26 @@ class AboutLiveClassesScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text(description, style: const TextStyle(fontSize: 12, color: AppColors.textLight, height: 1.4)),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textLight,
+                    height: 1.4,
+                  ),
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );

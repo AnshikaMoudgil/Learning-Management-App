@@ -12,14 +12,31 @@ class MySubscriptionsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textDark), onPressed: () => context.pop()),
-        title: const Text('My Subscriptions', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'My Subscriptions',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Active Subscriptions', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          const Text(
+            'Active Subscriptions',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildSubscriptionCard(
             title: 'React - The Complete Guide',
@@ -38,7 +55,14 @@ class MySubscriptionsScreen extends StatelessWidget {
             isActive: true,
           ),
           const SizedBox(height: 32),
-          const Text('Expired Subscriptions', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          const Text(
+            'Expired Subscriptions',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildSubscriptionCard(
             title: 'UI/UX Design Masterclass',
@@ -85,30 +109,70 @@ class MySubscriptionsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                  maxLines: 2,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(dateText, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                    Text(
+                      dateText,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textLight,
+                      ),
+                    ),
                     if (isActive)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           if (autoRenewal)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                              child: const Text('Auto-renewal ON', style: TextStyle(color: Colors.green, fontSize: 8, fontWeight: FontWeight.bold)),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'Auto-renewal ON',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             )
                           else if (!autoRenewal)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                              child: const Text('Auto-renewal OFF', style: TextStyle(color: Colors.orange, fontSize: 8, fontWeight: FontWeight.bold)),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'Auto-renewal OFF',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ElevatedButton(
                             onPressed: () {},
@@ -117,13 +181,23 @@ class MySubscriptionsScreen extends StatelessWidget {
                               foregroundColor: Colors.white,
                               elevation: 0,
                               minimumSize: const Size(70, 32),
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                             ),
-                            child: const Text('Renew', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                          )
+                            child: const Text(
+                              'Renew',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
-                      )
+                      ),
                   ],
                 ),
               ],

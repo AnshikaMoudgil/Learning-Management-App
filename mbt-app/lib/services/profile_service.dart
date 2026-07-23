@@ -38,30 +38,43 @@ class ProfileService {
     await _api.post('/api/v1/users/me/login-details', body: {});
   }
 
-  Future<Profile> createProfile(String fullName, {String? phone, String? email}) async {
-    final result = await _api.post('/api/v1/users/me/complete', body: {
-      'fullName': fullName,
-      if (phone != null) 'phone': phone,
-      if (email != null) 'email': email,
-    });
+  Future<Profile> createProfile(
+    String fullName, {
+    String? phone,
+    String? email,
+  }) async {
+    final result = await _api.post(
+      '/api/v1/users/me/complete',
+      body: {
+        'fullName': fullName,
+        if (phone != null) 'phone': phone,
+        if (email != null) 'email': email,
+      },
+    );
     return Profile.fromJson(result);
   }
 
-  Future<Profile> updateProfile(String fullName, {String? phone, String? email, String? about}) async {
-    final result = await _api.patch('/api/v1/users/me', body: {
-      'fullName': fullName,
-      if (phone != null) 'phone': phone,
-      if (email != null) 'email': email,
-      if (about != null) 'about': about,
-    });
+  Future<Profile> updateProfile(
+    String fullName, {
+    String? phone,
+    String? email,
+    String? about,
+  }) async {
+    final result = await _api.patch(
+      '/api/v1/users/me',
+      body: {
+        'fullName': fullName,
+        if (phone != null) 'phone': phone,
+        if (email != null) 'email': email,
+        if (about != null) 'about': about,
+      },
+    );
     return Profile.fromJson(result);
   }
 
   Future<void> bindDevice(String userId) async {
     final fingerprint = await _getDeviceFingerprint();
-    await _api.post('/api/v1/devices/bind', body: {
-      'fingerprint': fingerprint,
-    });
+    await _api.post('/api/v1/devices/bind', body: {'fingerprint': fingerprint});
   }
 
   Future<String> _getDeviceFingerprint() async {
@@ -76,12 +89,7 @@ class ProfileService {
   }
 
   Future<void> uploadAvatar(Uint8List bytes, String fileName) async {
-    await _api.uploadFile(
-      '/api/v1/users/me/photo',
-      'photo',
-      bytes,
-      fileName,
-    );
+    await _api.uploadFile('/api/v1/users/me/photo', 'photo', bytes, fileName);
   }
 
   Future<void> deleteAvatar() async {

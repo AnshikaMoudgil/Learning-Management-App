@@ -114,9 +114,11 @@ class RouteNames {
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _homeNavigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<NavigatorState> _myLearningNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _myLearningNavigatorKey =
+    GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _liveNavigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<NavigatorState> _storeNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _storeNavigatorKey =
+    GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _moreNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouter = GoRouter(
@@ -143,7 +145,9 @@ final appRouter = GoRouter(
       RouteNames.invoices,
     ];
 
-    final isProtected = protectedRoutes.any((route) => state.uri.path.startsWith(route));
+    final isProtected = protectedRoutes.any(
+      (route) => state.uri.path.startsWith(route),
+    );
 
     if (session == null && isProtected) {
       // Redirect to login if trying to access a protected route while logged out
@@ -242,15 +246,13 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.course,
-      builder: (context, state) => CourseDetailsScreen(
-        courseId: state.uri.queryParameters['id'],
-      ),
+      builder: (context, state) =>
+          CourseDetailsScreen(courseId: state.uri.queryParameters['id']),
     ),
     GoRoute(
       path: RouteNames.courseProgress,
-      builder: (context, state) => CourseProgressScreen(
-        courseId: state.uri.queryParameters['id'],
-      ),
+      builder: (context, state) =>
+          CourseProgressScreen(courseId: state.uri.queryParameters['id']),
     ),
     GoRoute(
       path: RouteNames.cart,
@@ -310,7 +312,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.notifications,
-      builder: (context, state) => const NotificationCenterScreen(), 
+      builder: (context, state) => const NotificationCenterScreen(),
     ),
     GoRoute(
       path: RouteNames.notificationSettings,

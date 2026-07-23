@@ -23,9 +23,9 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   bool _hasSearched = false;
   bool _isLoading = false;
   Timer? _debounce;
-  
+
   List<String> _recentSearches = [];
-  
+
   List<dynamic> _courseResults = [];
   List<dynamic> _recordingResults = [];
   List<dynamic> _teacherResults = [];
@@ -55,17 +55,17 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   Future<void> _addRecentSearch(String query) async {
     final q = query.trim();
     if (q.isEmpty) return;
-    
+
     final prefs = await SharedPreferences.getInstance();
     List<String> searches = prefs.getStringList(_recentSearchesKey) ?? [];
-    
+
     searches.remove(q); // Remove if exists to move to top
     searches.insert(0, q);
-    
+
     if (searches.length > 10) {
       searches = searches.sublist(0, 10);
     }
-    
+
     await prefs.setStringList(_recentSearchesKey, searches);
     setState(() {
       _recentSearches = searches;
@@ -94,9 +94,9 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     setState(() {
       _hasSearched = query.isNotEmpty;
     });
-    
+
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+
     if (query.isEmpty) {
       setState(() {
         _courseResults.clear();
@@ -124,7 +124,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     try {
       final q = Uri.encodeComponent(query.trim());
       final response = await ApiClient().get('/api/v1/search?q=$q');
-      
+
       if (mounted) {
         setState(() {
           _courseResults = (response['courses'] as List<dynamic>?) ?? [];
@@ -167,7 +167,10 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
       default:
         return;
     }
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => nextScreen));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => nextScreen),
+    );
   }
 
   @override
@@ -187,20 +190,39 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
               backgroundImage: AssetImage('assets/1.png'),
             ),
             const Spacer(),
-            IconButton(icon: const Icon(Icons.search, color: AppColors.textDark), onPressed: () {}),
+            IconButton(
+              icon: const Icon(Icons.search, color: AppColors.textDark),
+              onPressed: () {},
+            ),
             Stack(
               children: [
-                IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textDark), onPressed: () => context.push('/notifications')),
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: AppColors.textDark,
+                  ),
+                  onPressed: () => context.push('/notifications'),
+                ),
                 Positioned(
                   right: 8,
                   top: 8,
                   child: Container(
                     padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: const Text(
+                      '3',
+                      style: TextStyle(color: Colors.white, fontSize: 10),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                )
+                ),
               ],
             ),
           ],
@@ -226,13 +248,23 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                       controller: _searchController,
                       onChanged: _onSearchChanged,
                       decoration: InputDecoration(
-                        icon: const Icon(Icons.search, color: AppColors.textLight),
+                        icon: const Icon(
+                          Icons.search,
+                          color: AppColors.textLight,
+                        ),
                         hintText: 'Search for courses, recordings, teachers...',
-                        hintStyle: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                        hintStyle: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textLight,
+                        ),
                         border: InputBorder.none,
                         suffixIcon: _hasSearched
                             ? IconButton(
-                                icon: const Icon(Icons.close, size: 16, color: AppColors.textLight),
+                                icon: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: AppColors.textLight,
+                                ),
                                 onPressed: () {
                                   _searchController.clear();
                                   _onSearchChanged('');
@@ -248,24 +280,36 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                   onTap: () {
                     context.pop();
                   },
-                  child: const Text('Cancel', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 14)),
-                )
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          
+
           Expanded(
-            child: isQueryEmpty 
+            child: isQueryEmpty
                 ? _buildRecentSearches()
-                : _isLoading 
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
-                    : (_courseResults.isEmpty && _recordingResults.isEmpty && _teacherResults.isEmpty)
-                        ? _buildEmptyState()
-                        : _buildResultsState(),
+                : _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryBlue,
+                    ),
+                  )
+                : (_courseResults.isEmpty &&
+                      _recordingResults.isEmpty &&
+                      _teacherResults.isEmpty)
+                ? _buildEmptyState()
+                : _buildResultsState(),
           ),
         ],
       ),
-      
     );
   }
 
@@ -279,17 +323,33 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Recent Searches', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                const Text(
+                  'Recent Searches',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
                 TextButton(
-                  onPressed: _clearRecentSearches, 
-                  child: const Text('Clear All', style: TextStyle(color: AppColors.primaryBlue, fontSize: 12, fontWeight: FontWeight.bold))
+                  onPressed: _clearRecentSearches,
+                  child: const Text(
+                    'Clear All',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: _recentSearches.map((s) => _buildRecentSearchChip(s)).toList(),
+              children: _recentSearches
+                  .map((s) => _buildRecentSearchChip(s))
+                  .toList(),
             ),
             const SizedBox(height: 32),
           ],
@@ -297,7 +357,14 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
             children: const [
               Icon(Icons.trending_up, color: AppColors.primaryBlue, size: 20),
               SizedBox(width: 8),
-              Text('Trending Searches', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              Text(
+                'Trending Searches',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -328,11 +395,18 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           children: [
             const Icon(Icons.access_time, size: 14, color: AppColors.textLight),
             const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textDark)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: AppColors.textDark),
+            ),
             const SizedBox(width: 6),
             GestureDetector(
               onTap: () => _removeRecentSearch(label),
-              child: const Icon(Icons.close, size: 14, color: AppColors.textLight),
+              child: const Icon(
+                Icons.close,
+                size: 14,
+                color: AppColors.textLight,
+              ),
             ),
           ],
         ),
@@ -350,12 +424,21 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+          border: Border(
+            bottom: BorderSide(color: AppColors.border, width: 0.5),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 14, color: AppColors.primaryBlue, fontWeight: FontWeight.w500)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.primaryBlue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const Icon(Icons.call_made, size: 16, color: AppColors.primaryBlue),
           ],
         ),
@@ -384,12 +467,27 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     'assets/images/search_empty.png',
                     width: 200,
                     height: 200,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.search_off, size: 100, color: AppColors.primaryBlue),
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.search_off,
+                      size: 100,
+                      color: AppColors.primaryBlue,
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  const Text('No courses found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  const Text(
+                    'No courses found',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
                   const SizedBox(height: 12),
-                  const Text('Try searching with another keyword.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                  const Text(
+                    'Try searching with another keyword.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: AppColors.textLight),
+                  ),
                   const SizedBox(height: 24),
                   OutlinedButton(
                     onPressed: () {
@@ -399,10 +497,12 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryBlue,
                       side: const BorderSide(color: AppColors.primaryBlue),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: const Text('Clear Search'),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -429,8 +529,13 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           ],
         ),
         Expanded(
-          child: currentList.isEmpty 
-              ? const Center(child: Text('No results in this category.', style: TextStyle(color: AppColors.textLight)))
+          child: currentList.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No results in this category.',
+                    style: TextStyle(color: AppColors.textLight),
+                  ),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(20),
                   itemCount: currentList.length,
@@ -454,7 +559,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     }
                   },
                 ),
-        )
+        ),
       ],
     );
   }
@@ -467,12 +572,21 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: isSelected ? AppColors.primaryBlue : AppColors.border, width: isSelected ? 2 : 1)),
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? AppColors.primaryBlue : AppColors.border,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
           ),
           child: Center(
             child: Text(
               label,
-              style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? AppColors.primaryBlue : AppColors.textLight),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? AppColors.primaryBlue : AppColors.textLight,
+              ),
             ),
           ),
         ),
@@ -486,7 +600,8 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     if (course['profiles'] != null && course['profiles'] is Map) {
       author = course['profiles']['full_name'] ?? author;
     }
-    String rating = '${course['average_rating'] ?? '0.0'} (${course['reviews_count'] ?? 0})';
+    String rating =
+        '${course['average_rating'] ?? '0.0'} (${course['reviews_count'] ?? 0})';
     bool isPremium = (course['price'] ?? 0) > 0;
     String? thumb = course['thumbnail_url'];
     String category = course['category'] ?? '';
@@ -508,8 +623,10 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(
-                  image: thumb != null ? NetworkImage(thumb) as ImageProvider : const AssetImage('assets/iphone_hardware.png'), 
-                  fit: BoxFit.cover
+                  image: thumb != null
+                      ? NetworkImage(thumb) as ImageProvider
+                      : const AssetImage('assets/iphone_hardware.png'),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
@@ -518,26 +635,69 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 4),
                   if (category.isNotEmpty)
-                    Text(category, style: const TextStyle(fontSize: 10, color: AppColors.primaryBlue, fontWeight: FontWeight.w600)),
-                  Text('By $author', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                    Text(
+                      category,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  Text(
+                    'By $author',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textLight,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(Icons.star, color: Colors.orange, size: 12),
                       const SizedBox(width: 4),
-                      Text(rating, style: const TextStyle(fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.bold)),
+                      Text(
+                        rating,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: isPremium ? Colors.blue.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
+                          color: isPremium
+                              ? Colors.blue.withValues(alpha: 0.1)
+                              : Colors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text(isPremium ? 'Premium' : 'Free', style: TextStyle(color: isPremium ? AppColors.primaryBlue : Colors.green, fontSize: 8, fontWeight: FontWeight.bold)),
-                      )
+                        child: Text(
+                          isPremium ? 'Premium' : 'Free',
+                          style: TextStyle(
+                            color: isPremium
+                                ? AppColors.primaryBlue
+                                : Colors.green,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -553,9 +713,10 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     String title = lesson['title'] ?? 'Lesson';
     String duration = lesson['video_duration'] ?? 'Live';
     String author = 'Instructor';
-    
+
     if (lesson['courses'] != null && lesson['courses'] is Map) {
-      if (lesson['courses']['profiles'] != null && lesson['courses']['profiles'] is Map) {
+      if (lesson['courses']['profiles'] != null &&
+          lesson['courses']['profiles'] is Map) {
         author = lesson['courses']['profiles']['full_name'] ?? author;
       }
     }
@@ -582,19 +743,39 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                   height: 70,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    image: const DecorationImage(image: AssetImage('assets/iphone_software.png'), fit: BoxFit.cover),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/iphone_software.png'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 Positioned(
                   bottom: 4,
                   right: 4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(4)),
-                    child: Text(duration, style: const TextStyle(color: Colors.white, fontSize: 8)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      duration,
+                      style: const TextStyle(color: Colors.white, fontSize: 8),
+                    ),
                   ),
                 ),
-                const Positioned.fill(child: Center(child: Icon(Icons.play_circle_fill, color: Colors.white, size: 24))),
+                const Positioned.fill(
+                  child: Center(
+                    child: Icon(
+                      Icons.play_circle_fill,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(width: 12),
@@ -602,18 +783,43 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 4),
-                  Text('By $author', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                  Text(
+                    'By $author',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textLight,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text('Live / Recorded', style: TextStyle(color: Colors.red, fontSize: 8, fontWeight: FontWeight.bold)),
-                  )
+                    child: const Text(
+                      'Live / Recorded',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -627,7 +833,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     String name = teacher['full_name'] ?? 'Instructor';
     String? avatar = teacher['avatar_url'];
     String role = teacher['about'] ?? 'Instructor';
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -638,22 +844,46 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
       child: Row(
         children: [
           CircleAvatar(
-            radius: 24, 
-            backgroundImage: avatar != null ? NetworkImage(avatar) as ImageProvider : const AssetImage('assets/1.png')
+            radius: 24,
+            backgroundImage: avatar != null
+                ? NetworkImage(avatar) as ImageProvider
+                : const AssetImage('assets/1.png'),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                Text(role, style: const TextStyle(fontSize: 10, color: AppColors.textLight), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                Text(
+                  role,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textLight,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
                 Row(
                   children: const [
                     Icon(Icons.star, color: Colors.orange, size: 12),
                     SizedBox(width: 4),
-                    Text('Expert', style: TextStyle(fontSize: 10, color: AppColors.textDark, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Expert',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ],

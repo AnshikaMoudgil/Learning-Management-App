@@ -79,11 +79,18 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Failed to load invoices',
-                        style: TextStyle(color: AppColors.textLight, fontSize: 14),
+                        style: TextStyle(
+                          color: AppColors.textLight,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
@@ -103,16 +110,27 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.receipt_long_outlined, size: 64, color: AppColors.textLight.withOpacity(0.5)),
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 64,
+                      color: AppColors.textLight.withOpacity(0.5),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'No invoices yet',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textDark,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Your invoices will appear here after purchase',
-                      style: TextStyle(fontSize: 12, color: AppColors.textLight),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                      ),
                     ),
                   ],
                 ),
@@ -160,7 +178,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
               ),
               child: Icon(
                 Icons.receipt_long,
-                color: isRefunded || isVoid ? Colors.red : AppColors.primaryBlue,
+                color: isRefunded || isVoid
+                    ? Colors.red
+                    : AppColors.primaryBlue,
                 size: 24,
               ),
             ),
@@ -180,7 +200,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '${_formatCurrency(invoice.currency, invoice.total)} • ${_formatDate(invoice.issuedAt)}',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textLight,
+                    ),
                   ),
                 ],
               ),
@@ -191,8 +214,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 color: isRefunded
                     ? Colors.red.withOpacity(0.1)
                     : isVoid
-                        ? Colors.orange.withOpacity(0.1)
-                        : Colors.green.withOpacity(0.1),
+                    ? Colors.orange.withOpacity(0.1)
+                    : Colors.green.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -203,13 +226,17 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   color: isRefunded
                       ? Colors.red
                       : isVoid
-                          ? Colors.orange
-                          : Colors.green,
+                      ? Colors.orange
+                      : Colors.green,
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: AppColors.textLight, size: 20),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textLight,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -218,8 +245,18 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
