@@ -34,6 +34,24 @@ interface NotificationRow {
   data: Record<string, string> | null;
 }
 
+interface NotificationInsertResult {
+  id: string;
+  user_id: string;
+}
+
+interface NotificationSettingsRow {
+  user_id: string;
+  live_class_reminders: boolean;
+  course_expiry_alerts: boolean;
+  payment_confirmations: boolean;
+  device_transfer_status: boolean;
+  promotional_marketing: boolean;
+  push_notifications: boolean;
+  email: boolean;
+  sms: boolean;
+  updated_at?: string;
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -91,17 +109,17 @@ export class NotificationsService {
 
     // Trigger push notification delivery asynchronously
     this.deliveryService.deliverNotification([userId], {
-      notificationId: (data as any)?.id,
+      notificationId: (data as NotificationInsertResult | null)?.id,
       type: payload.type,
       title: payload.title,
       body: payload.body,
       data: payload.data,
-    }).catch(err => this.logger.error(`Push delivery error: ${err.message}`));
+    }).catch((err: Error) => this.logger.error(`Push delivery error: ${err.message}`));
   }
 
   async notifyAll(payload: NotificationPayload): Promise<void> {
     const { data: profiles } = await this.db.from('profiles').select('id');
-    const userIds = (profiles ?? []).map((p: { id: string }) => p.id);
+    const userIds = ((profiles ?? []) as { id: string }[]).map((p) => p.id);
     await this.notifyMany(userIds, payload);
   }
 
@@ -135,14 +153,14 @@ export class NotificationsService {
       
       // Deliver push notifications asynchronously
       if (data && data.length > 0) {
-        data.forEach((notification: any) => {
+        (data as NotificationInsertResult[]).forEach((notification) => {
           this.deliveryService.deliverNotification([notification.user_id], {
             notificationId: notification.id,
             type: payload.type,
             title: payload.title,
             body: payload.body,
             data: payload.data,
-          }).catch(err => this.logger.error(`Push delivery error for ${notification.user_id}: ${err.message}`));
+          }).catch((err: Error) => this.logger.error(`Push delivery error for ${notification.user_id}: ${err.message}`));
         });
       }
     }
@@ -210,7 +228,7 @@ export class NotificationsService {
     }
 
     if (data) {
-      return mapRowToSettings(data);
+      return mapRowToSettings(data as NotificationSettingsRow);
     }
 
     // Lazy create default settings row
@@ -237,7 +255,7 @@ export class NotificationsService {
       throw new BadRequestException(insertError.message);
     }
 
-    return mapRowToSettings(newRow);
+    return mapRowToSettings(newRow as NotificationSettingsRow);
   }
 
   async updateSettings(
@@ -258,11 +276,11 @@ export class NotificationsService {
       throw new BadRequestException(error.message);
     }
 
-    return mapRowToSettings(data);
+    return mapRowToSettings(data as NotificationSettingsRow);
   }
 }
 
-function mapRowToSettings(row: any) {
+function mapRowToSettings(row: NotificationSettingsRow): Record<string, boolean> {
   return {
     liveClassReminders: row.live_class_reminders,
     courseExpiryAlerts: row.course_expiry_alerts,
@@ -275,8 +293,8 @@ function mapRowToSettings(row: any) {
   };
 }
 
-function mapSettingsToRow(dto: any) {
-  const row: any = {};
+function mapSettingsToRow(dto: UpdateNotificationSettingsDto): Partial<NotificationSettingsRow> {
+  const row: Partial<NotificationSettingsRow> = {};
   if (dto.liveClassReminders !== undefined) row.live_class_reminders = dto.liveClassReminders;
   if (dto.courseExpiryAlerts !== undefined) row.course_expiry_alerts = dto.courseExpiryAlerts;
   if (dto.paymentConfirmations !== undefined) row.payment_confirmations = dto.paymentConfirmations;
