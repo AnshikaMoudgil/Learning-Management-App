@@ -33,13 +33,12 @@ export class FirebaseService implements OnModuleInit {
     }
 
     try {
-      let credentialObj: any;
+      let credentialObj: admin.ServiceAccount;
       if (serviceAccountVar.trim().startsWith('{')) {
-        credentialObj = JSON.parse(serviceAccountVar);
+        credentialObj = JSON.parse(serviceAccountVar) as admin.ServiceAccount;
       } else {
-        // Assume it's a file path
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        credentialObj = require(serviceAccountVar);
+        credentialObj = require(serviceAccountVar) as admin.ServiceAccount;
       }
 
       this.firebaseApp = admin.initializeApp({

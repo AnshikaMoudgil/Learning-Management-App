@@ -11,6 +11,16 @@ export interface DeliveryPayload {
   data?: Record<string, string>;
 }
 
+interface NotificationSettingsRow {
+  user_id: string;
+  push_notifications: boolean | null;
+  live_class_reminders: boolean | null;
+  course_expiry_alerts: boolean | null;
+  payment_confirmations: boolean | null;
+  device_transfer_status: boolean | null;
+  promotional_marketing: boolean | null;
+}
+
 @Injectable()
 export class NotificationDeliveryService {
   private readonly logger = new Logger(NotificationDeliveryService.name);
@@ -30,7 +40,7 @@ export class NotificationDeliveryService {
       const db = this.supabaseService.getClient();
 
       // Retrieve notification settings for the targeted users
-      const { data: settingsList, error: settingsError } = await db
+      const { data: settingsRaw, error: settingsError } = await db
         .from('notification_settings')
         .select('*')
         .in('user_id', userIds);
@@ -39,9 +49,13 @@ export class NotificationDeliveryService {
         this.logger.error(`Failed to fetch notification settings: ${settingsError.message}`);
       }
 
+      const settingsList = settingsRaw as NotificationSettingsRow[] | null;
+
       // Filter userIds based on their preferences
       const allowedUserIds = userIds.filter((userId) => {
-        const userSettings: any = settingsList?.find((s: any) => s.user_id === userId);
+        const userSettings: NotificationSettingsRow | undefined = settingsList?.find(
+          (s) => s.user_id === userId,
+        );
         if (!userSettings) return true; // Default to true if no settings row exists yet
 
         // 1. Check if push notifications are enabled globally
