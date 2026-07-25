@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import '../services/enrollment_provider.dart';
 import '../services/enrollments_service.dart';
 import '../services/notification_service.dart';
 
@@ -13,16 +14,26 @@ class MyLearningScreen extends StatefulWidget {
 
 class _MyLearningScreenState extends State<MyLearningScreen> {
   bool _isGridView = true;
-  late Future<List<EnrollmentItem>> _enrollmentsFuture;
-  final _enrollmentsService = EnrollmentsService();
+  final _enrollmentProvider = EnrollmentProvider();
   final NotificationService _notificationService = NotificationService();
   int _unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
-    _enrollmentsFuture = _enrollmentsService.getMyEnrollments();
+    _enrollmentProvider.addListener(_onEnrollmentsChanged);
+    _enrollmentProvider.refresh();
     _loadUnreadCount();
+  }
+
+  @override
+  void dispose() {
+    _enrollmentProvider.removeListener(_onEnrollmentsChanged);
+    super.dispose();
+  }
+
+  void _onEnrollmentsChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadUnreadCount() async {
@@ -36,10 +47,8 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
     _loadUnreadCount();
   }
 
-  void _refreshEnrollments() {
-    setState(() {
-      _enrollmentsFuture = _enrollmentsService.getMyEnrollments();
-    });
+  Future<void> _refreshEnrollments() async {
+    await _enrollmentProvider.refresh();
   }
 
   @override
@@ -144,54 +153,37 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
             ),
             
             Expanded(
-              child: FutureBuilder<List<EnrollmentItem>>(
-                future: _enrollmentsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Failed to load courses: ${snapshot.error}', style: const TextStyle(color: AppColors.textLight)),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: _refreshEnrollments,
-                            child: const Text('Try Again'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  final enrollments = snapshot.data ?? [];
-                  if (enrollments.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.school_outlined, size: 64, color: AppColors.textLight),
-                          const SizedBox(height: 16),
-                          const Text('You are not enrolled in any courses yet', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () => context.push('/store'),
-                            child: const Text('Explore Courses'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return _isGridView ? _buildGridView(enrollments) : _buildListView(enrollments);
-                },
-              ),
+              child: _buildEnrollmentsContent(),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildEnrollmentsContent() {
+    if (!_enrollmentProvider.initialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final enrollments = _enrollmentProvider.enrollments;
+    if (enrollments.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.school_outlined, size: 64, color: AppColors.textLight),
+            const SizedBox(height: 16),
+            const Text('You are not enrolled in any courses yet', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => context.push('/store'),
+              child: const Text('Explore Courses'),
+            ),
+          ],
+        ),
+      );
+    }
+    return _isGridView ? _buildGridView(enrollments) : _buildListView(enrollments);
   }
 
   Widget _buildIconBadge(IconData icon, String count, Color badgeColor, VoidCallback onTap) {

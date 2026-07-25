@@ -10,6 +10,8 @@ import 'downloads_screen.dart';
 import 'more_screen.dart';
 import 'package:go_router/go_router.dart';
 
+import '../services/notification_service.dart';
+
 class GlobalSearchScreen extends StatefulWidget {
   const GlobalSearchScreen({Key? key}) : super(key: key);
 
@@ -19,6 +21,8 @@ class GlobalSearchScreen extends StatefulWidget {
 
 class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final NotificationService _notificationService = NotificationService();
+  int _unreadNotifications = 0;
   int _selectedTab = 0;
   bool _hasSearched = false;
   bool _isLoading = false;
@@ -36,6 +40,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   void initState() {
     super.initState();
     _loadRecentSearches();
+    _loadUnreadCount();
   }
 
   @override
@@ -43,6 +48,19 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await _notificationService.getUnreadCount();
+      if (mounted) setState(() => _unreadNotifications = count);
+    } catch (_) {}
+  }
+
+  Future<void> _openNotifications() async {
+    await context.push('/notifications');
+    await _notificationService.markAllRead();
+    _loadUnreadCount();
   }
 
   Future<void> _loadRecentSearches() async {
@@ -201,28 +219,29 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     Icons.notifications_outlined,
                     color: AppColors.textDark,
                   ),
-                  onPressed: () => context.push('/notifications'),
+                  onPressed: _openNotifications,
                 ),
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: const Text(
-                      '3',
-                      style: TextStyle(color: Colors.white, fontSize: 10),
-                      textAlign: TextAlign.center,
+                if (_unreadNotifications > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$_unreadNotifications',
+                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ],
@@ -247,6 +266,12 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     child: TextField(
                       controller: _searchController,
                       onChanged: _onSearchChanged,
+                      onSubmitted: (value) {
+                        if (value.trim().isNotEmpty) {
+                          if (_debounce?.isActive ?? false) _debounce!.cancel();
+                          _performSearch(value);
+                        }
+                      },
                       decoration: InputDecoration(
                         icon: const Icon(
                           Icons.search,

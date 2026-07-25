@@ -37,6 +37,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+    _profileService.profileUpdateNotifier.addListener(_onProfileUpdated);
+  }
+
+  @override
+  void dispose() {
+    _profileService.profileUpdateNotifier.removeListener(_onProfileUpdated);
+    super.dispose();
+  }
+
+  void _onProfileUpdated() {
+    _loadProfile();
   }
 
   Future<void> _loadProfile() async {
@@ -181,9 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const SizedBox(height: 8),
                               GestureDetector(
                                 onTap: () {
-                                  context
-                                      .push('/edit-profile')
-                                      .then((_) => _loadProfile());
+                                  context.push('/edit-profile');
                                 },
                                 child: const Text(
                                   'View Profile',

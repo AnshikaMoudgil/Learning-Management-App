@@ -5,8 +5,7 @@ import '../theme/app_colors.dart';
 import '../services/profile_service.dart';
 import '../services/notification_service.dart';
 import '../services/sessions_service.dart';
-import '../services/enrollments_service.dart';
-import '../services/my_course_service.dart';
+import '../services/enrollment_provider.dart';
 import '../models/profile.dart';
 import '../models/session.dart';
 import 'my_courses_screen.dart';
@@ -35,15 +34,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
   final ProfileService _profileService = ProfileService();
   final NotificationService _notificationService = NotificationService();
   final SessionsService _sessionsService = SessionsService();
-  final EnrollmentsService _enrollmentsService = EnrollmentsService();
-  final MyCourseService _myCourseService = MyCourseService();
   final CouponService _couponService = CouponService();
+  final EnrollmentProvider _enrollmentProvider = EnrollmentProvider();
 
   Profile? _profile;
   int _unreadNotifications = 0;
   List<LiveSession> _upcomingSessions = [];
-  List<EnrollmentItem> _enrollments = [];
-  List<ContinueWatchingItem> _continueWatching = [];
   List<AppNotification> _notifications = [];
   List<CouponItem> _activeCoupons = [];
   bool _isLoading = true;
@@ -57,6 +53,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     super.initState();
     _loadAllData();
     _profileService.addUpdateListener(_onProfileUpdated);
+    _enrollmentProvider.addListener(_onEnrollmentsUpdated);
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted) return;
       final itemCount = _bannerItemCount;
@@ -82,6 +79,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     _couponCycleTimer?.cancel();
     _pageController.dispose();
     _profileService.removeUpdateListener(_onProfileUpdated);
+    _enrollmentProvider.removeListener(_onEnrollmentsUpdated);
     super.dispose();
   }
 
@@ -101,8 +99,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         _loadProfile(),
         _loadNotifications(),
         _loadUpcomingSessions(),
-        _loadEnrollments(),
-        _loadContinueWatching(),
+        _enrollmentProvider.refresh(),
         _loadCoupons(),
       ]);
     } catch (_) {}
@@ -111,6 +108,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   void _onProfileUpdated() {
     _loadProfile();
+  }
+
+  void _onEnrollmentsUpdated() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadProfile() async {
@@ -137,20 +138,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
     try {
       final list = await _sessionsService.getUpcoming();
       if (mounted) setState(() => _upcomingSessions = list);
-    } catch (_) {}
-  }
-
-  Future<void> _loadEnrollments() async {
-    try {
-      final list = await _enrollmentsService.getMyEnrollments();
-      if (mounted) setState(() => _enrollments = list);
-    } catch (_) {}
-  }
-
-  Future<void> _loadContinueWatching() async {
-    try {
-      final list = await _myCourseService.getContinueWatching();
-      if (mounted) setState(() => _continueWatching = list);
     } catch (_) {}
   }
 
@@ -351,7 +338,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               const SizedBox(height: 24),
 
               // Continue Watching
-              if (_continueWatching.isNotEmpty) ...[
+              if (_enrollmentProvider.continueWatching.isNotEmpty) ...[
                 _buildSectionHeader('Continue Watching', onViewAll: () {
                   context.push('/continue-watching');
                 }),
@@ -360,9 +347,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _continueWatching.length,
+                    itemCount: _enrollmentProvider.continueWatching.length,
                     itemBuilder: (context, index) {
-                      final item = _continueWatching[index];
+                      final item = _enrollmentProvider.continueWatching[index];
                       int progressPercent = 30;
                       if (item.videoDuration.contains(':')) {
                         final parts = item.videoDuration.split(':');
@@ -400,14 +387,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
               }),
               SizedBox(
                 height: 180,
-                child: _enrollments.isEmpty
+                child: _enrollmentProvider.enrollments.isEmpty
                     ? const Center(child: Text('No enrolled courses yet.', style: TextStyle(color: AppColors.textLight)))
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: _enrollments.length,
+                        itemCount: _enrollmentProvider.enrollments.length,
                         itemBuilder: (context, index) {
-                          final enrollment = _enrollments[index];
+                          final enrollment = _enrollmentProvider.enrollments[index];
                           return GestureDetector(
                             onTap: () {
                               context.push('/course-progress?id=${enrollment.courseId}');
@@ -473,7 +460,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                       children: [
                                         Center(
                                           child: CircularProgressIndicator(
-                                            value: _enrollments.isEmpty ? 0.0 : (_enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollments.length) / 100,
+                                            value: _enrollmentProvider.enrollments.isEmpty ? 0.0 : (_enrollmentProvider.enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollmentProvider.enrollments.length) / 100,
                                             backgroundColor: AppColors.border,
                                             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                                             strokeWidth: 4,
@@ -481,7 +468,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                         ),
                                         Center(
                                           child: Text(
-                                            '${_enrollments.isEmpty ? 0 : (_enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollments.length).round()}%',
+                                            '${_enrollmentProvider.enrollments.isEmpty ? 0 : (_enrollmentProvider.enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollmentProvider.enrollments.length).round()}%',
                                             style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue, fontSize: 12),
                                           ),
                                         ),
@@ -540,7 +527,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                               Row(
                                 children: [
                                   Text(
-                                    '${_enrollments.where((e) => e.validityEndAt != null && e.validityEndAt!.difference(DateTime.now()).inDays <= 30).length}',
+                                    '${_enrollmentProvider.enrollments.where((e) => e.validityEndAt != null && e.validityEndAt!.difference(DateTime.now()).inDays <= 30).length}',
                                     style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.deepOrange),
                                   ),
                                   const SizedBox(width: 12),

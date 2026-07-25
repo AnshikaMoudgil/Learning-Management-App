@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/watermarked_video_player.dart';
 import '../services/my_course_service.dart';
+import '../services/enrollment_provider.dart';
 
 class RecordedClassPlayerScreen extends StatefulWidget {
   final String? lessonId;
@@ -54,6 +55,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
       await _courseService.toggleLessonProgress(
         widget.courseId!, lesson.id, !lesson.isCompleted,
       );
+      EnrollmentProvider().refresh();
       if (!mounted) return;
       setState(() {
         _allLessons[_currentIndex] = MyCourseLesson(

@@ -15,13 +15,20 @@ export class SearchRepository {
       return { courses: [], recordings: [], teachers: [] };
     }
 
+    // Split words by space and join with '&' for a valid tsquery.
+    // Example: "Mobile ic" -> "Mobile & ic:*"
+    const words = query.split(/\s+/).filter(Boolean);
+    const ftsQuery = words.length > 0 
+      ? words.map((w, index) => index === words.length - 1 ? `${w}:*` : w).join(' & ')
+      : '';
+
     const [coursesResult, recordingsResult, teachersResult] = await Promise.all(
       [
         // 1. Search Courses via FTS (with ILIKE fallback)
         this.db
           .from('courses')
           .select('*, profiles!courses_instructor_id_fkey(full_name)')
-          .textSearch('search_document', query, { config: 'english' })
+          .textSearch('search_document', ftsQuery, { config: 'english' })
           .eq('is_published', true)
           .limit(20),
 
@@ -31,7 +38,7 @@ export class SearchRepository {
           .select(
             '*, courses!inner(id, title, category, profiles!courses_instructor_id_fkey(full_name))',
           )
-          .textSearch('search_document', query, { config: 'english' })
+          .textSearch('search_document', ftsQuery, { config: 'english' })
           .limit(20),
 
         // 3. Search Teachers via FTS
@@ -39,7 +46,7 @@ export class SearchRepository {
           .from('profiles')
           .select('*')
           .eq('role', 'instructor')
-          .textSearch('search_document', query, { config: 'english' })
+          .textSearch('search_document', ftsQuery, { config: 'english' })
           .limit(20),
       ],
     );
