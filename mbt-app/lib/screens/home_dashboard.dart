@@ -15,7 +15,7 @@ import 'profile_screen.dart';
 import 'course_progress_screen.dart';
 import 'expiring_courses_screen.dart';
 import 'continue_watching_screen.dart';
-import 'notifications_screen.dart';
+
 import 'meeting_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
@@ -40,7 +40,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
   Profile? _profile;
   int _unreadNotifications = 0;
   List<LiveSession> _upcomingSessions = [];
-  List<AppNotification> _notifications = [];
   List<CouponItem> _activeCoupons = [];
   bool _isLoading = true;
   int _couponDisplayIndex = 0;
@@ -114,6 +113,15 @@ class _HomeDashboardState extends State<HomeDashboard> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _loadNotifications() async {
+    try {
+      final count = await _notificationService.getUnreadCount();
+      if (mounted) {
+        setState(() => _unreadNotifications = count);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _loadProfile() async {
     try {
       final profile = await _profileService.getProfile();
@@ -121,18 +129,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
     } catch (_) {}
   }
 
-  Future<void> _loadNotifications() async {
-    try {
-      final count = await _notificationService.getUnreadCount();
-      final result = await _notificationService.getNotifications(limit: 2);
-      if (mounted) {
-        setState(() {
-          _unreadNotifications = count;
-          _notifications = result.data;
-        });
-      }
-    } catch (_) {}
-  }
 
   Future<void> _loadUpcomingSessions() async {
     try {
@@ -552,43 +548,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ),
               const SizedBox(height: 24),
 
-              // Notifications
-              _buildSectionHeader('Notifications', onViewAll: () async {
-                await context.push('/notifications');
-                await _notificationService.markAllRead();
-                _loadNotifications();
-              }),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: _notifications.isEmpty
-                      ? [
-                          _buildNotificationItem(Icons.info_outline, Colors.blue, 'No Notifications', 'You are all caught up!', 'Today'),
-                        ]
-                      : _notifications.map((n) {
-                          IconData icon = Icons.notifications_none;
-                          Color color = Colors.blue;
-                          if (n.type.contains('session')) {
-                            icon = Icons.calendar_today;
-                            color = Colors.blue;
-                          } else if (n.type.contains('expire')) {
-                            icon = Icons.warning_amber_rounded;
-                            color = Colors.orange;
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildNotificationItem(
-                              icon,
-                              color,
-                              n.title,
-                              n.body,
-                              n.createdAt.toLocal().toString().substring(0, 16),
-                            ),
-                          );
-                        }).toList(),
-                ),
-              ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -948,47 +907,5 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
 
 
-  Widget _buildNotificationItem(IconData icon, Color iconColor, String title, String description, String time) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(time, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(description, style: const TextStyle(fontSize: 13, color: AppColors.textLight)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

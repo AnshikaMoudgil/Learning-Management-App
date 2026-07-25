@@ -10,7 +10,7 @@ import 'live_classes_screen.dart';
 import 'course_store_screen.dart';
 import 'edit_profile_screen.dart';
 import 'profile_courses_screen.dart';
-import 'my_subscriptions_screen.dart';
+// import 'my_subscriptions_screen.dart';
 import 'certificates_screen.dart';
 import 'active_devices_screen.dart';
 import 'notification_settings_screen.dart';
@@ -217,12 +217,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const ProfileCoursesScreen(),
                     iconColor: AppColors.primaryBlue,
                   ),
-                  _buildMenuItem(
-                    context,
-                    Icons.subscriptions_outlined,
-                    'My Subscriptions',
-                    const MySubscriptionsScreen(),
-                  ),
+                  // _buildMenuItem(
+                  //   context,
+                  //   Icons.subscriptions_outlined,
+                  //   'My Subscriptions',
+                  //   const MySubscriptionsScreen(),
+                  // ),
                   _buildMenuItem(
                     context,
                     Icons.workspace_premium_outlined,

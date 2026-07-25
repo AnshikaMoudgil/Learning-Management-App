@@ -78,8 +78,9 @@ export class CouponsService {
   async validateCoupon(
     code: string,
     courseId: string,
+    preloadedCourse?: CoursePriceRow,
   ): Promise<CouponValidationResult> {
-    const course = await this.getCoursePrice(courseId);
+    const course = preloadedCourse ?? (await this.getCoursePrice(courseId));
     const baseAmount = this.getBaseAmount(course);
     const normalizedCode = code.trim().toUpperCase();
 
@@ -108,8 +109,9 @@ export class CouponsService {
     code: string | undefined,
     courseId: string,
     userId?: string,
+    preloadedCourse?: CoursePriceRow,
   ): Promise<CouponValidationResult> {
-    const course = await this.getCoursePrice(courseId);
+    const course = preloadedCourse ?? (await this.getCoursePrice(courseId));
     const baseAmount = this.getBaseAmount(course);
 
     if (!code?.trim()) {
@@ -156,7 +158,7 @@ export class CouponsService {
       };
     }
 
-    const result = await this.validateCoupon(code, courses[0].id);
+    const result = await this.validateCoupon(code, courses[0].id, courses[0]);
     if (!result.valid) {
       throw new BadRequestException(result.reason || 'Invalid coupon');
     }

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { json, urlencoded } from 'express';
 import type { IncomingMessage } from 'http';
+import compression from 'compression';
 import { AppModule } from './app.module';
 
 interface RawBodyIncomingMessage extends IncomingMessage {
@@ -20,6 +21,8 @@ async function bootstrap() {
     }),
   );
   app.use(urlencoded({ extended: true }));
+
+  app.use(compression());
 
   app.enableCors({
     origin: '*',
