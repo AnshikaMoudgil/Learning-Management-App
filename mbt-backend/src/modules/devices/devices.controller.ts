@@ -46,7 +46,10 @@ export class DevicesController {
   }
 
   @Post('unbind-fcm')
-  unbindFcm(@Req() req: AuthenticatedRequest, @Body() body: { fingerprint: string }) {
+  unbindFcm(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { fingerprint: string },
+  ) {
     return this.devicesService.unbindFcmToken(req.user.id, body.fingerprint);
   }
 

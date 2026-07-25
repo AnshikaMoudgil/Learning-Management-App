@@ -17,11 +17,14 @@ export interface ThrottleOptions {
 
 @Injectable()
 export class ThrottleGuard implements CanActivate {
-  private readonly store = new Map<string, { count: number; resetAt: number }>();
+  private readonly store = new Map<
+    string,
+    { count: number; resetAt: number }
+  >();
 
   constructor(private readonly reflector: Reflector) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const options = this.reflector.getAllAndOverride<ThrottleOptions>(
       THROTTLE_KEY,
       [context.getHandler(), context.getClass()],

@@ -46,16 +46,17 @@ export class NotificationDeliveryService {
         .in('user_id', userIds);
 
       if (settingsError) {
-        this.logger.error(`Failed to fetch notification settings: ${settingsError.message}`);
+        this.logger.error(
+          `Failed to fetch notification settings: ${settingsError.message}`,
+        );
       }
 
       const settingsList = settingsRaw as NotificationSettingsRow[] | null;
 
       // Filter userIds based on their preferences
       const allowedUserIds = userIds.filter((userId) => {
-        const userSettings: NotificationSettingsRow | undefined = settingsList?.find(
-          (s) => s.user_id === userId,
-        );
+        const userSettings: NotificationSettingsRow | undefined =
+          settingsList?.find((s) => s.user_id === userId);
         if (!userSettings) return true; // Default to true if no settings row exists yet
 
         // 1. Check if push notifications are enabled globally
@@ -90,7 +91,9 @@ export class NotificationDeliveryService {
       });
 
       if (allowedUserIds.length === 0) {
-        this.logger.log(`All targeted users have push notifications disabled for type: ${payload.type}`);
+        this.logger.log(
+          `All targeted users have push notifications disabled for type: ${payload.type}`,
+        );
         return;
       }
 
@@ -103,12 +106,16 @@ export class NotificationDeliveryService {
         .not('fcm_token', 'is', null);
 
       if (error) {
-        this.logger.error(`Failed to fetch active device tokens: ${error.message}`);
+        this.logger.error(
+          `Failed to fetch active device tokens: ${error.message}`,
+        );
         return;
       }
 
       if (!devices || devices.length === 0) {
-        this.logger.log(`No active FCM tokens found for users: ${userIds.join(', ')}`);
+        this.logger.log(
+          `No active FCM tokens found for users: ${userIds.join(', ')}`,
+        );
         return;
       }
 
@@ -134,7 +141,9 @@ export class NotificationDeliveryService {
         });
       }
 
-      this.logger.log(`Delivering push notification to ${tokens.length} tokens.`);
+      this.logger.log(
+        `Delivering push notification to ${tokens.length} tokens.`,
+      );
       await this.firebaseService.sendPushNotification(
         tokens,
         payload.title,
@@ -142,7 +151,9 @@ export class NotificationDeliveryService {
         pushData,
       );
     } catch (e) {
-      this.logger.error(`Failed to deliver push notification: ${(e as Error).message}`);
+      this.logger.error(
+        `Failed to deliver push notification: ${(e as Error).message}`,
+      );
     }
   }
 }

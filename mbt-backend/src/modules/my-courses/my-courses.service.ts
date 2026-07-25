@@ -243,7 +243,9 @@ export class MyCoursesService {
     // 6. Assemble sections with progress merged into lessons
     const sections: SectionWithContent[] = sectionsWithLessons.map(
       (section, index) => {
-        const rawLessons = (section as unknown as Record<string, unknown>).course_lessons as Record<string, unknown>[] ?? [];
+        const rawLessons =
+          ((section as unknown as Record<string, unknown>)
+            .course_lessons as Record<string, unknown>[]) ?? [];
         const lessons: LessonWithProgress[] = rawLessons.map((row) => {
           const asset = row.media_assets as {
             storage_url?: string | null;
@@ -251,11 +253,12 @@ export class MyCoursesService {
             thumbnail_url?: string | null;
             status?: string | null;
           } | null;
-          const { media_assets: _unused, ...lesson } = row;
+          const lesson = row;
           const progress = progressMap.get(lesson.id as string);
           return {
             ...(lesson as unknown as LessonWithProgress),
-            video_url: asset?.storage_url ?? (lesson.video_url as string | null),
+            video_url:
+              asset?.storage_url ?? (lesson.video_url as string | null),
             video_duration:
               asset?.duration != null
                 ? String(asset.duration)
@@ -273,7 +276,9 @@ export class MyCoursesService {
           index === 0
             ? true
             : sectionsWithLessons.slice(0, index).every((sec) => {
-                const secLessons = (sec as unknown as Record<string, unknown>).course_lessons as Record<string, unknown>[] ?? [];
+                const secLessons =
+                  ((sec as unknown as Record<string, unknown>)
+                    .course_lessons as Record<string, unknown>[]) ?? [];
                 const secTotal = secLessons.length;
                 const secDone = secLessons.filter((l) => {
                   const lp = progressMap.get(l.id as string);
@@ -309,9 +314,9 @@ export class MyCoursesService {
         : 0;
 
     return {
-      course_id: course.id as string,
-      title: course.title as string,
-      thumbnail_url: course.thumbnail_url as string | null,
+      course_id: course.id,
+      title: course.title,
+      thumbnail_url: course.thumbnail_url,
       enrollment: {
         enrollment_id: enrollment.id as string,
         progress_percent: computedProgress,
@@ -392,7 +397,11 @@ export class MyCoursesService {
       .eq('id', courseId)
       .maybeSingle();
     if (error) throw new BadRequestException(error.message);
-    return data as { id: string; title: string; thumbnail_url: string | null } | null;
+    return data as {
+      id: string;
+      title: string;
+      thumbnail_url: string | null;
+    } | null;
   }
 
   private async fetchSectionsWithLessons(courseId: string) {

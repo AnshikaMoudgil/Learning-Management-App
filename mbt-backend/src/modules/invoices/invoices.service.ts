@@ -284,9 +284,7 @@ export class InvoicesService {
       .insert(invoiceItems as never);
 
     if (itemError) {
-      this.logger.error(
-        `Failed to create invoice items: ${itemError.message}`,
-      );
+      this.logger.error(`Failed to create invoice items: ${itemError.message}`);
       throw new Error(`Failed to create invoice items: ${itemError.message}`);
     }
 

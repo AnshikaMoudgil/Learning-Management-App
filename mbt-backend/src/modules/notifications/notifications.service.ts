@@ -108,13 +108,17 @@ export class NotificationsService {
     }
 
     // Trigger push notification delivery asynchronously
-    this.deliveryService.deliverNotification([userId], {
-      notificationId: (data as NotificationInsertResult | null)?.id,
-      type: payload.type,
-      title: payload.title,
-      body: payload.body,
-      data: payload.data,
-    }).catch((err: Error) => this.logger.error(`Push delivery error: ${err.message}`));
+    this.deliveryService
+      .deliverNotification([userId], {
+        notificationId: (data as NotificationInsertResult | null)?.id,
+        type: payload.type,
+        title: payload.title,
+        body: payload.body,
+        data: payload.data,
+      })
+      .catch((err: Error) =>
+        this.logger.error(`Push delivery error: ${err.message}`),
+      );
   }
 
   async notifyAll(payload: NotificationPayload): Promise<void> {
@@ -164,17 +168,23 @@ export class NotificationsService {
       this.logger.log(
         `Sent "${payload.type}" notification to ${userIds.length} users`,
       );
-      
+
       // Deliver push notifications asynchronously
       if (data && data.length > 0) {
         (data as NotificationInsertResult[]).forEach((notification) => {
-          this.deliveryService.deliverNotification([notification.user_id], {
-            notificationId: notification.id,
-            type: payload.type,
-            title: payload.title,
-            body: payload.body,
-            data: payload.data,
-          }).catch((err: Error) => this.logger.error(`Push delivery error for ${notification.user_id}: ${err.message}`));
+          this.deliveryService
+            .deliverNotification([notification.user_id], {
+              notificationId: notification.id,
+              type: payload.type,
+              title: payload.title,
+              body: payload.body,
+              data: payload.data,
+            })
+            .catch((err: Error) =>
+              this.logger.error(
+                `Push delivery error for ${notification.user_id}: ${err.message}`,
+              ),
+            );
         });
       }
     }
@@ -265,7 +275,9 @@ export class NotificationsService {
       .single();
 
     if (insertError) {
-      this.logger.error(`Failed to create default settings: ${insertError.message}`);
+      this.logger.error(
+        `Failed to create default settings: ${insertError.message}`,
+      );
       throw new BadRequestException(insertError.message);
     }
 
@@ -294,7 +306,9 @@ export class NotificationsService {
   }
 }
 
-function mapRowToSettings(row: NotificationSettingsRow): Record<string, boolean> {
+function mapRowToSettings(
+  row: NotificationSettingsRow,
+): Record<string, boolean> {
   return {
     liveClassReminders: row.live_class_reminders,
     courseExpiryAlerts: row.course_expiry_alerts,
@@ -307,14 +321,22 @@ function mapRowToSettings(row: NotificationSettingsRow): Record<string, boolean>
   };
 }
 
-function mapSettingsToRow(dto: UpdateNotificationSettingsDto): Partial<NotificationSettingsRow> {
+function mapSettingsToRow(
+  dto: UpdateNotificationSettingsDto,
+): Partial<NotificationSettingsRow> {
   const row: Partial<NotificationSettingsRow> = {};
-  if (dto.liveClassReminders !== undefined) row.live_class_reminders = dto.liveClassReminders;
-  if (dto.courseExpiryAlerts !== undefined) row.course_expiry_alerts = dto.courseExpiryAlerts;
-  if (dto.paymentConfirmations !== undefined) row.payment_confirmations = dto.paymentConfirmations;
-  if (dto.deviceTransferStatus !== undefined) row.device_transfer_status = dto.deviceTransferStatus;
-  if (dto.promotionalMarketing !== undefined) row.promotional_marketing = dto.promotionalMarketing;
-  if (dto.pushNotifications !== undefined) row.push_notifications = dto.pushNotifications;
+  if (dto.liveClassReminders !== undefined)
+    row.live_class_reminders = dto.liveClassReminders;
+  if (dto.courseExpiryAlerts !== undefined)
+    row.course_expiry_alerts = dto.courseExpiryAlerts;
+  if (dto.paymentConfirmations !== undefined)
+    row.payment_confirmations = dto.paymentConfirmations;
+  if (dto.deviceTransferStatus !== undefined)
+    row.device_transfer_status = dto.deviceTransferStatus;
+  if (dto.promotionalMarketing !== undefined)
+    row.promotional_marketing = dto.promotionalMarketing;
+  if (dto.pushNotifications !== undefined)
+    row.push_notifications = dto.pushNotifications;
   if (dto.email !== undefined) row.email = dto.email;
   if (dto.sms !== undefined) row.sms = dto.sms;
   return row;

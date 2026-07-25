@@ -38,7 +38,12 @@ export class DevicesService {
     fcmToken?: string,
   ): Promise<Device> {
     if (!this.deviceCheckEnabled) {
-      return this.devicesRepository.upsertDevice(userId, fingerprint, platform, fcmToken);
+      return this.devicesRepository.upsertDevice(
+        userId,
+        fingerprint,
+        platform,
+        fcmToken,
+      );
     }
 
     const existing = await this.devicesRepository.findByUserAndFingerprint(
@@ -47,7 +52,12 @@ export class DevicesService {
     );
 
     if (existing) {
-      return this.devicesRepository.upsertDevice(userId, fingerprint, platform, fcmToken);
+      return this.devicesRepository.upsertDevice(
+        userId,
+        fingerprint,
+        platform,
+        fcmToken,
+      );
     }
 
     const anyDevice = await this.devicesRepository.findAnyByUserId(userId);

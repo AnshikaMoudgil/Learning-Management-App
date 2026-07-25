@@ -22,6 +22,7 @@ async function bootstrap() {
   );
   app.use(urlencoded({ extended: true }));
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   app.use(compression());
 
   app.enableCors({

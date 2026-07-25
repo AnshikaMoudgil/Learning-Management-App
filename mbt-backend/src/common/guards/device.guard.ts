@@ -81,7 +81,7 @@ export class DeviceGuard implements CanActivate {
       .from('devices')
       .update({ last_seen_at: new Date().toISOString() } as never)
       .eq('user_id', userId)
-      .eq('fingerprint', deviceFingerprint as string);
+      .eq('fingerprint', deviceFingerprint);
 
     return true;
   }

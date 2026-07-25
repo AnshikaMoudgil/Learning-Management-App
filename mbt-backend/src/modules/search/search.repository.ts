@@ -18,9 +18,12 @@ export class SearchRepository {
     // Split words by space and join with '&' for a valid tsquery.
     // Example: "Mobile ic" -> "Mobile & ic:*"
     const words = query.split(/\s+/).filter(Boolean);
-    const ftsQuery = words.length > 0 
-      ? words.map((w, index) => index === words.length - 1 ? `${w}:*` : w).join(' & ')
-      : '';
+    const ftsQuery =
+      words.length > 0
+        ? words
+            .map((w, index) => (index === words.length - 1 ? `${w}:*` : w))
+            .join(' & ')
+        : '';
 
     const [coursesResult, recordingsResult, teachersResult] = await Promise.all(
       [
@@ -57,7 +60,10 @@ export class SearchRepository {
 
     // Fallback to ILIKE if FTS fails (e.g. migration not yet applied)
     if (coursesResult.error) {
-      console.error('Courses FTS error, falling back to ILIKE:', coursesResult.error);
+      console.error(
+        'Courses FTS error, falling back to ILIKE:',
+        coursesResult.error,
+      );
       const fallback = await this.db
         .from('courses')
         .select('*')
@@ -70,7 +76,10 @@ export class SearchRepository {
     }
 
     if (recordingsResult.error) {
-      console.error('Recordings FTS error, falling back to ILIKE:', recordingsResult.error);
+      console.error(
+        'Recordings FTS error, falling back to ILIKE:',
+        recordingsResult.error,
+      );
       const fallback = await this.db
         .from('course_lessons')
         .select('*')
@@ -80,7 +89,10 @@ export class SearchRepository {
     }
 
     if (teachersResult.error) {
-      console.error('Teachers FTS error, falling back to ILIKE:', teachersResult.error);
+      console.error(
+        'Teachers FTS error, falling back to ILIKE:',
+        teachersResult.error,
+      );
       const fallback = await this.db
         .from('profiles')
         .select('*')

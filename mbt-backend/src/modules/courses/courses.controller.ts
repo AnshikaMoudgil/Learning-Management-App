@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Query, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -41,7 +49,10 @@ export class CoursesController {
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res?: Response,
   ) {
-    const result = await this.coursesService.findByIdOrSlug(idOrSlug, req.user.id);
+    const result = await this.coursesService.findByIdOrSlug(
+      idOrSlug,
+      req.user.id,
+    );
     res?.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     return result;
   }

@@ -122,12 +122,14 @@ export class EnrollmentsService {
     }
 
     const totalMap = new Map<string, number>();
-    for (const lesson of (lessonCountsResult.data as unknown as LessonCountRow[]) ?? []) {
+    for (const lesson of (lessonCountsResult.data as unknown as LessonCountRow[]) ??
+      []) {
       totalMap.set(lesson.course_id, (totalMap.get(lesson.course_id) ?? 0) + 1);
     }
 
     const completedMap = new Map<string, number>();
-    for (const lp of (completedDataResult.data as { course_id: string }[]) ?? []) {
+    for (const lp of (completedDataResult.data as { course_id: string }[]) ??
+      []) {
       completedMap.set(lp.course_id, (completedMap.get(lp.course_id) ?? 0) + 1);
     }
 

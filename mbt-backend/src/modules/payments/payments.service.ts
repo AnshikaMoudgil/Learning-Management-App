@@ -437,7 +437,9 @@ export class PaymentsService {
 
     const rows = (data ?? []) as CourseRow[];
     const missing = courseIds.filter(
-      (id) => !rows.find((r) => r.id === id) || !rows.find((r) => r.id === id && r.is_published),
+      (id) =>
+        !rows.find((r) => r.id === id) ||
+        !rows.find((r) => r.id === id && r.is_published),
     );
     if (missing.length > 0) {
       throw new NotFoundException(`Courses not found: ${missing.join(', ')}`);

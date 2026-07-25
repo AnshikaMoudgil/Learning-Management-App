@@ -25,7 +25,9 @@ export class CouponsService {
     const nowISO = now.toISOString();
     const { data, error } = await this.db
       .from('coupons')
-      .select('id, code, discount_type, discount_value, expires_at, max_uses, uses_count')
+      .select(
+        'id, code, discount_type, discount_value, expires_at, max_uses, uses_count',
+      )
       .eq('is_active', true)
       .or(`starts_at.is.null,starts_at.lte.${nowISO}`)
       .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
@@ -208,7 +210,9 @@ export class CouponsService {
     return data as CoursePriceRow;
   }
 
-  private async getCoursesPrices(courseIds: string[]): Promise<CoursePriceRow[]> {
+  private async getCoursesPrices(
+    courseIds: string[],
+  ): Promise<CoursePriceRow[]> {
     const { data, error } = await this.db
       .from('courses')
       .select('id, price, discount_price, is_published')
@@ -219,9 +223,7 @@ export class CouponsService {
     }
 
     const rows = (data ?? []) as CoursePriceRow[];
-    const missing = courseIds.filter(
-      (id) => !rows.find((r) => r.id === id),
-    );
+    const missing = courseIds.filter((id) => !rows.find((r) => r.id === id));
     if (missing.length > 0) {
       throw new NotFoundException(`Courses not found: ${missing.join(', ')}`);
     }
