@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_colors.dart';
 import '../widgets/share_bottom_sheet.dart';
 import '../services/my_course_service.dart';
+import '../services/enrollment_provider.dart';
 
 class CourseProgressScreen extends StatefulWidget {
   final String? courseId;
@@ -60,6 +61,7 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
       );
       // Reload course content to update UI state
       _loadCourseContent();
+      EnrollmentProvider().refresh();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -596,9 +598,15 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
     final filtered = content.allLiveClasses.where((item) {
       if (_liveFilter == 'All') return true;
       if (_liveFilter == 'Upcoming') {
-        return item.status == 'scheduled' && item.startTime.isAfter(DateTime.now());
+        return item.status == 'scheduled';
       }
-      return item.status.toLowerCase() == _liveFilter.toLowerCase();
+      if (_liveFilter == 'Live') {
+        return item.status == 'live';
+      }
+      if (_liveFilter == 'Completed') {
+        return item.status == 'finished' || item.status == 'completed' || item.status == 'ended';
+      }
+      return true;
     }).toList();
 
     return Padding(

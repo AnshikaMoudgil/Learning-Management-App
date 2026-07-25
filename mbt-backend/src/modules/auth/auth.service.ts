@@ -99,7 +99,9 @@ export class AuthService {
   ): Promise<AuthResponseDto['profile']> {
     const { data, error } = await this.client
       .from('profiles')
-      .select('*')
+      .select(
+        'id, full_name, avatar_url, phone, email, role, status, about, is_active, is_deleted, onboarding_completed, last_login_at',
+      )
       .eq('id', userId)
       .maybeSingle();
 

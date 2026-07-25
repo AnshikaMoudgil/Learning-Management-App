@@ -5,8 +5,7 @@ import '../theme/app_colors.dart';
 import '../services/profile_service.dart';
 import '../services/notification_service.dart';
 import '../services/sessions_service.dart';
-import '../services/enrollments_service.dart';
-import '../services/my_course_service.dart';
+import '../services/enrollment_provider.dart';
 import '../models/profile.dart';
 import '../models/session.dart';
 import 'my_courses_screen.dart';
@@ -16,7 +15,7 @@ import 'profile_screen.dart';
 import 'course_progress_screen.dart';
 import 'expiring_courses_screen.dart';
 import 'continue_watching_screen.dart';
-import 'notifications_screen.dart';
+
 import 'meeting_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
@@ -35,16 +34,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
   final ProfileService _profileService = ProfileService();
   final NotificationService _notificationService = NotificationService();
   final SessionsService _sessionsService = SessionsService();
-  final EnrollmentsService _enrollmentsService = EnrollmentsService();
-  final MyCourseService _myCourseService = MyCourseService();
   final CouponService _couponService = CouponService();
+  final EnrollmentProvider _enrollmentProvider = EnrollmentProvider();
 
   Profile? _profile;
   int _unreadNotifications = 0;
   List<LiveSession> _upcomingSessions = [];
-  List<EnrollmentItem> _enrollments = [];
-  List<ContinueWatchingItem> _continueWatching = [];
-  List<AppNotification> _notifications = [];
   List<CouponItem> _activeCoupons = [];
   bool _isLoading = true;
   int _couponDisplayIndex = 0;
@@ -57,6 +52,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     super.initState();
     _loadAllData();
     _profileService.addUpdateListener(_onProfileUpdated);
+    _enrollmentProvider.addListener(_onEnrollmentsUpdated);
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted) return;
       final itemCount = _bannerItemCount;
@@ -82,6 +78,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     _couponCycleTimer?.cancel();
     _pageController.dispose();
     _profileService.removeUpdateListener(_onProfileUpdated);
+    _enrollmentProvider.removeListener(_onEnrollmentsUpdated);
     super.dispose();
   }
 
@@ -101,8 +98,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         _loadProfile(),
         _loadNotifications(),
         _loadUpcomingSessions(),
-        _loadEnrollments(),
-        _loadContinueWatching(),
+        _enrollmentProvider.refresh(),
         _loadCoupons(),
       ]);
     } catch (_) {}
@@ -113,6 +109,19 @@ class _HomeDashboardState extends State<HomeDashboard> {
     _loadProfile();
   }
 
+  void _onEnrollmentsUpdated() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final count = await _notificationService.getUnreadCount();
+      if (mounted) {
+        setState(() => _unreadNotifications = count);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _loadProfile() async {
     try {
       final profile = await _profileService.getProfile();
@@ -120,37 +129,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
     } catch (_) {}
   }
 
-  Future<void> _loadNotifications() async {
-    try {
-      final count = await _notificationService.getUnreadCount();
-      final result = await _notificationService.getNotifications(limit: 2);
-      if (mounted) {
-        setState(() {
-          _unreadNotifications = count;
-          _notifications = result.data;
-        });
-      }
-    } catch (_) {}
-  }
 
   Future<void> _loadUpcomingSessions() async {
     try {
       final list = await _sessionsService.getUpcoming();
       if (mounted) setState(() => _upcomingSessions = list);
-    } catch (_) {}
-  }
-
-  Future<void> _loadEnrollments() async {
-    try {
-      final list = await _enrollmentsService.getMyEnrollments();
-      if (mounted) setState(() => _enrollments = list);
-    } catch (_) {}
-  }
-
-  Future<void> _loadContinueWatching() async {
-    try {
-      final list = await _myCourseService.getContinueWatching();
-      if (mounted) setState(() => _continueWatching = list);
     } catch (_) {}
   }
 
@@ -351,7 +334,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               const SizedBox(height: 24),
 
               // Continue Watching
-              if (_continueWatching.isNotEmpty) ...[
+              if (_enrollmentProvider.continueWatching.isNotEmpty) ...[
                 _buildSectionHeader('Continue Watching', onViewAll: () {
                   context.push('/continue-watching');
                 }),
@@ -360,9 +343,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _continueWatching.length,
+                    itemCount: _enrollmentProvider.continueWatching.length,
                     itemBuilder: (context, index) {
-                      final item = _continueWatching[index];
+                      final item = _enrollmentProvider.continueWatching[index];
                       int progressPercent = 30;
                       if (item.videoDuration.contains(':')) {
                         final parts = item.videoDuration.split(':');
@@ -400,14 +383,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
               }),
               SizedBox(
                 height: 180,
-                child: _enrollments.isEmpty
+                child: _enrollmentProvider.enrollments.isEmpty
                     ? const Center(child: Text('No enrolled courses yet.', style: TextStyle(color: AppColors.textLight)))
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: _enrollments.length,
+                        itemCount: _enrollmentProvider.enrollments.length,
                         itemBuilder: (context, index) {
-                          final enrollment = _enrollments[index];
+                          final enrollment = _enrollmentProvider.enrollments[index];
                           return GestureDetector(
                             onTap: () {
                               context.push('/course-progress?id=${enrollment.courseId}');
@@ -473,7 +456,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                       children: [
                                         Center(
                                           child: CircularProgressIndicator(
-                                            value: _enrollments.isEmpty ? 0.0 : (_enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollments.length) / 100,
+                                            value: _enrollmentProvider.enrollments.isEmpty ? 0.0 : (_enrollmentProvider.enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollmentProvider.enrollments.length) / 100,
                                             backgroundColor: AppColors.border,
                                             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                                             strokeWidth: 4,
@@ -481,7 +464,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                         ),
                                         Center(
                                           child: Text(
-                                            '${_enrollments.isEmpty ? 0 : (_enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollments.length).round()}%',
+                                            '${_enrollmentProvider.enrollments.isEmpty ? 0 : (_enrollmentProvider.enrollments.map((e) => e.progressPercent).reduce((a, b) => a + b) / _enrollmentProvider.enrollments.length).round()}%',
                                             style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue, fontSize: 12),
                                           ),
                                         ),
@@ -540,7 +523,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                               Row(
                                 children: [
                                   Text(
-                                    '${_enrollments.where((e) => e.validityEndAt != null && e.validityEndAt!.difference(DateTime.now()).inDays <= 30).length}',
+                                    '${_enrollmentProvider.enrollments.where((e) => e.validityEndAt != null && e.validityEndAt!.difference(DateTime.now()).inDays <= 30).length}',
                                     style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.deepOrange),
                                   ),
                                   const SizedBox(width: 12),
@@ -565,43 +548,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ),
               const SizedBox(height: 24),
 
-              // Notifications
-              _buildSectionHeader('Notifications', onViewAll: () async {
-                await context.push('/notifications');
-                await _notificationService.markAllRead();
-                _loadNotifications();
-              }),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: _notifications.isEmpty
-                      ? [
-                          _buildNotificationItem(Icons.info_outline, Colors.blue, 'No Notifications', 'You are all caught up!', 'Today'),
-                        ]
-                      : _notifications.map((n) {
-                          IconData icon = Icons.notifications_none;
-                          Color color = Colors.blue;
-                          if (n.type.contains('session')) {
-                            icon = Icons.calendar_today;
-                            color = Colors.blue;
-                          } else if (n.type.contains('expire')) {
-                            icon = Icons.warning_amber_rounded;
-                            color = Colors.orange;
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildNotificationItem(
-                              icon,
-                              color,
-                              n.title,
-                              n.body,
-                              n.createdAt.toLocal().toString().substring(0, 16),
-                            ),
-                          );
-                        }).toList(),
-                ),
-              ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -961,47 +907,5 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
 
 
-  Widget _buildNotificationItem(IconData icon, Color iconColor, String title, String description, String time) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(time, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(description, style: const TextStyle(fontSize: 13, color: AppColors.textLight)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

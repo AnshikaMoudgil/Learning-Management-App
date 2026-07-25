@@ -39,37 +39,6 @@ export default function LoginPage() {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, status')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      if (profileError || !profile) {
-        await supabase.auth.signOut();
-        toast.dismiss(loadingToast);
-        toast.error('Unable to fetch user profile.');
-        setIsLoading(false);
-        return;
-      }
-
-      if (profile.status !== 'ACTIVE') {
-        await supabase.auth.signOut();
-        toast.dismiss(loadingToast);
-        toast.error(`Your account status is ${profile.status}. Access denied.`);
-        setIsLoading(false);
-        return;
-      }
-
-      const allowedRoles = ['admin', 'superadmin', 'instructor'];
-      if (!allowedRoles.includes(profile.role)) {
-        await supabase.auth.signOut();
-        toast.dismiss(loadingToast);
-        toast.error('Access Denied: Learners are not permitted on the admin dashboard.');
-        setIsLoading(false);
-        return;
-      }
-
       toast.dismiss(loadingToast);
       toast.success('Logged in successfully!');
       router.push('/dashboard');

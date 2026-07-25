@@ -51,9 +51,7 @@ export class PaymentsService {
       throw new BadRequestException('At least one course is required');
     }
 
-    const courses = await Promise.all(
-      courseIds.map((id) => this.getCourse(id)),
-    );
+    const courses = await this.getCourses(courseIds);
 
     if (!allowRenewal) {
       for (const course of courses) {
@@ -425,6 +423,29 @@ export class PaymentsService {
     }
 
     return data as CourseRow;
+  }
+
+  private async getCourses(courseIds: string[]): Promise<CourseRow[]> {
+    const { data, error } = await this.db
+      .from('courses')
+      .select('id, title, category, price, discount_price, is_published')
+      .in('id', courseIds);
+
+    if (error) {
+      throw new InternalServerErrorException('Failed to look up courses');
+    }
+
+    const rows = (data ?? []) as CourseRow[];
+    const missing = courseIds.filter(
+      (id) =>
+        !rows.find((r) => r.id === id) ||
+        !rows.find((r) => r.id === id && r.is_published),
+    );
+    if (missing.length > 0) {
+      throw new NotFoundException(`Courses not found: ${missing.join(', ')}`);
+    }
+
+    return rows;
   }
 
   private async assertNotEnrolled(userId: string, courseId: string) {

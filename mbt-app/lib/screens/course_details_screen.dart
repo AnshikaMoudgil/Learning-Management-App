@@ -95,18 +95,19 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
               url: 'https://app.skilltech.com/courses/mobile-ic-repair',
             ),
           ),
-          AnimatedBuilder(
-            animation: WishlistProvider(),
+          ListenableBuilder(
+            listenable: WishlistProvider(),
             builder: (context, _) {
+              final provider = WishlistProvider();
               if (widget.courseId == null) return const SizedBox();
-              final isWishlisted = WishlistProvider().isWishlisted(widget.courseId!);
+              final isWishlisted = provider.isWishlisted(widget.courseId!);
               return IconButton(
                 icon: Icon(
                   isWishlisted ? Icons.favorite : Icons.favorite_border,
                   color: isWishlisted ? Colors.red : AppColors.textDark,
                 ),
                 onPressed: () {
-                  WishlistProvider().toggleWishlist(widget.courseId!);
+                  provider.toggleWishlist(widget.courseId!);
                 },
               );
             },

@@ -23,7 +23,9 @@ export class FirebaseService implements OnModuleInit {
       return;
     }
 
-    const serviceAccountVar = this.configService.get<string>('fcmServiceAccountJson');
+    const serviceAccountVar = this.configService.get<string>(
+      'fcmServiceAccountJson',
+    );
 
     if (!serviceAccountVar) {
       this.logger.warn(
@@ -59,22 +61,26 @@ export class FirebaseService implements OnModuleInit {
     data?: Record<string, string>,
   ): Promise<void> {
     if (!this.firebaseApp) {
-      this.logger.warn('Firebase Admin SDK not initialized. Skipping push notification.');
+      this.logger.warn(
+        'Firebase Admin SDK not initialized. Skipping push notification.',
+      );
       return;
     }
 
-    const uniqueTokens = Array.from(new Set(tokens.filter(t => !!t)));
+    const uniqueTokens = Array.from(new Set(tokens.filter((t) => !!t)));
     if (uniqueTokens.length === 0) return;
 
     try {
-      const response = await admin.messaging(this.firebaseApp).sendEachForMulticast({
-        tokens: uniqueTokens,
-        notification: {
-          title,
-          body,
-        },
-        data: data || {},
-      });
+      const response = await admin
+        .messaging(this.firebaseApp)
+        .sendEachForMulticast({
+          tokens: uniqueTokens,
+          notification: {
+            title,
+            body,
+          },
+          data: data || {},
+        });
 
       this.logger.log(
         `Multicast push sent: ${response.successCount} success, ${response.failureCount} failure.`,
@@ -95,7 +101,9 @@ export class FirebaseService implements OnModuleInit {
         });
 
         if (invalidTokens.length > 0) {
-          this.logger.log(`Nullifying ${invalidTokens.length} invalid/unregistered FCM tokens.`);
+          this.logger.log(
+            `Nullifying ${invalidTokens.length} invalid/unregistered FCM tokens.`,
+          );
           const db = this.supabaseService.getClient();
           const { error } = await db
             .from('devices')
@@ -103,12 +111,16 @@ export class FirebaseService implements OnModuleInit {
             .in('fcm_token', invalidTokens);
 
           if (error) {
-            this.logger.error(`Failed to nullify invalid FCM tokens: ${error.message}`);
+            this.logger.error(
+              `Failed to nullify invalid FCM tokens: ${error.message}`,
+            );
           }
         }
       }
     } catch (error) {
-      this.logger.error(`Error sending multicast FCM notification: ${(error as Error).message}`);
+      this.logger.error(
+        `Error sending multicast FCM notification: ${(error as Error).message}`,
+      );
     }
   }
 }

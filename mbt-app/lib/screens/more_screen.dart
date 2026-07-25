@@ -172,13 +172,11 @@ class _MoreScreenState extends State<MoreScreen> {
                                           color: AppColors.textDark,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 4),
                                       Text(
-                                        user?.phone ??
-                                            user?.email ??
-                                            'Update Profile',
+                                        user?.email ?? '',
                                         style: const TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 13,
                                           color: AppColors.textLight,
                                         ),
                                       ),
@@ -222,14 +220,14 @@ class _MoreScreenState extends State<MoreScreen> {
                   context.push('/edit-profile');
                 },
               ),
-              _buildMenuItem(
-                context,
-                Icons.credit_card_outlined,
-                'My Subscriptions',
-                onTap: () {
-                  context.push('/subscriptions');
-                },
-              ),
+              // _buildMenuItem(
+              //   context,
+              //   Icons.credit_card_outlined,
+              //   'My Subscriptions',
+              //   onTap: () {
+              //     context.push('/subscriptions');
+              //   },
+              // ),
               _buildMenuItem(
                 context,
                 Icons.workspace_premium_outlined,

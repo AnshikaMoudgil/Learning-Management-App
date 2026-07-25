@@ -266,30 +266,26 @@ export class InvoicesService {
       throw new Error(`Failed to create invoice: ${invoiceError?.message}`);
     }
 
-    // 7. Create Invoice Items in database
-    for (const item of invoiceItemsData) {
-      const invoiceItem: InvoiceItemRow = {
-        invoice_id: newInvoice.id,
-        item_type: 'course',
-        item_id: item.course_id,
-        title: item.title,
-        description: item.short_description || undefined,
-        quantity: 1,
-        unit_price: item.base_amount,
-        discount: item.discount_amount,
-        tax: 0.0,
-        total: item.amount_paid,
-      };
-      const { error: itemError } = await this.db
-        .from('invoice_items')
-        .insert(invoiceItem as never);
+    // 7. Create Invoice Items in database (batch insert)
+    const invoiceItems: InvoiceItemRow[] = invoiceItemsData.map((item) => ({
+      invoice_id: newInvoice.id,
+      item_type: 'course',
+      item_id: item.course_id,
+      title: item.title,
+      description: item.short_description || undefined,
+      quantity: 1,
+      unit_price: item.base_amount,
+      discount: item.discount_amount,
+      tax: 0.0,
+      total: item.amount_paid,
+    }));
+    const { error: itemError } = await this.db
+      .from('invoice_items')
+      .insert(invoiceItems as never);
 
-      if (itemError) {
-        this.logger.error(
-          `Failed to create invoice item: ${itemError.message}`,
-        );
-        throw new Error(`Failed to create invoice item: ${itemError.message}`);
-      }
+    if (itemError) {
+      this.logger.error(`Failed to create invoice items: ${itemError.message}`);
+      throw new Error(`Failed to create invoice items: ${itemError.message}`);
     }
 
     // 8. Generate PDF

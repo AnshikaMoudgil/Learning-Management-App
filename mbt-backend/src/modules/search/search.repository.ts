@@ -10,33 +10,46 @@ export class SearchRepository {
   }
 
   async globalSearch(searchTerm: string) {
+    const query = searchTerm.replace(/%/g, '').trim();
+    if (!query) {
+      return { courses: [], recordings: [], teachers: [] };
+    }
+
+    // Split words by space and join with '&' for a valid tsquery.
+    // Example: "Mobile ic" -> "Mobile & ic:*"
+    const words = query.split(/\s+/).filter(Boolean);
+    const ftsQuery =
+      words.length > 0
+        ? words
+            .map((w, index) => (index === words.length - 1 ? `${w}:*` : w))
+            .join(' & ')
+        : '';
+
     const [coursesResult, recordingsResult, teachersResult] = await Promise.all(
       [
-        // 1. Search Courses
+        // 1. Search Courses via FTS (with ILIKE fallback)
         this.db
           .from('courses')
           .select('*, profiles!courses_instructor_id_fkey(full_name)')
-          .or(
-            `title.ilike.${searchTerm},description.ilike.${searchTerm},category.ilike.${searchTerm}`,
-          )
+          .textSearch('search_document', ftsQuery, { config: 'english' })
           .eq('is_published', true)
           .limit(20),
 
-        // 2. Search Recordings (Lessons)
+        // 2. Search Recordings (Lessons) via FTS
         this.db
           .from('course_lessons')
           .select(
             '*, courses!inner(id, title, category, profiles!courses_instructor_id_fkey(full_name))',
           )
-          .ilike('title', searchTerm)
+          .textSearch('search_document', ftsQuery, { config: 'english' })
           .limit(20),
 
-        // 3. Search Teachers
+        // 3. Search Teachers via FTS
         this.db
           .from('profiles')
           .select('*')
           .eq('role', 'instructor')
-          .ilike('full_name', searchTerm)
+          .textSearch('search_document', ftsQuery, { config: 'english' })
           .limit(20),
       ],
     );
@@ -45,9 +58,12 @@ export class SearchRepository {
     let recordings: any[] = (recordingsResult.data as any[]) || [];
     let teachers: any[] = (teachersResult.data as any[]) || [];
 
-    // If foreign key relations fail, fallback to simple select (similar to frontend fallback)
+    // Fallback to ILIKE if FTS fails (e.g. migration not yet applied)
     if (coursesResult.error) {
-      console.error('Courses search error:', coursesResult.error);
+      console.error(
+        'Courses FTS error, falling back to ILIKE:',
+        coursesResult.error,
+      );
       const fallback = await this.db
         .from('courses')
         .select('*')
@@ -60,7 +76,10 @@ export class SearchRepository {
     }
 
     if (recordingsResult.error) {
-      console.error('Recordings search error:', recordingsResult.error);
+      console.error(
+        'Recordings FTS error, falling back to ILIKE:',
+        recordingsResult.error,
+      );
       const fallback = await this.db
         .from('course_lessons')
         .select('*')
@@ -70,7 +89,10 @@ export class SearchRepository {
     }
 
     if (teachersResult.error) {
-      console.error('Teachers search error:', teachersResult.error);
+      console.error(
+        'Teachers FTS error, falling back to ILIKE:',
+        teachersResult.error,
+      );
       const fallback = await this.db
         .from('profiles')
         .select('*')

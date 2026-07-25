@@ -108,19 +108,37 @@ export class NotificationsService {
     }
 
     // Trigger push notification delivery asynchronously
-    this.deliveryService.deliverNotification([userId], {
-      notificationId: (data as NotificationInsertResult | null)?.id,
-      type: payload.type,
-      title: payload.title,
-      body: payload.body,
-      data: payload.data,
-    }).catch((err: Error) => this.logger.error(`Push delivery error: ${err.message}`));
+    this.deliveryService
+      .deliverNotification([userId], {
+        notificationId: (data as NotificationInsertResult | null)?.id,
+        type: payload.type,
+        title: payload.title,
+        body: payload.body,
+        data: payload.data,
+      })
+      .catch((err: Error) =>
+        this.logger.error(`Push delivery error: ${err.message}`),
+      );
   }
 
   async notifyAll(payload: NotificationPayload): Promise<void> {
-    const { data: profiles } = await this.db.from('profiles').select('id');
-    const userIds = ((profiles ?? []) as { id: string }[]).map((p) => p.id);
-    await this.notifyMany(userIds, payload);
+    const BATCH_SIZE = 1000;
+    let page = 0;
+    let total = 0;
+    do {
+      const from = page * BATCH_SIZE;
+      const to = from + BATCH_SIZE - 1;
+      const { data: profiles, count } = await this.db
+        .from('profiles')
+        .select('id', { count: 'exact' })
+        .range(from, to);
+      total = count ?? 0;
+      const userIds = ((profiles ?? []) as { id: string }[]).map((p) => p.id);
+      if (userIds.length > 0) {
+        await this.notifyMany(userIds, payload);
+      }
+      page++;
+    } while (page * BATCH_SIZE < total);
   }
 
   async notifyMany(
@@ -150,17 +168,23 @@ export class NotificationsService {
       this.logger.log(
         `Sent "${payload.type}" notification to ${userIds.length} users`,
       );
-      
+
       // Deliver push notifications asynchronously
       if (data && data.length > 0) {
         (data as NotificationInsertResult[]).forEach((notification) => {
-          this.deliveryService.deliverNotification([notification.user_id], {
-            notificationId: notification.id,
-            type: payload.type,
-            title: payload.title,
-            body: payload.body,
-            data: payload.data,
-          }).catch((err: Error) => this.logger.error(`Push delivery error for ${notification.user_id}: ${err.message}`));
+          this.deliveryService
+            .deliverNotification([notification.user_id], {
+              notificationId: notification.id,
+              type: payload.type,
+              title: payload.title,
+              body: payload.body,
+              data: payload.data,
+            })
+            .catch((err: Error) =>
+              this.logger.error(
+                `Push delivery error for ${notification.user_id}: ${err.message}`,
+              ),
+            );
         });
       }
     }
@@ -251,7 +275,9 @@ export class NotificationsService {
       .single();
 
     if (insertError) {
-      this.logger.error(`Failed to create default settings: ${insertError.message}`);
+      this.logger.error(
+        `Failed to create default settings: ${insertError.message}`,
+      );
       throw new BadRequestException(insertError.message);
     }
 
@@ -280,7 +306,9 @@ export class NotificationsService {
   }
 }
 
-function mapRowToSettings(row: NotificationSettingsRow): Record<string, boolean> {
+function mapRowToSettings(
+  row: NotificationSettingsRow,
+): Record<string, boolean> {
   return {
     liveClassReminders: row.live_class_reminders,
     courseExpiryAlerts: row.course_expiry_alerts,
@@ -293,14 +321,22 @@ function mapRowToSettings(row: NotificationSettingsRow): Record<string, boolean>
   };
 }
 
-function mapSettingsToRow(dto: UpdateNotificationSettingsDto): Partial<NotificationSettingsRow> {
+function mapSettingsToRow(
+  dto: UpdateNotificationSettingsDto,
+): Partial<NotificationSettingsRow> {
   const row: Partial<NotificationSettingsRow> = {};
-  if (dto.liveClassReminders !== undefined) row.live_class_reminders = dto.liveClassReminders;
-  if (dto.courseExpiryAlerts !== undefined) row.course_expiry_alerts = dto.courseExpiryAlerts;
-  if (dto.paymentConfirmations !== undefined) row.payment_confirmations = dto.paymentConfirmations;
-  if (dto.deviceTransferStatus !== undefined) row.device_transfer_status = dto.deviceTransferStatus;
-  if (dto.promotionalMarketing !== undefined) row.promotional_marketing = dto.promotionalMarketing;
-  if (dto.pushNotifications !== undefined) row.push_notifications = dto.pushNotifications;
+  if (dto.liveClassReminders !== undefined)
+    row.live_class_reminders = dto.liveClassReminders;
+  if (dto.courseExpiryAlerts !== undefined)
+    row.course_expiry_alerts = dto.courseExpiryAlerts;
+  if (dto.paymentConfirmations !== undefined)
+    row.payment_confirmations = dto.paymentConfirmations;
+  if (dto.deviceTransferStatus !== undefined)
+    row.device_transfer_status = dto.deviceTransferStatus;
+  if (dto.promotionalMarketing !== undefined)
+    row.promotional_marketing = dto.promotionalMarketing;
+  if (dto.pushNotifications !== undefined)
+    row.push_notifications = dto.pushNotifications;
   if (dto.email !== undefined) row.email = dto.email;
   if (dto.sms !== undefined) row.sms = dto.sms;
   return row;

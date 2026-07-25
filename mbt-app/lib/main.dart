@@ -95,6 +95,7 @@ class _MyAppState extends State<MyApp> {
           // Has a session on startup — small delay for splash screen visibility
           await Future.delayed(const Duration(milliseconds: 2500));
         }
+        // signedIn fires immediately (e.g. after Google login) — no delay needed
 
         if (session != null) {
           try {
@@ -105,10 +106,14 @@ class _MyAppState extends State<MyApp> {
             } else if (!profile.onboardingCompleted) {
               _navigateTo(RouteNames.createProfile);
             } else {
+              // Navigate to home immediately so user isn't stuck on onboarding
+              _navigateTo(RouteNames.home);
+              // Run device binding, FCM init, and login details update in background
               try {
-                await profileService.bindDevice(session.user.id);
-                // Initialize FCM and bind token
-                await FcmService().init(session.user.id);
+                await Future.wait([
+                  profileService.bindDevice(session.user.id),
+                  FcmService().init(session.user.id),
+                ]);
               } catch (e) {
                 if (e.toString().contains('bound to another device')) {
                   _navigateTo(RouteNames.deviceBlocked);
@@ -118,7 +123,6 @@ class _MyAppState extends State<MyApp> {
               try {
                 await profileService.updateLoginDetails(session.user.id);
               } catch (_) {}
-              _navigateTo(RouteNames.home);
             }
           } catch (e) {
             _showErrorAndLogout(e.toString());

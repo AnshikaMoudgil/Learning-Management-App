@@ -43,7 +43,7 @@ import '../screens/terms_of_service_screen.dart';
 import '../screens/about_us_screen.dart';
 import '../screens/device_blocked_screen.dart';
 import '../screens/request_device_change_screen.dart';
-import '../screens/my_subscriptions_screen.dart';
+// import '../screens/my_subscriptions_screen.dart';
 import '../screens/payment_success_screen.dart';
 import '../screens/global_search_screen.dart';
 import '../screens/popular_courses_screen.dart';
@@ -90,7 +90,7 @@ class RouteNames {
   static const privacy = '/privacy';
   static const terms = '/terms';
   static const about = '/about';
-  static const subscriptions = '/subscriptions';
+  // static const subscriptions = '/subscriptions';
   static const paymentSuccess = '/payment-success';
   static const search = '/search';
   static const popularCourses = '/popular-courses';
@@ -138,7 +138,7 @@ final appRouter = GoRouter(
       RouteNames.notifications,
       RouteNames.paymentSuccess,
       RouteNames.courseProgress,
-      RouteNames.subscriptions,
+      // RouteNames.subscriptions,
       RouteNames.notificationSettings,
       RouteNames.deviceBlocked,
       RouteNames.requestDeviceChange,
@@ -338,10 +338,10 @@ final appRouter = GoRouter(
       path: RouteNames.about,
       builder: (context, state) => const AboutUsScreen(),
     ),
-    GoRoute(
-      path: RouteNames.subscriptions,
-      builder: (context, state) => const MySubscriptionsScreen(),
-    ),
+    // GoRoute(
+    //   path: RouteNames.subscriptions,
+    //   builder: (context, state) => const MySubscriptionsScreen(),
+    // ),
     GoRoute(
       path: RouteNames.paymentSuccess,
       builder: (context, state) => PaymentSuccessScreen(

@@ -130,10 +130,7 @@ export class DevicesRepository {
     }
     const { data, error } = await this.db
       .from('devices')
-      .upsert(
-        updateObj as never,
-        { onConflict: 'user_id, fingerprint' },
-      )
+      .upsert(updateObj as never, { onConflict: 'user_id, fingerprint' })
       .select()
       .single();
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import '../services/enrollment_provider.dart';
 import '../services/enrollments_service.dart';
 import '../services/notification_service.dart';
 
@@ -25,10 +26,9 @@ class MyCoursesScreen extends StatefulWidget {
 
 class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final EnrollmentsService _enrollmentsService = EnrollmentsService();
+  final _enrollmentProvider = EnrollmentProvider();
   final NotificationService _notificationService = NotificationService();
   
-  List<EnrollmentItem> _allEnrollments = [];
   bool _isLoading = true;
   String _sortBy = 'Recently Accessed';
   int _unreadNotifications = 0;
@@ -56,41 +56,43 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
         setState(() {}); // trigger rebuild for filtering
       }
     });
+    _enrollmentProvider.addListener(_onEnrollmentsChanged);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _enrollmentProvider.removeListener(_onEnrollmentsChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onEnrollmentsChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final enrollments = await _enrollmentsService.getMyEnrollments();
-      final unreadCount = await _notificationService.getUnreadCount();
-      if (mounted) {
-        setState(() {
-          _allEnrollments = enrollments;
-          _unreadNotifications = unreadCount;
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      await Future.wait([
+        _enrollmentProvider.refresh(),
+        _notificationService.getUnreadCount().then((count) {
+          if (mounted) setState(() => _unreadNotifications = count);
+        }),
+      ]);
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  int get _inProgressCount => _allEnrollments.where((item) => item.progressPercent > 0 && item.progressPercent < 100).length;
-  int get _completedCount => _allEnrollments.where((item) => item.progressPercent == 100).length;
-  int get _expiredCount => _allEnrollments.where((item) => item.validityEndAt != null && item.validityEndAt!.isBefore(DateTime.now())).length;
+  int get _inProgressCount => _enrollmentProvider.enrollments.where((item) => item.progressPercent > 0 && item.progressPercent < 100).length;
+  int get _completedCount => _enrollmentProvider.enrollments.where((item) => item.progressPercent == 100).length;
+  int get _expiredCount => _enrollmentProvider.enrollments.where((item) => item.validityEndAt != null && item.validityEndAt!.isBefore(DateTime.now())).length;
 
   List<EnrollmentItem> get _filteredAndSortedCourses {
     // 1. Filter by Tab
-    List<EnrollmentItem> filtered = _allEnrollments.where((item) {
+    List<EnrollmentItem> filtered = _enrollmentProvider.enrollments.where((item) {
       if (_tabController.index == 0) return true; // All
       if (_tabController.index == 1) return item.progressPercent > 0 && item.progressPercent < 100; // In Progress
       if (_tabController.index == 2) return item.progressPercent == 100; // Completed
@@ -164,7 +166,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
   }
 
   void _showFilterBottomSheet() {
-    final allInstructors = _allEnrollments.map((e) => e.instructorName ?? 'Unknown').toSet().toList();
+    final allInstructors = _enrollmentProvider.enrollments.map((e) => e.instructorName ?? 'Unknown').toSet().toList();
     allInstructors.sort();
 
     showModalBottomSheet(
@@ -503,7 +505,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
             color: Colors.white,
           ),
           tabs: [
-            _buildTab('All (${_allEnrollments.length})'),
+            _buildTab('All (${_enrollmentProvider.enrollments.length})'),
             _buildTab('In Progress ($_inProgressCount)'),
             _buildTab('Completed ($_completedCount)'),
             _buildTab('Expired ($_expiredCount)'),
@@ -519,7 +521,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_allEnrollments.isEmpty) {
+    if (_enrollmentProvider.enrollments.isEmpty) {
       return _buildEmptyState();
     }
 

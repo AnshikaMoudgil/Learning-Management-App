@@ -10,7 +10,7 @@ import 'live_classes_screen.dart';
 import 'course_store_screen.dart';
 import 'edit_profile_screen.dart';
 import 'profile_courses_screen.dart';
-import 'my_subscriptions_screen.dart';
+// import 'my_subscriptions_screen.dart';
 import 'certificates_screen.dart';
 import 'active_devices_screen.dart';
 import 'notification_settings_screen.dart';
@@ -36,6 +36,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _loadProfile();
+    _profileService.profileUpdateNotifier.addListener(_onProfileUpdated);
+  }
+
+  @override
+  void dispose() {
+    _profileService.profileUpdateNotifier.removeListener(_onProfileUpdated);
+    super.dispose();
+  }
+
+  void _onProfileUpdated() {
     _loadProfile();
   }
 
@@ -181,9 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const SizedBox(height: 8),
                               GestureDetector(
                                 onTap: () {
-                                  context
-                                      .push('/edit-profile')
-                                      .then((_) => _loadProfile());
+                                  context.push('/edit-profile');
                                 },
                                 child: const Text(
                                   'View Profile',
@@ -208,12 +217,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const ProfileCoursesScreen(),
                     iconColor: AppColors.primaryBlue,
                   ),
-                  _buildMenuItem(
-                    context,
-                    Icons.subscriptions_outlined,
-                    'My Subscriptions',
-                    const MySubscriptionsScreen(),
-                  ),
+                  // _buildMenuItem(
+                  //   context,
+                  //   Icons.subscriptions_outlined,
+                  //   'My Subscriptions',
+                  //   const MySubscriptionsScreen(),
+                  // ),
                   _buildMenuItem(
                     context,
                     Icons.workspace_premium_outlined,

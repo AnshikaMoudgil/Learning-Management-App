@@ -69,7 +69,9 @@ export class RolesGuard implements CanActivate {
     const path = request.path || '';
     if (path.includes('/devices/admin')) {
       const hasSection = profile.allowed_sections?.includes('Device Requests');
-      const hasAction = profile.allowed_actions?.includes('Accept / Reject Device Requests');
+      const hasAction = profile.allowed_actions?.includes(
+        'Accept / Reject Device Requests',
+      );
       if (hasSection || hasAction) {
         return true;
       }
