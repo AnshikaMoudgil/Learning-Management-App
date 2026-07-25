@@ -19,14 +19,14 @@ class LiveClassesScreen extends StatefulWidget {
 
 class _LiveClassesScreenState extends State<LiveClassesScreen> {
   int _selectedTab = 0;
+  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  int? _selectedDay = DateTime.now().day;
   final ApiClient _api = ApiClient();
   final NotificationService _notificationService = NotificationService();
   List<LiveSession> _sessions = [];
   bool _loading = true;
   String? _error;
   int _unreadNotifications = 0;
-  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
-  int? _selectedDay = DateTime.now().day;
 
   @override
   void initState() {
@@ -298,43 +298,17 @@ class _LiveClassesScreenState extends State<LiveClassesScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Upcoming Live Classes',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Upcoming Live Classes',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
               ),
-              GestureDetector(
-                onTap: () => setState(() => _selectedTab = 1),
-                child: Row(
-                  children: const [
-                    Icon(
-                      Icons.calendar_month,
-                      size: 14,
-                      color: AppColors.primaryBlue,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Calendar View',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.primaryBlue,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
         const SizedBox(height: 12),
         if (todaySessions.isNotEmpty)
           SizedBox(

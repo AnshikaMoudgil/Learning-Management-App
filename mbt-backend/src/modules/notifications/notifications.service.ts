@@ -118,9 +118,23 @@ export class NotificationsService {
   }
 
   async notifyAll(payload: NotificationPayload): Promise<void> {
-    const { data: profiles } = await this.db.from('profiles').select('id');
-    const userIds = ((profiles ?? []) as { id: string }[]).map((p) => p.id);
-    await this.notifyMany(userIds, payload);
+    const BATCH_SIZE = 1000;
+    let page = 0;
+    let total = 0;
+    do {
+      const from = page * BATCH_SIZE;
+      const to = from + BATCH_SIZE - 1;
+      const { data: profiles, count } = await this.db
+        .from('profiles')
+        .select('id', { count: 'exact' })
+        .range(from, to);
+      total = count ?? 0;
+      const userIds = ((profiles ?? []) as { id: string }[]).map((p) => p.id);
+      if (userIds.length > 0) {
+        await this.notifyMany(userIds, payload);
+      }
+      page++;
+    } while (page * BATCH_SIZE < total);
   }
 
   async notifyMany(

@@ -100,33 +100,34 @@ export class EnrollmentsService {
 
     const courseIds = rows.map((r) => r.course_id);
 
-    const { data: lessonCounts, error: countError } = await this.db
-      .from('course_lessons')
-      .select('course_id')
-      .in('course_id', courseIds);
+    const [lessonCountsResult, completedDataResult] = await Promise.all([
+      this.db
+        .from('course_lessons')
+        .select('course_id')
+        .in('course_id', courseIds),
+      this.db
+        .from('user_lesson_progress')
+        .select('course_id')
+        .eq('user_id', userId)
+        .eq('is_completed', true)
+        .in('course_id', courseIds),
+    ]);
 
-    if (countError) {
-      throw new BadRequestException(countError.message);
+    if (lessonCountsResult.error) {
+      throw new BadRequestException(lessonCountsResult.error.message);
+    }
+
+    if (completedDataResult.error) {
+      throw new BadRequestException(completedDataResult.error.message);
     }
 
     const totalMap = new Map<string, number>();
-    for (const lesson of (lessonCounts as unknown as LessonCountRow[]) ?? []) {
+    for (const lesson of (lessonCountsResult.data as unknown as LessonCountRow[]) ?? []) {
       totalMap.set(lesson.course_id, (totalMap.get(lesson.course_id) ?? 0) + 1);
     }
 
-    const { data: completedData, error: completedError } = await this.db
-      .from('user_lesson_progress')
-      .select('course_id')
-      .eq('user_id', userId)
-      .eq('is_completed', true)
-      .in('course_id', courseIds);
-
-    if (completedError) {
-      throw new BadRequestException(completedError.message);
-    }
-
     const completedMap = new Map<string, number>();
-    for (const lp of (completedData as { course_id: string }[]) ?? []) {
+    for (const lp of (completedDataResult.data as { course_id: string }[]) ?? []) {
       completedMap.set(lp.course_id, (completedMap.get(lp.course_id) ?? 0) + 1);
     }
 

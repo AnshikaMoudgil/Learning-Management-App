@@ -179,7 +179,7 @@ export class MyCoursesService {
     courseId: string,
     userId: string,
   ): Promise<CourseContent> {
-    // 1. Verify active enrollment
+    // 1. Verify active enrollment (sequential — early rejection)
     const { data: enrollment, error: enrollError } = await this.db
       .from('enrollments')
       .select('id, progress_percent, validity_end_at, status')
@@ -195,34 +195,26 @@ export class MyCoursesService {
       );
     }
 
-    // 2. Fetch course basics
-    const { data: course, error: courseError } = await this.db
-      .from('courses')
-      .select('id, title, thumbnail_url')
-      .eq('id', courseId)
-      .maybeSingle();
-
-    if (courseError) throw new BadRequestException(courseError.message);
-    if (!course) throw new NotFoundException('Course not found');
-
-    // 3. Fetch all data in parallel
+    // 2. Fetch all data in parallel (7 queries → 5 by combining sections+lessons)
     const [
-      sectionsData,
-      lessonsData,
+      course,
+      sectionsWithLessons,
       progressData,
       sessionsData,
       recordingsData,
       resourcesData,
     ] = await Promise.all([
-      this.fetchSections(courseId),
-      this.fetchLessons(courseId),
+      this.fetchCourse(courseId),
+      this.fetchSectionsWithLessons(courseId),
       this.fetchLessonProgress(courseId, userId),
       this.fetchSessions(courseId),
       this.fetchRecordings(courseId),
       this.fetchResources(courseId),
     ]);
 
-    // 4. Build progress lookup
+    if (!course) throw new NotFoundException('Course not found');
+
+    // 3. Build progress lookup
     const progressMap = new Map<
       string,
       { is_completed: boolean; watched_seconds: number }
@@ -234,47 +226,59 @@ export class MyCoursesService {
       });
     }
 
-    // 5. Build session lookup by section
+    // 4. Build session lookup by section
     const sessionsBySection = new Map<string, LiveClassItem[]>();
     for (const s of sessionsData) {
       const key = s.section_id ?? '__no_section__';
       sessionsBySection.set(key, [...(sessionsBySection.get(key) ?? []), s]);
     }
 
-    // 6. Build resource lookup by section
+    // 5. Build resource lookup by section
     const resourcesBySection = new Map<string, ResourceItem[]>();
     for (const r of resourcesData) {
       const key = r.section_id ?? '__no_section__';
       resourcesBySection.set(key, [...(resourcesBySection.get(key) ?? []), r]);
     }
 
-    // 7. Build lesson lookup by section
-    const lessonsBySection = new Map<string, LessonWithProgress[]>();
-    for (const lesson of lessonsData) {
-      const progress = progressMap.get(lesson.id);
-      const withProgress: LessonWithProgress = {
-        ...lesson,
-        is_completed: progress?.is_completed ?? false,
-        watched_seconds: progress?.watched_seconds ?? 0,
-      };
-      const arr = lessonsBySection.get(lesson.section_id) ?? [];
-      arr.push(withProgress);
-      lessonsBySection.set(lesson.section_id, arr);
-    }
-
-    // 8. Assemble sections with unlock gating
-    const sections: SectionWithContent[] = sectionsData.map(
+    // 6. Assemble sections with progress merged into lessons
+    const sections: SectionWithContent[] = sectionsWithLessons.map(
       (section, index) => {
-        const lessons = lessonsBySection.get(section.id) ?? [];
+        const rawLessons = (section as unknown as Record<string, unknown>).course_lessons as Record<string, unknown>[] ?? [];
+        const lessons: LessonWithProgress[] = rawLessons.map((row) => {
+          const asset = row.media_assets as {
+            storage_url?: string | null;
+            duration?: number | null;
+            thumbnail_url?: string | null;
+            status?: string | null;
+          } | null;
+          const { media_assets: _unused, ...lesson } = row;
+          const progress = progressMap.get(lesson.id as string);
+          return {
+            ...(lesson as unknown as LessonWithProgress),
+            video_url: asset?.storage_url ?? (lesson.video_url as string | null),
+            video_duration:
+              asset?.duration != null
+                ? String(asset.duration)
+                : (lesson.video_duration as string | null),
+            video_status: asset?.status ?? null,
+            thumbnail_url: asset?.thumbnail_url ?? null,
+            is_completed: progress?.is_completed ?? false,
+            watched_seconds: progress?.watched_seconds ?? 0,
+          };
+        });
+
         const completed = lessons.filter((l) => l.is_completed).length;
         const total = lessons.length;
         const prevCompleted =
           index === 0
             ? true
-            : sectionsData.slice(0, index).every((sec) => {
-                const secLessons = lessonsBySection.get(sec.id) ?? [];
+            : sectionsWithLessons.slice(0, index).every((sec) => {
+                const secLessons = (sec as unknown as Record<string, unknown>).course_lessons as Record<string, unknown>[] ?? [];
                 const secTotal = secLessons.length;
-                const secDone = secLessons.filter((l) => l.is_completed).length;
+                const secDone = secLessons.filter((l) => {
+                  const lp = progressMap.get(l.id as string);
+                  return lp?.is_completed;
+                }).length;
                 return secTotal === 0 || secDone >= secTotal;
               });
         return {
@@ -381,60 +385,36 @@ export class MyCoursesService {
 
   // ─── Private helpers ───────────────────────────────────────────────────────
 
-  private async fetchSections(courseId: string) {
+  private async fetchCourse(courseId: string) {
+    const { data, error } = await this.db
+      .from('courses')
+      .select('id, title, thumbnail_url')
+      .eq('id', courseId)
+      .maybeSingle();
+    if (error) throw new BadRequestException(error.message);
+    return data as { id: string; title: string; thumbnail_url: string | null } | null;
+  }
+
+  private async fetchSectionsWithLessons(courseId: string) {
     const { data, error } = await this.db
       .from('course_sections')
-      .select('id, title, description, sort_order')
+      .select(
+        `id, title, description, sort_order,
+         course_lessons(
+           id, section_id, title, description,
+           video_asset_id, video_url, video_duration,
+           is_free_preview, sort_order,
+           media_assets!video_asset_id(id, storage_url, duration, thumbnail_url, status)
+         )`,
+      )
       .eq('course_id', courseId)
-      .order('sort_order', { ascending: true });
+      .order('sort_order', { ascending: true })
+      .order('sort_order', { ascending: true, foreignTable: 'course_lessons' });
     if (error) throw new BadRequestException(error.message);
     return (data ?? []) as {
       id: string;
       title: string;
       description: string | null;
-      sort_order: number;
-    }[];
-  }
-
-  private async fetchLessons(courseId: string) {
-    const { data, error } = await this.db
-      .from('course_lessons')
-      .select(
-        'id, section_id, title, description, video_asset_id, video_url, video_duration, is_free_preview, sort_order, media_assets!video_asset_id(id, storage_url, duration, thumbnail_url, status)',
-      )
-      .eq('course_id', courseId)
-      .order('sort_order', { ascending: true });
-    if (error) throw new BadRequestException(error.message);
-    return ((data as Record<string, unknown>[]) ?? []).map((row) => {
-      const asset = row.media_assets as {
-        storage_url?: string | null;
-        duration?: number | null;
-        thumbnail_url?: string | null;
-        status?: string | null;
-      } | null;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { media_assets: _unused, ...lesson } = row;
-      return {
-        ...lesson,
-        video_url: asset?.storage_url ?? (row.video_url as string | null),
-        video_duration:
-          asset?.duration != null
-            ? String(asset.duration)
-            : (row.video_duration as string | null),
-        video_status: asset?.status ?? null,
-        thumbnail_url: asset?.thumbnail_url ?? null,
-      };
-    }) as {
-      id: string;
-      section_id: string;
-      title: string;
-      description: string | null;
-      video_asset_id: string | null;
-      video_url: string | null;
-      video_duration: string | null;
-      video_status: string | null;
-      thumbnail_url: string | null;
-      is_free_preview: boolean;
       sort_order: number;
     }[];
   }

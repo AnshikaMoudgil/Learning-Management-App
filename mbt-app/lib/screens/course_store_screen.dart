@@ -512,22 +512,6 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                         ),
                       ),
                     ),
-                  Positioned(
-                    bottom: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.play_arrow,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

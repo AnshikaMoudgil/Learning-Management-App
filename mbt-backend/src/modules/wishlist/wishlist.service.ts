@@ -18,7 +18,12 @@ export class WishlistService {
   async getWishlist(userId: string) {
     const { data, error } = await this.db
       .from('wishlists')
-      .select('*, courses(*, profiles!courses_instructor_id_fkey(full_name))')
+      .select(
+        `id, course_id, created_at,
+         courses!inner(id, title, slug, thumbnail_url, price, discount_price, category, level, is_published,
+           profiles!courses_instructor_id_fkey(full_name)
+         )`,
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 

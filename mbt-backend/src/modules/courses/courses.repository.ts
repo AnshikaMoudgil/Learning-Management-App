@@ -70,7 +70,7 @@ export class CoursesRepository {
     }
 
     if (filters.search) {
-      query = query.ilike('title', `%${filters.search}%`);
+      query = query.textSearch('search_document', filters.search.trim(), { config: 'english' });
     }
 
     const from = (pagination.page - 1) * pagination.limit;

@@ -125,8 +125,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (name.isEmpty) {
       setState(() => _nameError = 'Full name is required');
       hasError = true;
-    } else if (RegExp(r'^[0-9\s]+$').hasMatch(name)) {
-      setState(() => _nameError = 'Name must contain at least one letter');
+    } else if (RegExp(r'[0-9]').hasMatch(name)) {
+      setState(() => _nameError = 'Name must contain only letters');
       hasError = true;
     }
 
@@ -418,7 +418,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               required: true,
               errorText: _nameError,
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]')),
+                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
               ],
             ),
             const SizedBox(height: 16),

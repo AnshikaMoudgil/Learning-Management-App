@@ -22,18 +22,29 @@ export class CouponsService {
 
   async getActiveCoupons(): Promise<ActiveCouponResult[]> {
     const now = new Date();
-    const { data, error } = await this.db.from('coupons').select('*');
+    const nowISO = now.toISOString();
+    const { data, error } = await this.db
+      .from('coupons')
+      .select('id, code, discount_type, discount_value, expires_at, max_uses, uses_count')
+      .eq('is_active', true)
+      .or(`starts_at.is.null,starts_at.lte.${nowISO}`)
+      .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
 
     if (error)
       throw new InternalServerErrorException('Failed to fetch active coupons');
 
-    const coupons = (data ?? []) as CouponRow[];
+    const rows = (data ?? []) as {
+      id: string;
+      code: string;
+      discount_type: 'percentage' | 'fixed';
+      discount_value: number;
+      expires_at: string | null;
+      max_uses: number | null;
+      uses_count: number;
+    }[];
 
-    return coupons
+    return rows
       .filter((c) => {
-        if (!c.is_active) return false;
-        if (c.starts_at && new Date(c.starts_at) > now) return false;
-        if (c.expires_at && new Date(c.expires_at) <= now) return false;
         if (c.max_uses !== null && c.uses_count >= c.max_uses) return false;
         return true;
       })
@@ -168,9 +179,7 @@ export class CouponsService {
     courseIds: string[],
     userId: string,
   ): Promise<CouponValidationResult> {
-    const courses = await Promise.all(
-      courseIds.map((id) => this.getCoursePrice(id)),
-    );
+    const courses = await this.getCoursesPrices(courseIds);
     const result = await this.validateCouponForCheckoutMulti(
       code,
       courses,
@@ -195,6 +204,27 @@ export class CouponsService {
     }
 
     return data as CoursePriceRow;
+  }
+
+  private async getCoursesPrices(courseIds: string[]): Promise<CoursePriceRow[]> {
+    const { data, error } = await this.db
+      .from('courses')
+      .select('id, price, discount_price, is_published')
+      .in('id', courseIds);
+
+    if (error) {
+      throw new InternalServerErrorException('Failed to look up courses');
+    }
+
+    const rows = (data ?? []) as CoursePriceRow[];
+    const missing = courseIds.filter(
+      (id) => !rows.find((r) => r.id === id),
+    );
+    if (missing.length > 0) {
+      throw new NotFoundException(`Courses not found: ${missing.join(', ')}`);
+    }
+
+    return rows;
   }
 
   private getBaseAmount(course: CoursePriceRow): number {

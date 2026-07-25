@@ -596,9 +596,15 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
     final filtered = content.allLiveClasses.where((item) {
       if (_liveFilter == 'All') return true;
       if (_liveFilter == 'Upcoming') {
-        return item.status == 'scheduled' && item.startTime.isAfter(DateTime.now());
+        return item.status == 'scheduled';
       }
-      return item.status.toLowerCase() == _liveFilter.toLowerCase();
+      if (_liveFilter == 'Live') {
+        return item.status == 'live';
+      }
+      if (_liveFilter == 'Completed') {
+        return item.status == 'finished' || item.status == 'completed' || item.status == 'ended';
+      }
+      return true;
     }).toList();
 
     return Padding(

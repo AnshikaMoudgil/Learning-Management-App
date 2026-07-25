@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { DeviceGuard } from '../../common/guards/device.guard';
@@ -14,14 +15,15 @@ export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @Get()
-  findAll(
+  async findAll(
     @Query('category') category?: string,
     @Query('level') level?: CourseLevel,
     @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.coursesService.findAll({
+    const result = await this.coursesService.findAll({
       category,
       level,
       is_published: true,
@@ -29,13 +31,18 @@ export class CoursesController {
       page: page ? +page : undefined,
       limit: limit ? +limit : undefined,
     });
+    res?.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    return result;
   }
 
   @Get(':idOrSlug')
-  findOne(
+  async findOne(
     @Param('idOrSlug') idOrSlug: string,
     @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.coursesService.findByIdOrSlug(idOrSlug, req.user.id);
+    const result = await this.coursesService.findByIdOrSlug(idOrSlug, req.user.id);
+    res?.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+    return result;
   }
 }

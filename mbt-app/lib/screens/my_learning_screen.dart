@@ -227,9 +227,22 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
       itemCount: enrollments.length,
       itemBuilder: (context, index) {
         final item = enrollments[index];
-        final isCompleted = item.progressPercent >= 100;
-        final statusColor = isCompleted ? Colors.green : AppColors.primaryBlue;
-        final statusText = isCompleted ? 'Completed' : 'In Progress';
+        final now = DateTime.now();
+        final isExpired = item.status == 'expired' || (item.validityEndAt != null && item.validityEndAt!.isBefore(now));
+
+        String statusText;
+        Color statusColor;
+
+        if (isExpired) {
+          statusText = 'Expired';
+          statusColor = Colors.grey;
+        } else if (item.progressPercent >= 100) {
+          statusText = 'Completed';
+          statusColor = Colors.green;
+        } else {
+          statusText = 'In Progress';
+          statusColor = AppColors.primaryBlue;
+        }
 
         return _buildGridCard(
           enrollment: item,
