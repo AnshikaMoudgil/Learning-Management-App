@@ -68,7 +68,7 @@ export class InvoicesService {
     // 1. Fetch payment details
     const { data: payment, error: paymentError } = (await this.db
       .from('payments')
-      .select('*')
+      .select('status, user_id, course_id, base_amount, discount_amount, amount_paid, currency, updated_at')
       .eq('id', paymentId)
       .single()) as unknown as {
       data: PaymentRow | null;

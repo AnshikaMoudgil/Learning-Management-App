@@ -11,6 +11,10 @@ import 'api_client.dart';
 typedef ProfileUpdateCallback = void Function();
 
 class ProfileService {
+  static final ProfileService _instance = ProfileService._internal();
+  factory ProfileService() => _instance;
+  ProfileService._internal();
+
   final ApiClient _api = ApiClient();
 
   final List<ProfileUpdateCallback> _onProfileUpdated = [];

@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:country_picker/country_picker.dart';
 import '../theme/app_colors.dart';
 import '../services/profile_service.dart';
-import 'package:go_router/go_router.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -33,8 +34,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   bool _phoneReadOnly = false;
   bool _emailReadOnly = false;
-  String _countryCode = '+91';
-  final List<String> _countryCodes = ['+20', '+91'];
+  Country _selectedCountry = Country.tryParse('IN')!;
 
   static const int _bioMaxChars = 1000;
 
@@ -64,14 +64,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ? profile.phone!
               : (user?.phone ?? '');
           if (phoneSource.isNotEmpty) {
-            for (final code in _countryCodes) {
-              if (phoneSource.startsWith(code)) {
-                _countryCode = code;
-                _phoneController.text = phoneSource.substring(code.length);
-                break;
+            final clean = phoneSource.startsWith('+') ? phoneSource.substring(1) : phoneSource;
+            // Try phone codes from longest (4 digits) to shortest (1 digit)
+            Country? matched;
+            for (int len = 4; len >= 1; len--) {
+              if (clean.length >= len) {
+                final candidate = clean.substring(0, len);
+                final c = CountryParser.tryParsePhoneCode(candidate);
+                if (c != null) {
+                  matched = c;
+                  break;
+                }
               }
             }
-            if (_phoneController.text.isEmpty) {
+            if (matched != null) {
+              _selectedCountry = matched;
+              _phoneController.text = clean.substring(matched.phoneCode.length);
+            } else {
               _phoneController.text = phoneSource;
             }
           }
@@ -161,12 +170,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() => _isSaving = true);
     try {
+      final fullPhone = !_phoneReadOnly && phone.isNotEmpty
+          ? '+${_selectedCountry.phoneCode}$phone'
+          : null;
       await _profileService.updateProfile(
         name,
-        phone: !_phoneReadOnly && phone.isNotEmpty
-            ? '$_countryCode$phone'
-            : null,
-        email: !_emailReadOnly && email.isNotEmpty ? email : null,
+        phone: fullPhone,
+        email: email.isNotEmpty ? email : null,
         about: _bioController.text.trim().isNotEmpty
             ? _bioController.text.trim()
             : null,
@@ -507,28 +517,43 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           child: Row(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _countryCode,
-                    items: _countryCodes
-                        .map(
-                          (code) => DropdownMenuItem(
-                            value: code,
-                            child: Text(
-                              code,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: _phoneReadOnly
-                        ? null
-                        : (val) {
-                            if (val != null) setState(() => _countryCode = val);
-                          },
-                    isDense: true,
+              InkWell(
+                onTap: _phoneReadOnly
+                    ? null
+                    : () {
+                  showCountryPicker(
+                    context: context,
+                    countryListTheme: CountryListThemeData(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
+                    ),
+                    onSelect: (country) {
+                      setState(() => _selectedCountry = country);
+                    },
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _selectedCountry.flagEmoji,
+                        style: const TextStyle(fontSize: 22),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '+${_selectedCountry.phoneCode}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      if (!_phoneReadOnly)
+                        const Icon(Icons.arrow_drop_down, color: AppColors.textLight),
+                    ],
                   ),
                 ),
               ),

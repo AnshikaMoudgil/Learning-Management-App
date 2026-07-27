@@ -28,8 +28,11 @@ export class CoursesRepository {
     return this.supabaseService.getClient();
   }
 
-  private readonly courseSelect =
+  private readonly courseDetailSelect =
     '*, profiles!instructor_id ( full_name, avatar_url, instructor_profiles ( specialization ) )';
+
+  private readonly courseListSelect =
+    'id, title, slug, short_description, thumbnail_url, category, level, price, discount_price, estimated_duration, average_rating, reviews_count, is_bestseller, total_lessons, instructor_id, created_at, profiles!instructor_id ( full_name, avatar_url )';
 
   private mapCourse(row: Record<string, unknown>): Course {
     const profiles = row.profiles as {
@@ -55,7 +58,7 @@ export class CoursesRepository {
   ): Promise<{ data: Course[]; total: number }> {
     let query = this.db
       .from('courses')
-      .select(this.courseSelect, { count: 'exact' });
+      .select(this.courseListSelect, { count: 'exact' });
 
     if (filters.category) {
       query = query.eq('category', filters.category);
@@ -96,7 +99,7 @@ export class CoursesRepository {
   async findById(id: string): Promise<Course | null> {
     const { data, error } = await this.db
       .from('courses')
-      .select(this.courseSelect)
+      .select(this.courseDetailSelect)
       .eq('id', id)
       .maybeSingle();
 
@@ -110,7 +113,7 @@ export class CoursesRepository {
   async findBySlug(slug: string): Promise<Course | null> {
     const { data, error } = await this.db
       .from('courses')
-      .select(this.courseSelect)
+      .select(this.courseDetailSelect)
       .eq('slug', slug)
       .maybeSingle();
 

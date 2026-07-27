@@ -23,6 +23,6 @@ export class UpdateProfileDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(500)
+  @MaxLength(1000)
   about?: string;
 }

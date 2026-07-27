@@ -13,6 +13,10 @@ interface EnrolledCourse {
   profiles: { full_name: string | null } | null;
 }
 
+interface LessonCountRow {
+  course_id: string;
+}
+
 interface EnrollmentRow {
   id: string;
   course_id: string;
@@ -21,10 +25,6 @@ interface EnrollmentRow {
   validity_end_at: string | null;
   enrolled_at: string;
   courses: EnrolledCourse | null;
-}
-
-interface LessonCountRow {
-  course_id: string;
 }
 
 @Injectable()
@@ -100,7 +100,7 @@ export class EnrollmentsService {
 
     const courseIds = rows.map((r) => r.course_id);
 
-    const [lessonCountsResult, completedDataResult] = await Promise.all([
+    const [lessonCountsResult, completedResult] = await Promise.all([
       this.db
         .from('course_lessons')
         .select('course_id')
@@ -117,8 +117,8 @@ export class EnrollmentsService {
       throw new BadRequestException(lessonCountsResult.error.message);
     }
 
-    if (completedDataResult.error) {
-      throw new BadRequestException(completedDataResult.error.message);
+    if (completedResult.error) {
+      throw new BadRequestException(completedResult.error.message);
     }
 
     const totalMap = new Map<string, number>();
@@ -128,8 +128,7 @@ export class EnrollmentsService {
     }
 
     const completedMap = new Map<string, number>();
-    for (const lp of (completedDataResult.data as { course_id: string }[]) ??
-      []) {
+    for (const lp of (completedResult.data as { course_id: string }[]) ?? []) {
       completedMap.set(lp.course_id, (completedMap.get(lp.course_id) ?? 0) + 1);
     }
 

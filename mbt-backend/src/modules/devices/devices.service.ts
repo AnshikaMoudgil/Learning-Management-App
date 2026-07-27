@@ -60,7 +60,7 @@ export class DevicesService {
       );
     }
 
-    const anyDevice = await this.devicesRepository.findAnyByUserId(userId);
+    const anyDevice = await this.devicesRepository.findActiveByUserId(userId);
     if (anyDevice) {
       const approved =
         await this.devicesRepository.findApprovedByUserAndFingerprint(
@@ -140,7 +140,7 @@ export class DevicesService {
       return existingPending;
     }
 
-    const currentDevice = await this.devicesRepository.findAnyByUserId(userId);
+    const currentDevice = await this.devicesRepository.findActiveByUserId(userId);
 
     return this.devicesRepository.createChangeRequest(
       userId,
@@ -197,7 +197,7 @@ export class DevicesService {
     userId: string,
     fingerprint: string,
   ): Promise<boolean> {
-    const device = await this.devicesRepository.findAnyByUserId(userId);
+    const device = await this.devicesRepository.findActiveByUserId(userId);
     if (!device) return true;
 
     if (device.fingerprint === fingerprint) return true;
