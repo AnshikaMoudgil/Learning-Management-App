@@ -391,18 +391,35 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         itemCount: _enrollmentProvider.enrollments.length,
                         itemBuilder: (context, index) {
                           final enrollment = _enrollmentProvider.enrollments[index];
+                          final now = DateTime.now();
+                          final isExpired = enrollment.status == 'expired' || (enrollment.validityEndAt != null && enrollment.validityEndAt!.isBefore(now));
+                          String badgeText;
+                          Color badgeColor;
+                          if (isExpired) {
+                            badgeText = 'Expired';
+                            badgeColor = Colors.grey;
+                          } else if (enrollment.progressPercent >= 100) {
+                            badgeText = 'Completed';
+                            badgeColor = Colors.green;
+                          } else {
+                            badgeText = 'In Progress';
+                            badgeColor = AppColors.primaryBlue;
+                          }
                           return GestureDetector(
-                            onTap: () {
-                              context.push('/course-progress?id=${enrollment.courseId}');
-                            },
+                            onTap: isExpired
+                                ? null
+                                : () => context.push('/course-progress?id=${enrollment.courseId}'),
                             child: Padding(
                               padding: const EdgeInsets.only(right: 16),
-                              child: _buildCourseCard(
-                                enrollment.thumbnailUrl ?? 'assets/iphone_hardware.png',
-                                enrollment.title ?? 'Course',
-                                enrollment.status.toUpperCase(),
-                                enrollment.progressPercent,
-                                AppColors.primaryBlue,
+                              child: Opacity(
+                                opacity: isExpired ? 0.5 : 1.0,
+                                child: _buildCourseCard(
+                                  enrollment.thumbnailUrl ?? 'assets/iphone_hardware.png',
+                                  enrollment.title ?? 'Course',
+                                  badgeText,
+                                  enrollment.progressPercent,
+                                  badgeColor,
+                                ),
                               ),
                             ),
                           );
@@ -418,7 +435,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => context.push('/course-progress'),
+                        onTap: () => context.push('/my-courses?tab=in_progress'),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(

@@ -134,6 +134,12 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
         final totalLessons = content.sections.fold<int>(0, (sum, sec) => sum + sec.totalLessons);
         final completedLessons = content.sections.fold<int>(0, (sum, sec) => sum + sec.completedLessons);
 
+        final now = DateTime.now();
+        final isExpired = content.enrollment.status == 'expired' ||
+            (content.enrollment.validityEndAt != null && content.enrollment.validityEndAt!.isBefore(now));
+        final statusBadge = isExpired ? 'EXPIRED' : content.enrollment.status.toUpperCase();
+        final statusBadgeColor = isExpired ? Colors.grey : Colors.blue;
+
         return Scaffold(
           backgroundColor: Colors.white,
           body: CustomScrollView(
@@ -185,8 +191,8 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(12)),
-                              child: Text(content.enrollment.status.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                              decoration: BoxDecoration(color: statusBadgeColor, borderRadius: BorderRadius.circular(12)),
+                              child: Text(statusBadge, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -320,6 +326,12 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
     );
   }
 
+  bool _isContentExpired(MyCourseContent content) {
+    final now = DateTime.now();
+    return content.enrollment.status == 'expired' ||
+        (content.enrollment.validityEndAt != null && content.enrollment.validityEndAt!.isBefore(now));
+  }
+
   Widget _buildTabContent(MyCourseContent content) {
     switch (_tabController.index) {
       case 0:
@@ -337,31 +349,56 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
 
   // ─── Modules Tab ───────────────────────────────────────────────────────────
   Widget _buildModulesTab(MyCourseContent content) {
+    final isExpired = _isContentExpired(content);
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (isExpired)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lock, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'This course has expired. Content is no longer accessible.',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Modules', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark)),
-              GestureDetector(
-                onTap: () {
-                  final unlockedIds = content.sections.where((s) => s.isUnlocked).map((s) => s.id).toSet();
-                  setState(() {
-                    if (_expandedSectionIds.length >= unlockedIds.length) {
-                      _expandedSectionIds.clear();
-                    } else {
-                      _expandedSectionIds.addAll(unlockedIds);
-                    }
-                  });
-                },
-                child: Text(
-                  _expandedSectionIds.length >= content.sections.where((s) => s.isUnlocked).length ? 'Collapse All' : 'Expand All',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryBlue),
+              if (!isExpired)
+                GestureDetector(
+                  onTap: () {
+                    final unlockedIds = content.sections.where((s) => s.isUnlocked).map((s) => s.id).toSet();
+                    setState(() {
+                      if (_expandedSectionIds.length >= unlockedIds.length) {
+                        _expandedSectionIds.clear();
+                      } else {
+                        _expandedSectionIds.addAll(unlockedIds);
+                      }
+                    });
+                  },
+                  child: Text(
+                    _expandedSectionIds.length >= content.sections.where((s) => s.isUnlocked).length ? 'Collapse All' : 'Expand All',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryBlue),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -378,6 +415,7 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
                   number: '${index + 1}',
                   section: section,
                   isExpanded: isExpanded,
+                  isExpired: isExpired,
                   onToggle: () {
                     setState(() {
                       if (isExpanded) {
@@ -400,9 +438,10 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
     required String number,
     required MyCourseSection section,
     required bool isExpanded,
+    required bool isExpired,
     required VoidCallback onToggle,
   }) {
-    final isLocked = !section.isUnlocked;
+    final isLocked = !section.isUnlocked || isExpired;
 
     return Container(
       decoration: BoxDecoration(
@@ -593,8 +632,39 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
     );
   }
 
+  Widget _buildExpiredBanner() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'This course has expired. Content is no longer accessible.',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─── Live Classes Tab ──────────────────────────────────────────────────────
   Widget _buildLiveClassesTab(MyCourseContent content) {
+    if (_isContentExpired(content)) {
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: _buildExpiredBanner(),
+      );
+    }
     final filtered = content.allLiveClasses.where((item) {
       if (_liveFilter == 'All') return true;
       if (_liveFilter == 'Upcoming') {
@@ -708,6 +778,12 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
 
   // ─── Recordings Tab ────────────────────────────────────────────────────────
   Widget _buildRecordingsTab(MyCourseContent content) {
+    if (_isContentExpired(content)) {
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: _buildExpiredBanner(),
+      );
+    }
     final filtered = content.allRecordings.where((item) {
       if (_recordingFilter == 'All') return true;
       return item.sectionId == _recordingFilter;
@@ -811,6 +887,12 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
 
   // ─── Resources Tab ─────────────────────────────────────────────────────────
   Widget _buildResourcesTab(MyCourseContent content) {
+    if (_isContentExpired(content)) {
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: _buildExpiredBanner(),
+      );
+    }
     final filtered = content.allResources.where((item) {
       if (_resourceFilter == 'All') return true;
       final type = item.fileType?.toLowerCase() ?? '';

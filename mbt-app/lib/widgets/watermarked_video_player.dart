@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../services/video_service.dart';
 
 class WatermarkedVideoPlayer extends StatefulWidget {
@@ -19,6 +19,7 @@ class _WatermarkedVideoPlayerState extends State<WatermarkedVideoPlayer> {
   bool _isLoading = true;
   bool _isYouTube = false;
   String? _error;
+  YoutubePlayerController? _youtubeController;
   final List<_WatermarkData> _watermarks = [];
 
   @override
@@ -27,33 +28,77 @@ class _WatermarkedVideoPlayerState extends State<WatermarkedVideoPlayer> {
     _loadVideo();
   }
 
+  String? _extractYouTubeId(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+
+    if (uri.host.contains('youtube.com')) {
+      if (uri.queryParameters.containsKey('v')) {
+        return uri.queryParameters['v'];
+      }
+      final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      if (segments.isNotEmpty) {
+        return segments.last;
+      }
+    }
+    if (uri.host.contains('youtu.be')) {
+      final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      if (segments.isNotEmpty) {
+        return segments.first;
+      }
+    }
+    return null;
+  }
+
   Future<void> _loadVideo() async {
     try {
       final service = VideoService();
       final info = await service.getPlaybackInfoForLesson(widget.lessonId);
 
       final url = info.playbackUrl;
-      final uri = Uri.parse(url);
-      final host = uri.host;
-
-      if (host.contains('youtube.com') || host.contains('youtu.be')) {
+      final uri = Uri.tryParse(url);
+      if (uri == null) {
         setState(() {
           _playbackInfo = info;
-          _isYouTube = true;
+          _error = 'Invalid video URL';
           _isLoading = false;
         });
         return;
       }
+      final host = uri.host;
 
-      final controller = VideoPlayerController.networkUrl(uri);
-      await controller.initialize();
+      if (host.contains('youtube.com') || host.contains('youtu.be')) {
+        final videoId = _extractYouTubeId(url);
+        YoutubePlayerController? controller;
+        if (videoId != null) {
+          controller = YoutubePlayerController(
+            params: const YoutubePlayerParams(
+              showControls: true,
+              showFullscreenButton: true,
+              mute: false,
+              privacyEnhancedMode: true,
+            ),
+          );
+          controller.loadVideoById(videoId: videoId);
+        }
+        setState(() {
+          _playbackInfo = info;
+          _isYouTube = true;
+          _isLoading = false;
+          _youtubeController = controller;
+        });
+        return;
+      }
 
-      _videoController = controller;
+      final videoController = VideoPlayerController.networkUrl(uri);
+      await videoController.initialize();
+
+      _videoController = videoController;
       _chewieController = ChewieController(
-        videoPlayerController: controller,
+        videoPlayerController: videoController,
         autoPlay: true,
         allowFullScreen: false,
-        aspectRatio: controller.value.aspectRatio,
+        aspectRatio: videoController.value.aspectRatio,
       );
 
       _watermarks.add(_WatermarkData(
@@ -77,6 +122,7 @@ class _WatermarkedVideoPlayerState extends State<WatermarkedVideoPlayer> {
 
   @override
   void dispose() {
+    _youtubeController?.close();
     _chewieController?.dispose();
     _videoController?.dispose();
     super.dispose();
@@ -91,7 +137,7 @@ class _WatermarkedVideoPlayerState extends State<WatermarkedVideoPlayer> {
       );
     }
     if (_isYouTube) {
-      return _buildYouTubePlaceholder();
+      return _buildYouTubePlayer();
     }
     if (_error != null) {
       return AspectRatio(
@@ -126,46 +172,23 @@ class _WatermarkedVideoPlayerState extends State<WatermarkedVideoPlayer> {
     );
   }
 
-  Widget _buildYouTubePlaceholder() {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        color: Colors.black,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.play_circle_fill, size: 64, color: Colors.white54),
-              const SizedBox(height: 16),
-              const Text(
-                'External video link',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _launchExternalUrl,
-                icon: const Icon(Icons.open_in_new, size: 18),
-                label: const Text('Watch on YouTube'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-              ),
-            ],
+  Widget _buildYouTubePlayer() {
+    if (_youtubeController == null) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: Colors.black,
+          child: const Center(
+            child: Text('Could not load video', style: TextStyle(color: Colors.white70, fontSize: 14)),
           ),
         ),
-      ),
-    );
-  }
-
-  Future<void> _launchExternalUrl() async {
-    final url = _playbackInfo?.playbackUrl;
-    if (url == null) return;
-    final uri = Uri.tryParse(url);
-    if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      );
     }
+
+    return YoutubePlayer(
+      controller: _youtubeController!,
+      aspectRatio: 16 / 9,
+    );
   }
 
   void _enterFullScreen() {

@@ -704,7 +704,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
           ? NetworkImage(course.thumbnailUrl!) as ImageProvider
           : const AssetImage('assets/iphone_software.png') as ImageProvider,
       title: course.title,
-      subtitle: course.shortDescription ?? course.description ?? '',
+      subtitle: course.shortDescription ?? '',
       author: course.instructorName ?? 'Instructor',
       authorRole:
           course.instructorSpecialization ?? course.category ?? 'Instructor',

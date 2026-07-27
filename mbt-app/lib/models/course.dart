@@ -5,9 +5,7 @@ class Course {
   final String title;
   final String slug;
   final String? shortDescription;
-  final String? description;
   final String? thumbnailUrl;
-  final String? previewVideoUrl;
   final String language;
   final CourseLevel level;
   final String? category;
@@ -36,9 +34,7 @@ class Course {
     required this.title,
     required this.slug,
     this.shortDescription,
-    this.description,
     this.thumbnailUrl,
-    this.previewVideoUrl,
     required this.language,
     required this.level,
     this.category,
@@ -92,10 +88,7 @@ class Course {
       slug: (json['slug'] ?? json['Slug']) as String,
       shortDescription:
           (json['short_description'] ?? json['shortDescription']) as String?,
-      description: (json['description'] ?? json['Description']) as String?,
       thumbnailUrl: (json['thumbnail_url'] ?? json['thumbnailUrl']) as String?,
-      previewVideoUrl:
-          (json['preview_video_url'] ?? json['previewVideoUrl']) as String?,
       language: (json['language'] ?? json['Language'] ?? 'English') as String,
       level: _parseLevel(json['level'] ?? json['Level']),
       category: (json['category'] ?? json['Category']) as String?,
@@ -150,9 +143,7 @@ class Course {
       'title': title,
       'slug': slug,
       'short_description': shortDescription,
-      'description': description,
       'thumbnail_url': thumbnailUrl,
-      'preview_video_url': previewVideoUrl,
       'language': language,
       'level': level.name,
       'category': category,

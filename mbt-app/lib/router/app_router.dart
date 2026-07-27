@@ -242,7 +242,9 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.categoryDetail,
-      builder: (context, state) => const CategoryDetailScreen(),
+      builder: (context, state) => CategoryDetailScreen(
+        category: state.uri.queryParameters['category'] ?? 'software',
+      ),
     ),
     GoRoute(
       path: RouteNames.course,
@@ -392,7 +394,11 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.myCourses,
-      builder: (context, state) => const MyCoursesScreen(),
+      builder: (context, state) {
+        final tabParam = state.uri.queryParameters['tab'];
+        final tabIndex = tabParam == 'in_progress' ? 1 : 0;
+        return MyCoursesScreen(initialTab: tabIndex);
+      },
     ),
     GoRoute(
       path: RouteNames.recentRecordings,

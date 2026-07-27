@@ -68,7 +68,7 @@ export class SearchRepository {
         .from('courses')
         .select('*')
         .or(
-          `title.ilike.${searchTerm},description.ilike.${searchTerm},category.ilike.${searchTerm}`,
+          `title.ilike.${searchTerm},category.ilike.${searchTerm}`,
         )
         .eq('is_published', true)
         .limit(20);

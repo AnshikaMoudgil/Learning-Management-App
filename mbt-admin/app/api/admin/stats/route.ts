@@ -181,6 +181,8 @@ export async function GET(request: Request) {
     response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
     return response;
   } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Server error';
+    console.error('[Dashboard Stats API]', message, err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

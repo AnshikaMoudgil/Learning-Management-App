@@ -42,7 +42,6 @@ export default function EditCoursePage() {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [shortDescription, setShortDescription] = useState('');
-  const [description, setDescription] = useState('');
   const [language, setLanguage] = useState('English');
   const [level, setLevel] = useState('beginner');
   const [category, setCategory] = useState('');
@@ -52,7 +51,6 @@ export default function EditCoursePage() {
   const [estimatedDuration, setEstimatedDuration] = useState('');
   const [isPublished, setIsPublished] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState('');
-  const [previewVideoUrl, setPreviewVideoUrl] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
   const [instructorId, setInstructorId] = useState('');
   const [averageRating, setAverageRating] = useState('');
@@ -148,7 +146,6 @@ export default function EditCoursePage() {
         setTitle(data.title || '');
         setSlug(data.slug || '');
         setShortDescription(data.short_description || '');
-        setDescription(data.description || '');
         setLanguage(data.language || 'English');
         setLevel(data.level || 'beginner');
         setCategory(data.category || '');
@@ -158,7 +155,6 @@ export default function EditCoursePage() {
         setEstimatedDuration(data.estimated_duration || '');
         setIsPublished(data.is_published || false);
         setThumbnailUrl(data.thumbnail_url || '');
-        setPreviewVideoUrl(data.preview_video_url || '');
         setIsBestseller(data.is_bestseller || false);
         setInstructorId(data.instructor_id || '');
         setAverageRating(data.average_rating?.toString() || '');
@@ -287,10 +283,10 @@ export default function EditCoursePage() {
     setErrors({});
 
     const formData = {
-      title, slug, shortDescription, description, language, level, category,
+      title, slug, shortDescription, language, level, category,
       price, discountPrice, instructorId, averageRating, reviewsCount,
       validityDays, estimatedDuration, isPublished,
-      thumbnailUrl, previewVideoUrl, isBestseller,
+      thumbnailUrl, isBestseller,
       learningOutcomes, requirements,
     };
 
@@ -314,7 +310,6 @@ export default function EditCoursePage() {
         title,
         slug,
         short_description: shortDescription || null,
-        description: description || null,
         language,
         level,
         category,
@@ -327,7 +322,6 @@ export default function EditCoursePage() {
         estimated_duration: estimatedDuration || null,
         is_published: isPublished,
         thumbnail_url: thumbnailUrl || null,
-        preview_video_url: previewVideoUrl || null,
         is_bestseller: isBestseller,
         learning_outcomes: (Array.isArray(learningOutcomes) ? learningOutcomes : [])
           .map((s) => s.trim())
@@ -485,15 +479,7 @@ export default function EditCoursePage() {
                   label="Requirements *"
                 />
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Description</label>
-                  <textarea
-                    rows={6}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition"
-                  />
-                </div>
+
               </div>
             </div>
 
@@ -640,41 +626,7 @@ export default function EditCoursePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
-              <h2 className="text-lg font-bold text-gray-900">Course Video</h2>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Video URL</label>
-                <input
-                  type="text"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  value={previewVideoUrl}
-                  onChange={(e) => setPreviewVideoUrl(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition"
-                />
-              </div>
-
-              {previewVideoUrl && (
-                <div className="aspect-video w-full rounded-xl bg-white border border-gray-200 overflow-hidden">
-                  {previewVideoUrl.includes('youtube.com') || previewVideoUrl.includes('youtu.be') ? (
-                    <iframe
-                      src={previewVideoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
-                      className="h-full w-full"
-                      allowFullScreen
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    />
-                  ) : previewVideoUrl.includes('vimeo.com') ? (
-                    <iframe
-                      src={previewVideoUrl.replace('vimeo.com', 'player.vimeo.com/video')}
-                      className="h-full w-full"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <video src={previewVideoUrl} controls className="h-full w-full" />
-                  )}
-                </div>
-              )}
-            </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
               <h2 className="text-lg font-bold text-gray-900">Publish Settings</h2>

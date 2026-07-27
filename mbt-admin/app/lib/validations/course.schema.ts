@@ -5,7 +5,6 @@ export const courseSchema = z
     title: z.string().min(1, 'Course Title is required.'),
     slug: z.string().min(1, 'Course Slug is required.'),
     shortDescription: z.string().min(1, 'Short Description is required.'),
-    description: z.string().optional(),
     language: z.string().min(1, 'Language is required.'),
     level: z.string().min(1, 'Level is required.'),
     category: z.string().min(1, 'Category is required.'),
@@ -45,7 +44,7 @@ export const courseSchema = z
       .refine((v) => !isNaN(Number(v)) && Number(v) >= 0, 'Estimated Duration must be a valid positive number.'),
     isPublished: z.boolean(),
     thumbnailUrl: z.string().min(1, 'Course Thumbnail is required.'),
-    previewVideoUrl: z.string().optional(),
+
     isBestseller: z.boolean().optional().default(false),
     learningOutcomes: z.array(z.string()).min(1, 'At least one Learning Outcome is required.'),
     requirements: z.array(z.string()).min(1, 'At least one Requirement is required.'),
