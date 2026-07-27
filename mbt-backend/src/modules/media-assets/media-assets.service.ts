@@ -395,7 +395,7 @@ export class MediaAssetsService implements OnModuleInit {
   private async getReadyAsset(assetId: string) {
     const { data, error } = await this.db
       .from('media_assets')
-      .select('*')
+      .select('id, storage_key, provider, storage_url, mime_type, duration, width, height, thumbnail_url')
       .eq('id', assetId)
       .eq('status', 'READY')
       .maybeSingle();

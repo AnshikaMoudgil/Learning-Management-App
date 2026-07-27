@@ -132,11 +132,13 @@ export default function OverviewPage() {
         const response = await fetch('/api/admin/stats', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        if (!response.ok) throw new Error('Failed to load stats.');
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to load stats.');
         setStats(data);
-      } catch {
-        toast.error('Error fetching dashboard statistics.');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error fetching dashboard statistics.';
+        console.error('[Dashboard]', msg);
+        toast.error(msg);
       } finally {
         setIsLoading(false);
       }

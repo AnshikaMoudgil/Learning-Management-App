@@ -5,9 +5,7 @@ export interface Course {
   title: string;
   slug: string;
   short_description: string | null;
-  description: string | null;
   thumbnail_url: string | null;
-  preview_video_url: string | null;
   language: string;
   level: CourseLevel;
   category: string | null;

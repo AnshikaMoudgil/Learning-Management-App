@@ -1,10 +1,9 @@
-INSERT INTO public.courses (title, slug, short_description, description, thumbnail_url, language, level, category, price, discount_price, validity_days, estimated_duration, is_published)
+INSERT INTO public.courses (title, slug, short_description, thumbnail_url, language, level, category, price, discount_price, validity_days, estimated_duration, is_published)
 SELECT * FROM (VALUES
     (
         'Mobile IC Repair Complete Course',
         'mobile-ic-repair-complete-course',
         'Learn complete mobile IC repair from basics to advanced level.',
-        'Identify and test mobile ICs, advanced soldering techniques, fault finding, troubleshooting, IC replacement and reballing. Covers all major phone models.',
         NULL,
         'Arabic',
         'intermediate'::public.course_level,
@@ -19,7 +18,6 @@ SELECT * FROM (VALUES
         'Advanced Soldering Techniques for Mobile Repair',
         'advanced-soldering-techniques',
         'Master professional soldering skills for board-level mobile repair.',
-        'Learn hot air soldering, micro-soldering, BGA rework, jumper techniques, and PCB repair. Hands-on practice with real damaged boards.',
         NULL,
         'Arabic',
         'advanced'::public.course_level,
@@ -34,7 +32,6 @@ SELECT * FROM (VALUES
         'Power IC Section - Deep Dive',
         'power-ic-deep-dive',
         'Comprehensive guide to power IC faults and repair in mobile phones.',
-        'Understand power management ICs, charging circuits, battery connectors, voltage regulation, and common power-related failures in iPhones and Android devices.',
         NULL,
         'Arabic',
         'intermediate'::public.course_level,
@@ -49,7 +46,6 @@ SELECT * FROM (VALUES
         'CPU Reballing & BGA Repair Mastery',
         'cpu-reballing-bga-repair',
         'Expert-level BGA reballing and CPU repair techniques for mobile devices.',
-        'Learn stencil alignment, solder ball placement, reflow profiling, CPU underfill removal, and successful reballing for iPhones, Samsung, and Huawei devices.',
         NULL,
         'Arabic',
         'advanced'::public.course_level,
@@ -64,7 +60,6 @@ SELECT * FROM (VALUES
         'Micro-soldering for Beginners',
         'micro-soldering-beginners',
         'Start your micro-soldering journey with proper tools and techniques.',
-        'Essential micro-soldering skills: tool selection, microscope usage, wire soldering, component removal and replacement, and practice exercises on donor boards.',
         NULL,
         'Arabic',
         'beginner'::public.course_level,
@@ -79,7 +74,6 @@ SELECT * FROM (VALUES
         'Schematic Reading for Mobile Phone Repair',
         'schematic-reading-mobile-repair',
         'Learn to read and interpret mobile phone schematics like a pro.',
-        'Understand circuit diagrams, component symbols, signal tracing, power rails, and how to use schematics to diagnose faults quickly and accurately.',
         NULL,
         'Arabic',
         'intermediate'::public.course_level,
@@ -94,7 +88,6 @@ SELECT * FROM (VALUES
         'Mobile Software Troubleshooting & Repair',
         'mobile-software-troubleshooting',
         'Fix software issues: boot loops, hang on logo, no IMEI, and more.',
-        'Cover Android and iOS software repair including firmware flashing, EDL mode, iTunes recovery, bootloader unlocking, and common software fault diagnosis.',
         NULL,
         'Arabic',
         'beginner'::public.course_level,
@@ -109,7 +102,6 @@ SELECT * FROM (VALUES
         'FRP Bypass & Unlock Tools Mastery',
         'frp-bypass-unlock-tools',
         'Bypass FRP locks and master unlock tools for all major brands.',
-        'Learn FRP bypass methods for Samsung, Xiaomi, Oppo, Vivo, and Huawei. Use tools like Octopus, UMT, Miracle Box, and Sigma for unlocking and repair.',
         NULL,
         'Arabic',
         'intermediate'::public.course_level,
@@ -124,7 +116,6 @@ SELECT * FROM (VALUES
         'Mobile Data Recovery - Complete Guide',
         'mobile-data-recovery-guide',
         'Recover lost data from damaged or dead mobile phones.',
-        'Techniques for data recovery from water-damaged phones, broken screens, dead motherboards, and locked devices. Covers both logical and chip-off recovery.',
         NULL,
         'Arabic',
         'advanced'::public.course_level,
@@ -139,7 +130,6 @@ SELECT * FROM (VALUES
         'Flashing & Firmware Repair for Android & iOS',
         'flashing-firmware-repair',
         'Master firmware flashing and repair for all mobile brands.',
-        'Complete guide to Odin, SP Flash Tool, iBox, 3uTools, and other flashing tools. Fix dead devices, upgrade/downgrade firmware, and repair boot issues.',
         NULL,
         'Arabic',
         'beginner'::public.course_level,
@@ -150,5 +140,5 @@ SELECT * FROM (VALUES
         '12 hours',
         TRUE
     )
-) AS data(title, slug, short_description, description, thumbnail_url, language, level, category, price, discount_price, validity_days, estimated_duration, is_published)
+    ) AS data(title, slug, short_description, thumbnail_url, language, level, category, price, discount_price, validity_days, estimated_duration, is_published)
 WHERE NOT EXISTS (SELECT 1 FROM public.courses LIMIT 1);

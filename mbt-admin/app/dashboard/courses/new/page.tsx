@@ -41,7 +41,6 @@ export default function NewCoursePage() {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [shortDescription, setShortDescription] = useState('');
-  const [description, setDescription] = useState('');
   const [language, setLanguage] = useState('English');
   const [level, setLevel] = useState('beginner');
   const [category, setCategory] = useState('');
@@ -50,7 +49,6 @@ export default function NewCoursePage() {
   const [validityDays, setValidityDays] = useState('');
   const [estimatedDuration, setEstimatedDuration] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
-  const [previewVideoUrl, setPreviewVideoUrl] = useState('');
   const [isBestseller, setIsBestseller] = useState(false);
   const [instructorId, setInstructorId] = useState('');
   const [averageRating, setAverageRating] = useState('');
@@ -162,7 +160,7 @@ export default function NewCoursePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    const formData = { title, slug, shortDescription, description, language, level, category, price, discountPrice, instructorId, averageRating, reviewsCount, validityDays, estimatedDuration, isPublished: false, thumbnailUrl, previewVideoUrl, isBestseller, learningOutcomes, requirements };
+    const formData = { title, slug, shortDescription, language, level, category, price, discountPrice, instructorId, averageRating, reviewsCount, validityDays, estimatedDuration, isPublished: false, thumbnailUrl, isBestseller, learningOutcomes, requirements };
     const result = courseSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -175,7 +173,7 @@ export default function NewCoursePage() {
     const savingToast = toast.loading('Creating your course...');
     try {
       const courseId = crypto.randomUUID();
-      const coursePayload = { id: courseId, title, slug, short_description: shortDescription || null, description: description || null, language, level, category, price: Number(price), discount_price: discountPrice ? Number(discountPrice) : null, instructor_id: instructorId || null, average_rating: averageRating ? parseFloat(averageRating) : 0, reviews_count: reviewsCount ? parseInt(reviewsCount, 10) : 0, validity_days: validityDays ? parseInt(validityDays, 10) : null, estimated_duration: estimatedDuration || null, is_published: false, thumbnail_url: thumbnailUrl || null, preview_video_url: previewVideoUrl || null, is_bestseller: isBestseller, learning_outcomes: (Array.isArray(learningOutcomes) ? learningOutcomes : []).map((s) => s.trim()).filter(Boolean), requirements: (Array.isArray(requirements) ? requirements : []).map((s) => s.trim()).filter(Boolean), created_by: userId };
+      const coursePayload = { id: courseId, title, slug, short_description: shortDescription || null, language, level, category, price: Number(price), discount_price: discountPrice ? Number(discountPrice) : null, instructor_id: instructorId || null, average_rating: averageRating ? parseFloat(averageRating) : 0, reviews_count: reviewsCount ? parseInt(reviewsCount, 10) : 0, validity_days: validityDays ? parseInt(validityDays, 10) : null, estimated_duration: estimatedDuration || null, is_published: false, thumbnail_url: thumbnailUrl || null, is_bestseller: isBestseller, learning_outcomes: (Array.isArray(learningOutcomes) ? learningOutcomes : []).map((s) => s.trim()).filter(Boolean), requirements: (Array.isArray(requirements) ? requirements : []).map((s) => s.trim()).filter(Boolean), created_by: userId };
       const { error: courseError } = await supabase.from('courses').insert([coursePayload]);
       if (courseError) throw courseError;
 
@@ -251,10 +249,7 @@ export default function NewCoursePage() {
                   </div>
                   <ListEditor items={learningOutcomes} onChange={setLearningOutcomes} placeholder="e.g. Identify and test mobile ICs" label="Learning Outcomes *" />
                   <ListEditor items={requirements} onChange={setRequirements} placeholder="e.g. Basic knowledge of mobile hardware" label="Requirements *" />
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Description</label>
-                    <textarea rows={6} placeholder="Detailed rich course outline and materials description..." value={description} onChange={(e) => setDescription(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition" />
-                  </div>
+
                 </div>
               </div>
               <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
@@ -330,24 +325,7 @@ export default function NewCoursePage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
-                <h2 className="text-lg font-bold text-gray-900">Course Video</h2>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Preview Video URL</label>
-                  <input type="text" placeholder="https://www.youtube.com/watch?v=..." value={previewVideoUrl} onChange={(e) => setPreviewVideoUrl(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 transition" />
-                </div>
-                {previewVideoUrl && (
-                  <div className="aspect-video w-full rounded-xl bg-white border border-gray-200 overflow-hidden">
-                    {previewVideoUrl.includes('youtube.com') || previewVideoUrl.includes('youtu.be') ? (
-                      <iframe src={previewVideoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} className="h-full w-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
-                    ) : previewVideoUrl.includes('vimeo.com') ? (
-                      <iframe src={previewVideoUrl.replace('vimeo.com', 'player.vimeo.com/video')} className="h-full w-full" allowFullScreen />
-                    ) : (
-                      <video src={previewVideoUrl} controls className="h-full w-full" />
-                    )}
-                  </div>
-                )}
-              </div>
+
 
               <div className="rounded-2xl border border-gray-200 bg-white p-6 space-y-6">
                 <h2 className="text-lg font-bold text-gray-900">Course Level <span className="text-rose-400">*</span></h2>

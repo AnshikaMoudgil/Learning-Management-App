@@ -66,7 +66,7 @@ export class SearchRepository {
       );
       const fallback = await this.db
         .from('courses')
-        .select('*')
+        .select('*, profiles!courses_instructor_id_fkey(full_name)')
         .or(
           `title.ilike.${searchTerm},description.ilike.${searchTerm},category.ilike.${searchTerm}`,
         )
@@ -82,7 +82,9 @@ export class SearchRepository {
       );
       const fallback = await this.db
         .from('course_lessons')
-        .select('*')
+        .select(
+          '*, courses!inner(id, title, category, profiles!courses_instructor_id_fkey(full_name))',
+        )
         .ilike('title', searchTerm)
         .limit(20);
       recordings = (fallback.data as any[]) || [];

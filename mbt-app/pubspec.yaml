@@ -51,6 +51,9 @@ dependencies:
   chewie: ^1.10.0
   flutter_local_notifications: ^17.2.2
   google_fonts: ^8.2.0
+  webview_flutter_windows: ^1.1.1
+  youtube_player_iframe: ^6.0.2
+  country_picker: ^2.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

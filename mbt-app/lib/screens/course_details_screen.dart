@@ -280,7 +280,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
           const SizedBox(height: 20),
           Text(course.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark)),
           const SizedBox(height: 8),
-          Text(course.shortDescription ?? course.description ?? '', style: const TextStyle(fontSize: 14, color: AppColors.textLight, height: 1.5)),
+          Text(course.shortDescription ?? '', style: const TextStyle(fontSize: 14, color: AppColors.textLight, height: 1.5)),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

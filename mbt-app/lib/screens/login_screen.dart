@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:country_picker/country_picker.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
-import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -15,8 +16,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool _isLoading = false;
-  String _countryCode = '+91';
-  final List<String> _countryCodes = ['+20', '+91'];
+  Country _selectedCountry = Country.tryParse('IN')!;
 
   @override
   void dispose() {
@@ -51,9 +51,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() => _isLoading = true);
     try {
-      await _authService.sendOtp('$_countryCode$phone');
+      await _authService.sendOtp('+${_selectedCountry.phoneCode}$phone');
       if (mounted) {
-        context.push('/otp?phone=$_countryCode$phone');
+        context.push('/otp?phone=+${_selectedCountry.phoneCode}$phone');
       }
     } catch (e) {
       if (mounted) {
@@ -169,31 +169,41 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Row(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _countryCode,
-                            items: _countryCodes
-                                .map(
-                                  (code) => DropdownMenuItem(
-                                    value: code,
-                                    child: Text(
-                                      code,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textDark,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (val) {
-                              if (val != null)
-                                setState(() => _countryCode = val);
+                      InkWell(
+                        onTap: () {
+                          showCountryPicker(
+                            context: context,
+                            countryListTheme: CountryListThemeData(
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              ),
+                            ),
+                            onSelect: (country) {
+                              setState(() => _selectedCountry = country);
                             },
-                            isDense: true,
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _selectedCountry.flagEmoji,
+                                style: const TextStyle(fontSize: 22),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '+${_selectedCountry.phoneCode}',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              const Icon(Icons.arrow_drop_down, color: AppColors.textLight),
+                            ],
                           ),
                         ),
                       ),

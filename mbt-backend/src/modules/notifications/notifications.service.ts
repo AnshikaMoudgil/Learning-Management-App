@@ -169,23 +169,21 @@ export class NotificationsService {
         `Sent "${payload.type}" notification to ${userIds.length} users`,
       );
 
-      // Deliver push notifications asynchronously
+      // Deliver push notifications asynchronously in a single batch
       if (data && data.length > 0) {
-        (data as NotificationInsertResult[]).forEach((notification) => {
-          this.deliveryService
-            .deliverNotification([notification.user_id], {
-              notificationId: notification.id,
-              type: payload.type,
-              title: payload.title,
-              body: payload.body,
-              data: payload.data,
-            })
-            .catch((err: Error) =>
-              this.logger.error(
-                `Push delivery error for ${notification.user_id}: ${err.message}`,
-              ),
-            );
-        });
+        const allUserIds = (data as NotificationInsertResult[]).map(
+          (n) => n.user_id,
+        );
+        this.deliveryService
+          .deliverNotification(allUserIds, {
+            type: payload.type,
+            title: payload.title,
+            body: payload.body,
+            data: payload.data,
+          })
+          .catch((err: Error) =>
+            this.logger.error(`Push delivery error: ${err.message}`),
+          );
       }
     }
   }

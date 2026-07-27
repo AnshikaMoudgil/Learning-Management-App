@@ -179,24 +179,9 @@ export class MyCoursesService {
     courseId: string,
     userId: string,
   ): Promise<CourseContent> {
-    // 1. Verify active enrollment (sequential — early rejection)
-    const { data: enrollment, error: enrollError } = await this.db
-      .from('enrollments')
-      .select('id, progress_percent, validity_end_at, status')
-      .eq('course_id', courseId)
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .maybeSingle();
-
-    if (enrollError) throw new BadRequestException(enrollError.message);
-    if (!enrollment) {
-      throw new ForbiddenException(
-        'You must be enrolled in this course to access its content',
-      );
-    }
-
-    // 2. Fetch all data in parallel (7 queries → 5 by combining sections+lessons)
+    // 1. Fetch enrollment + course data in parallel
     const [
+      enrollmentResult,
       course,
       sectionsWithLessons,
       progressData,
@@ -204,6 +189,13 @@ export class MyCoursesService {
       recordingsData,
       resourcesData,
     ] = await Promise.all([
+      this.db
+        .from('enrollments')
+        .select('id, progress_percent, validity_end_at, status')
+        .eq('course_id', courseId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .maybeSingle(),
       this.fetchCourse(courseId),
       this.fetchSectionsWithLessons(courseId),
       this.fetchLessonProgress(courseId, userId),
@@ -211,6 +203,23 @@ export class MyCoursesService {
       this.fetchRecordings(courseId),
       this.fetchResources(courseId),
     ]);
+
+    const { data: enrollment, error: enrollError } = enrollmentResult as {
+      data: {
+        id: string;
+        progress_percent: number;
+        validity_end_at: string | null;
+        status: string;
+      } | null;
+      error: { message: string } | null;
+    };
+
+    if (enrollError) throw new BadRequestException(enrollError.message);
+    if (!enrollment) {
+      throw new ForbiddenException(
+        'You must be enrolled in this course to access its content',
+      );
+    }
 
     if (!course) throw new NotFoundException('Course not found');
 

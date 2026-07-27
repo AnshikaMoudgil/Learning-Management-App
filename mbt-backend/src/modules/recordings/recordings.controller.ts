@@ -1,4 +1,5 @@
-import { Controller, Get, Param, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Param, Res, BadRequestException } from '@nestjs/common';
+import type { Response } from 'express';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Controller('recordings')
@@ -10,7 +11,10 @@ export class RecordingsController {
   }
 
   @Get('course/:courseId')
-  async getRecordingsByCourse(@Param('courseId') courseId: string) {
+  async getRecordingsByCourse(
+    @Param('courseId') courseId: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
     if (!courseId) {
       throw new BadRequestException('courseId is required');
     }
@@ -25,11 +29,18 @@ export class RecordingsController {
       throw new BadRequestException(error.message);
     }
 
+    res?.setHeader(
+      'Cache-Control',
+      's-maxage=300, stale-while-revalidate=600',
+    );
     return data;
   }
 
   @Get(':id')
-  async getRecordingDetail(@Param('id') id: string) {
+  async getRecordingDetail(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
     const { data, error } = await this.db
       .from('session_recordings')
       .select('*, sessions(*)')
@@ -40,6 +51,10 @@ export class RecordingsController {
       throw new BadRequestException(error.message);
     }
 
+    res?.setHeader(
+      'Cache-Control',
+      's-maxage=300, stale-while-revalidate=600',
+    );
     return data;
   }
 }

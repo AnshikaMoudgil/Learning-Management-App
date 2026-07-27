@@ -20,6 +20,7 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
   List<MyCourseLesson> _allLessons = [];
   int _currentIndex = 0;
   bool _isEnrolled = false;
+  bool _isExpired = false;
 
   @override
   void initState() {
@@ -31,6 +32,9 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
     if (widget.courseId == null || widget.lessonId == null) return;
     try {
       final content = await _courseService.getCourseContent(widget.courseId!);
+      final now = DateTime.now();
+      final expired = content.enrollment.status == 'expired' ||
+          (content.enrollment.validityEndAt != null && content.enrollment.validityEndAt!.isBefore(now));
       final flat = <MyCourseLesson>[];
       for (final sec in content.sections) {
         flat.addAll(sec.lessons);
@@ -40,7 +44,8 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
       setState(() {
         _allLessons = flat;
         _currentIndex = idx >= 0 ? idx : 0;
-        _isEnrolled = content.enrollment.status == 'active';
+        _isEnrolled = content.enrollment.status == 'active' && !expired;
+        _isExpired = expired;
       });
     } catch (_) {}
   }
@@ -85,6 +90,42 @@ class _RecordedClassPlayerScreenState extends State<RecordedClassPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isExpired) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                const Text(
+                  'Course Expired',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'This course has expired and content is no longer accessible.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: AppColors.textLight),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(

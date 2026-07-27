@@ -195,7 +195,7 @@ export class SessionsRepository {
   ): Promise<LiveSessionMeeting | null> {
     const { data, error } = (await this.db
       .from('live_session_meetings')
-      .select('*')
+      .select('meeting_id, password, start_url, join_url')
       .eq('session_id', sessionId)
       .maybeSingle()) as unknown as {
       data: LiveSessionMeeting | null;

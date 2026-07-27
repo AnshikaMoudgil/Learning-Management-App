@@ -28,22 +28,7 @@ export class DevicesRepository {
   async findActiveByUserId(userId: string): Promise<Device | null> {
     const { data, error } = await this.db
       .from('devices')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-
-    return data as Device | null;
-  }
-
-  async findAnyByUserId(userId: string): Promise<Device | null> {
-    const { data, error } = await this.db
-      .from('devices')
-      .select('*')
+      .select('id, fingerprint, platform, is_active, bound_at, last_seen_at, created_at, updated_at')
       .eq('user_id', userId)
       .eq('is_active', true)
       .maybeSingle();
@@ -61,7 +46,7 @@ export class DevicesRepository {
   ): Promise<Device | null> {
     const { data, error } = await this.db
       .from('devices')
-      .select('*')
+      .select('id')
       .eq('user_id', userId)
       .eq('fingerprint', fingerprint)
       .maybeSingle();
@@ -203,7 +188,7 @@ export class DevicesRepository {
   ): Promise<DeviceChangeRequest | null> {
     const { data, error } = await this.db
       .from('device_change_requests')
-      .select('*')
+      .select('id')
       .eq('user_id', userId)
       .eq('new_fingerprint', fingerprint)
       .eq('status', 'approved')
@@ -235,7 +220,7 @@ export class DevicesRepository {
   ): Promise<DeviceChangeRequest | null> {
     const { data, error } = await this.db
       .from('device_change_requests')
-      .select('*')
+      .select('reviewed_at')
       .eq('user_id', userId)
       .eq('status', 'approved')
       .order('reviewed_at', { ascending: false })
@@ -252,7 +237,7 @@ export class DevicesRepository {
   async findChangeRequestById(id: string): Promise<DeviceChangeRequest | null> {
     const { data, error } = await this.db
       .from('device_change_requests')
-      .select('*')
+      .select('id, user_id, new_fingerprint')
       .eq('id', id)
       .maybeSingle();
 

@@ -2,11 +2,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:country_picker/country_picker.dart';
 import '../theme/app_colors.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/wave_background.dart';
 import '../services/profile_service.dart';
-import 'package:go_router/go_router.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   const CreateProfileScreen({Key? key}) : super(key: key);
@@ -24,8 +25,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   String? _avatarPath;
   final ImagePicker _picker = ImagePicker();
   final ProfileService _profileService = ProfileService();
-  String _countryCode = '+91';
-  final List<String> _countryCodes = ['+20', '+91'];
+  Country _selectedCountry = Country.tryParse('IN')!;
 
   late final bool _needsPhone;
   late final bool _needsEmail;
@@ -40,17 +40,13 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
     if (!_needsPhone) {
       final phone = user!.phone!;
-      for (final code in _countryCodes) {
-        if (phone.startsWith(code)) {
-          _countryCode = code;
-          _phoneController.text = phone.substring(code.length);
-          return;
-        }
-      }
-      if (phone.startsWith('+')) {
-        _phoneController.text = phone.substring(3);
+      final clean = phone.startsWith('+') ? phone.substring(1) : phone;
+      final parsed = Country.tryParse(clean);
+      if (parsed != null) {
+        _selectedCountry = parsed;
+        _phoneController.text = phone.replaceFirst('+${parsed.phoneCode}', '');
       } else {
-        _phoneController.text = phone;
+        _phoneController.text = phone.startsWith('+') ? phone.substring(3) : phone;
       }
     }
   }
@@ -92,7 +88,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     try {
       await _profileService.createProfile(
         name,
-        phone: _needsPhone && phone.isNotEmpty ? '$_countryCode$phone' : null,
+        phone: _needsPhone && phone.isNotEmpty ? '+${_selectedCountry.phoneCode}$phone' : null,
         email: _needsEmail && email.isNotEmpty ? email : null,
       );
 
@@ -387,38 +383,39 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         ),
         child: Row(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _countryCode,
-                  items: _countryCodes
-                      .map(
-                        (code) => DropdownMenuItem(
-                          value: code,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                code == '+91' ? '🇮🇳' : '🇪🇬',
-                                style: const TextStyle(fontSize: 20),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                code,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _countryCode = val);
+            InkWell(
+              onTap: () {
+                showCountryPicker(
+                  context: context,
+                  countryListTheme: CountryListThemeData(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  onSelect: (country) {
+                    setState(() => _selectedCountry = country);
                   },
-                  isDense: true,
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _selectedCountry.flagEmoji,
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '+${_selectedCountry.phoneCode}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Icon(Icons.arrow_drop_down, color: AppColors.textLight),
+                  ],
                 ),
               ),
             ),

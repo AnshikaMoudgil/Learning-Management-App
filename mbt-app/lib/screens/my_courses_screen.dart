@@ -18,7 +18,8 @@ class CourseFilters {
 }
 
 class MyCoursesScreen extends StatefulWidget {
-  const MyCoursesScreen({Key? key}) : super(key: key);
+  final int initialTab;
+  const MyCoursesScreen({Key? key, this.initialTab = 0}) : super(key: key);
 
   @override
   State<MyCoursesScreen> createState() => _MyCoursesScreenState();
@@ -50,7 +51,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 4, vsync: this, initialIndex: widget.initialTab);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {}); // trigger rebuild for filtering

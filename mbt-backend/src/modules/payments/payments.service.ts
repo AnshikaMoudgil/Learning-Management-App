@@ -497,16 +497,19 @@ export class PaymentsService {
 
     const { data: firstItem } = await this.db
       .from('payment_items')
-      .select('course_id')
+      .select('course_id, courses(category)')
       .eq('payment_id', payment.id)
       .limit(1)
       .maybeSingle();
 
     if (firstItem) {
-      const course = await this.getCourse(
-        (firstItem as { course_id: string }).course_id,
+      const item = firstItem as {
+        course_id: string;
+        courses: { category: string | null } | null;
+      };
+      return this.razorpayService.getGatewayForCategory(
+        item.courses?.category ?? null,
       );
-      return this.razorpayService.getGatewayForCategory(course.category);
     }
 
     return this.razorpayService.getGatewayForCategory(null);
