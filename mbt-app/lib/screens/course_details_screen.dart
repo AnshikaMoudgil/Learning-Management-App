@@ -6,6 +6,7 @@ import '../models/course.dart';
 import '../services/course_service.dart';
 import '../services/cart_provider.dart';
 import '../services/wishlist_provider.dart';
+import '../utils/duration_formatter.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   final String? courseId;
@@ -321,7 +322,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> with SingleTi
             dense: true,
             leading: Icon(locked ? Icons.lock_outline : Icons.play_circle_outline, color: locked ? Colors.grey : AppColors.primaryBlue),
             title: Text(lesson.title, style: const TextStyle(fontSize: 13)),
-            subtitle: lesson.videoDuration == null ? null : Text(lesson.videoDuration!, style: const TextStyle(fontSize: 11)),
+            subtitle: lesson.videoDuration == null ? null : Text(DurationFormatter.format(lesson.videoDuration), style: const TextStyle(fontSize: 11)),
             onTap: lesson.isFreePreview
                 ? () => context.push('/recorded-player?lessonId=${lesson.id}&courseId=$courseId')
                 : null,

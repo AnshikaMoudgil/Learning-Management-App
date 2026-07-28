@@ -11,6 +11,8 @@ import {
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { DeviceGuard } from '../../common/guards/device.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { ThrottleGuard } from '../../common/guards/throttle.guard';
+import { Throttle } from '../../common/decorators/throttle.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DevicesService } from './devices.service';
 import { BindDeviceDto } from './dto/bind-device.dto';
@@ -36,6 +38,8 @@ export class DevicesController {
   }
 
   @Post('bind')
+  @UseGuards(ThrottleGuard)
+  @Throttle({ limit: 5, windowMs: 60000 })
   bindDevice(@Req() req: AuthenticatedRequest, @Body() body: BindDeviceDto) {
     return this.devicesService.bindDevice(
       req.user.id,
@@ -54,6 +58,8 @@ export class DevicesController {
   }
 
   @Post('change-request')
+  @UseGuards(ThrottleGuard)
+  @Throttle({ limit: 3, windowMs: 300000 })
   createChangeRequest(
     @Req() req: AuthenticatedRequest,
     @Body() body: CreateChangeRequestDto,

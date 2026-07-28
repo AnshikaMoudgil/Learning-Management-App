@@ -176,7 +176,7 @@ class _MoreScreenState extends State<MoreScreen> {
                                       Text(
                                         user?.email ?? '',
                                         style: const TextStyle(
-                                          fontSize: 13,
+                                          fontSize: 12,
                                           color: AppColors.textLight,
                                         ),
                                       ),

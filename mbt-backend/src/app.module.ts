@@ -27,6 +27,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { MyCoursesModule } from './modules/my-courses/my-courses.module';
 import { MediaAssetsModule } from './modules/media-assets/media-assets.module';
 import { VideoModule } from './modules/video/video.module';
+import { RedisModule } from './common/redis/redis.module';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { VideoModule } from './modules/video/video.module';
     MyCoursesModule,
     MediaAssetsModule,
     VideoModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

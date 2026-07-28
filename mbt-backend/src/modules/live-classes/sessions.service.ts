@@ -4,7 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { SessionsRepository } from './sessions.repository';
+import { SessionsRepository, Session, LiveSessionMeeting } from './sessions.repository';
 import { ZoomSdkService } from '../zoom/zoom-sdk.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -220,7 +220,11 @@ export class SessionsService {
     id: string,
     userId: string,
   ): Promise<JoinSessionResponseDto> {
-    const session = await this.sessionsRepository.findById(id);
+    const [session, profile] = await Promise.all([
+      this.sessionsRepository.findById(id),
+      this.sessionsRepository.findUserProfile(userId),
+    ]);
+
     if (!session) {
       throw new NotFoundException('Session not found');
     }
@@ -228,8 +232,6 @@ export class SessionsService {
     if (session.status === 'cancelled') {
       throw new BadRequestException('This session has been cancelled');
     }
-
-    const profile = await this.sessionsRepository.findUserProfile(userId);
 
     const isInstructor =
       profile.role === 'instructor' && session.instructor_id === userId;
@@ -262,7 +264,18 @@ export class SessionsService {
       }
     }
 
-    const meeting = await this.sessionsRepository.findMeetingBySessionId(id);
+    const sessionsWithMeetings = session as Session & {
+      live_session_meetings: LiveSessionMeeting[];
+    };
+    const preFetchedMeetings = sessionsWithMeetings.live_session_meetings;
+    let meeting: LiveSessionMeeting | null = Array.isArray(preFetchedMeetings)
+      ? preFetchedMeetings[0]
+      : preFetchedMeetings;
+
+    if (!meeting) {
+      meeting = await this.sessionsRepository.findMeetingBySessionId(id);
+    }
+
     if (!meeting) {
       throw new BadRequestException(
         'Zoom meeting details are not available yet. Please try again in a moment.',
@@ -321,30 +334,34 @@ export class SessionsService {
       { name: 'reminder_10min', offset: 10 * 60 * 1000 },
     ];
 
-    for (const job of jobs) {
-      const triggerTime = startTime - job.offset;
-      const delay = triggerTime - now;
-      if (delay > 0) {
-        await this.zoomTaskQueue.add(
-          job.name,
-          { sessionId, type: job.name },
-          { delay, jobId: `${sessionId}-${job.name}` },
-        );
-      }
-    }
+    await Promise.all(
+      jobs.map(async (job) => {
+        const triggerTime = startTime - job.offset;
+        const delay = triggerTime - now;
+        if (delay > 0) {
+          await this.zoomTaskQueue.add(
+            job.name,
+            { sessionId, type: job.name },
+            { delay, jobId: `${sessionId}-${job.name}` },
+          );
+        }
+      }),
+    );
   }
 
   private async cancelReminders(sessionId: string) {
     const jobTypes = ['reminder_24h', 'reminder_1h', 'reminder_10min'];
-    for (const type of jobTypes) {
-      try {
-        const job = await this.zoomTaskQueue.getJob(`${sessionId}-${type}`);
-        if (job) {
-          await job.remove();
+    await Promise.all(
+      jobTypes.map(async (type) => {
+        try {
+          const job = await this.zoomTaskQueue.getJob(`${sessionId}-${type}`);
+          if (job) {
+            await job.remove();
+          }
+        } catch {
+          // ignore errors if jobs don't exist
         }
-      } catch {
-        // ignore errors if jobs don't exist
-      }
-    }
+      }),
+    );
   }
 }

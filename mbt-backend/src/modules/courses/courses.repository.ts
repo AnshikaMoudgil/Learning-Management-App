@@ -8,6 +8,7 @@ import type {
   CourseFilters,
   PaginationParams,
 } from '../../common/types/course.type';
+import { secondsToHms } from '../../common/utils/format-duration';
 
 @Injectable()
 export class CoursesRepository {
@@ -194,7 +195,7 @@ export class CoursesRepository {
         video_url: asset?.storage_url ?? (row.video_url as string | null),
         video_duration:
           asset?.duration != null
-            ? String(asset.duration)
+            ? secondsToHms(asset.duration)
             : (row.video_duration as string | null),
         video_status: asset?.status ?? null,
         thumbnail_url: asset?.thumbnail_url ?? null,

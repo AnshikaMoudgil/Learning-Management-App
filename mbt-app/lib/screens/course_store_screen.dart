@@ -6,6 +6,7 @@ import '../services/course_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/cart_badge.dart';
 import '../services/wishlist_provider.dart';
+import '../utils/duration_formatter.dart';
 
 class CourseStoreScreen extends StatefulWidget {
   const CourseStoreScreen({Key? key}) : super(key: key);
@@ -167,6 +168,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: TextField(
+                                readOnly: true,
                                 decoration: const InputDecoration(
                                   hintText:
                                       'Search for courses, topics or teachers...',
@@ -177,6 +179,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                                   border: InputBorder.none,
                                   isDense: true,
                                 ),
+                                onTap: () => context.push('/search'),
                               ),
                             ),
                           ],

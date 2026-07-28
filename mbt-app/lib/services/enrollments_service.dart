@@ -11,6 +11,8 @@ class EnrollmentItem {
   final DateTime? validityEndAt;
   final int totalLessons;
   final String? estimatedDuration;
+  final String? category;
+  final String? level;
   final DateTime enrolledAt;
 
   EnrollmentItem({
@@ -24,6 +26,8 @@ class EnrollmentItem {
     this.validityEndAt,
     required this.totalLessons,
     this.estimatedDuration,
+    this.category,
+    this.level,
     required this.enrolledAt,
   });
 
@@ -41,6 +45,8 @@ class EnrollmentItem {
           : null,
       totalLessons: (json['total_lessons'] ?? 0) as int,
       estimatedDuration: json['estimated_duration'] as String?,
+      category: json['category'] as String?,
+      level: json['level'] as String?,
       enrolledAt: json['enrolled_at'] != null
           ? DateTime.parse(json['enrolled_at'] as String)
           : DateTime.now(),

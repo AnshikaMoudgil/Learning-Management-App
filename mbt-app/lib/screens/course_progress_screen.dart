@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../widgets/share_bottom_sheet.dart';
 import '../services/my_course_service.dart';
 import '../services/enrollment_provider.dart';
+import '../utils/duration_formatter.dart';
 
 class CourseProgressScreen extends StatefulWidget {
   final String? courseId;
@@ -561,7 +562,7 @@ class _CourseProgressScreenState extends State<CourseProgressScreen> with Single
                   ),
                 ),
                 if (lesson.videoDuration != null)
-                  Text(lesson.videoDuration!, style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                  Text(DurationFormatter.format(lesson.videoDuration), style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
               ],
             ),
           ),

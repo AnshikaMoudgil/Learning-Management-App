@@ -27,7 +27,7 @@ export class EnrollmentsRepository {
     return { data };
   }
 
-  async findEnrollmentsByUserId(userId: string) {
+  async findEnrollmentsByUserId(userId: string, limit = 50, offset = 0) {
     const { data, error } = await this.db
       .from('enrollments')
       .select(
@@ -42,13 +42,16 @@ export class EnrollmentsRepository {
           title,
           thumbnail_url,
           estimated_duration,
+          category,
+          level,
           profiles!instructor_id (
             full_name
           )
         )
       `,
       )
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .range(offset, offset + limit - 1);
 
     if (error) {
       throw new BadRequestException(error.message);

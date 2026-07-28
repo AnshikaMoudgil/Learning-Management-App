@@ -12,8 +12,11 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { ZoomOAuthService } from './zoom-oauth.service';
+import { RedisService } from '../../common/redis/redis.service';
 import { randomBytes } from 'crypto';
 import { SupabaseService } from '../supabase/supabase.service';
+
+const OAUTH_STATE_TTL_SEC = 600;
 
 @Controller('zoom')
 export class ZoomOAuthController {
@@ -22,18 +25,29 @@ export class ZoomOAuthController {
   constructor(
     private readonly zoomOAuthService: ZoomOAuthService,
     private readonly supabaseService: SupabaseService,
+    private readonly redisService: RedisService,
   ) {}
 
   @Get('connect')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('superadmin')
-  connect(@Request() req: AuthenticatedRequest) {
+  async connect(@Request() req: AuthenticatedRequest) {
     const instructorId = req.user?.id;
     if (!instructorId) {
       throw new UnauthorizedException('Authentication required');
     }
 
     const state = `${instructorId}:${randomBytes(16).toString('hex')}`;
+    const redis = this.redisService.getClient();
+    if (redis) {
+      await redis.set(
+        `zoom_oauth_state:${state}`,
+        instructorId,
+        'EX',
+        OAUTH_STATE_TTL_SEC,
+      );
+    }
+
     const url = this.zoomOAuthService.getAuthorizationUrl(state);
 
     return { url };
@@ -46,6 +60,19 @@ export class ZoomOAuthController {
         error: 'missing_params',
         message: 'Missing authorization code or state',
       };
+    }
+
+    const redis = this.redisService.getClient();
+    if (redis) {
+      const storedUserId = await redis.get(`zoom_oauth_state:${state}`);
+      if (!storedUserId) {
+        return {
+          error: 'invalid_state',
+          message:
+            'State parameter is invalid or expired. Please reconnect from the dashboard.',
+        };
+      }
+      await redis.del(`zoom_oauth_state:${state}`);
     }
 
     const instructorId = state.split(':')[0];
