@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../services/enrollment_provider.dart';
 import '../services/enrollments_service.dart';
 import '../services/notification_service.dart';
+import '../utils/duration_formatter.dart';
 
 class MyLearningScreen extends StatefulWidget {
   const MyLearningScreen({Key? key}) : super(key: key);
@@ -176,9 +177,11 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
     return enrollments.where((e) {
       final isExpired = e.status == 'expired' || (e.validityEndAt != null && e.validityEndAt!.isBefore(now));
       final isCompleted = e.progressPercent >= 100;
-      if (_selectedFilter == 'In Progress') return !isExpired && !isCompleted;
-      if (_selectedFilter == 'Completed') return isCompleted;
-      if (_selectedFilter == 'Expired') return isExpired;
+      if (_selectedFilter == 'In Progress' && (isExpired || isCompleted)) return false;
+      if (_selectedFilter == 'Completed' && !isCompleted) return false;
+      if (_selectedFilter == 'Expired' && !isExpired) return false;
+      if (_selectedCategory != 'All Categories' && e.category != _selectedCategory) return false;
+      if (_selectedLevel != 'All Levels' && e.level != _selectedLevel) return false;
       return true;
     }).toList();
   }
@@ -220,14 +223,14 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
   }
 
   void _showFilterSheet() {
+    String localCategory = _selectedCategory;
+    String localLevel = _selectedLevel;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
-          String localCategory = _selectedCategory;
-          String localLevel = _selectedLevel;
           return Container(
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -493,7 +496,7 @@ class _MyLearningScreenState extends State<MyLearningScreen> {
                         children: [
                           const Icon(Icons.access_time, size: 12, color: AppColors.textLight),
                           const SizedBox(width: 4),
-                          Text(enrollment.estimatedDuration ?? 'Self-paced', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
+                          Text(enrollment.estimatedDuration != null ? '${enrollment.estimatedDuration}hours' : 'Self-paced', style: const TextStyle(fontSize: 10, color: AppColors.textLight)),
                         ],
                       ),
                       Container(width: 1, height: 10, color: Colors.grey.shade300),

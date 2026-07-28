@@ -2,6 +2,8 @@ export interface EnrolledCourse {
   title: string;
   thumbnail_url: string | null;
   estimated_duration: string | null;
+  category: string | null;
+  level: string | null;
   profiles: { full_name: string | null } | null;
 }
 

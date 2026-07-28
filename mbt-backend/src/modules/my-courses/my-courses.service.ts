@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { secondsToHms } from '../../common/utils/format-duration';
 import type {
   LessonWithProgress,
   SectionWithContent,
@@ -190,7 +191,7 @@ export class MyCoursesService {
               asset?.storage_url ?? (lesson.video_url as string | null),
             video_duration:
               asset?.duration != null
-                ? String(asset.duration)
+                ? secondsToHms(asset.duration)
                 : (lesson.video_duration as string | null),
             video_status: asset?.status ?? null,
             thumbnail_url: asset?.thumbnail_url ?? null,

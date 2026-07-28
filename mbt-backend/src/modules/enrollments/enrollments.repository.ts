@@ -42,6 +42,8 @@ export class EnrollmentsRepository {
           title,
           thumbnail_url,
           estimated_duration,
+          category,
+          level,
           profiles!instructor_id (
             full_name
           )

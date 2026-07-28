@@ -96,6 +96,8 @@ export class EnrollmentsService {
         validity_end_at: row.validity_end_at,
         total_lessons: total,
         estimated_duration: course?.estimated_duration ?? null,
+        category: course?.category ?? null,
+        level: course?.level ?? null,
         enrolled_at: row.enrolled_at,
       };
     });

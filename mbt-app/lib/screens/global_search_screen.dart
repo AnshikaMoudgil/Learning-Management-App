@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
+import '../utils/duration_formatter.dart';
 import 'home_dashboard.dart';
 import 'my_courses_screen.dart';
 import 'live_classes_screen.dart';
@@ -736,7 +737,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
 
   Widget _buildRecordingResultCard(Map<String, dynamic> lesson) {
     String title = lesson['title'] ?? 'Lesson';
-    String duration = lesson['video_duration'] ?? 'Live';
+    String duration = DurationFormatter.format(lesson['video_duration'] as String? ?? 'Live');
     String author = 'Instructor';
 
     if (lesson['courses'] != null && lesson['courses'] is Map) {
