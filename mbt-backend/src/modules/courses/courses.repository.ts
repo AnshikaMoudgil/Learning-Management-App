@@ -4,21 +4,10 @@ import type {
   Course,
   CourseEnrollmentState,
   CourseLesson,
-  CourseLevel,
   CourseSection,
+  CourseFilters,
+  PaginationParams,
 } from '../../common/types/course.type';
-
-export interface CourseFilters {
-  category?: string;
-  level?: CourseLevel;
-  is_published?: boolean;
-  search?: string;
-}
-
-export interface PaginationParams {
-  page: number;
-  limit: number;
-}
 
 @Injectable()
 export class CoursesRepository {

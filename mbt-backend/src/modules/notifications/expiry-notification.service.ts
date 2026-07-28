@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { NotificationsRepository } from './notifications.repository';
 import { NotificationsService } from './notifications.service';
 
 @Injectable()
@@ -8,13 +8,9 @@ export class ExpiryNotificationService implements OnModuleInit {
   private intervalHandle: ReturnType<typeof setInterval> | null = null;
 
   constructor(
-    private readonly supabaseService: SupabaseService,
+    private readonly notificationsRepository: NotificationsRepository,
     private readonly notificationsService: NotificationsService,
   ) {}
-
-  private get db() {
-    return this.supabaseService.getClient();
-  }
 
   async onModuleInit() {
     await this.checkExpirations();
@@ -50,23 +46,10 @@ export class ExpiryNotificationService implements OnModuleInit {
     ).toISOString();
     const nowISO = now.toISOString();
 
-    const { data, error } = await this.db
-      .from('enrollments')
-      .select('user_id, course_id, validity_end_at, courses(title)')
-      .eq('status', 'active')
-      .gt('validity_end_at', nowISO)
-      .lte('validity_end_at', in30Days);
-
-    if (error) {
-      this.logger.error(
-        `Failed to fetch expiring enrollments: ${error.message}`,
-      );
-      return;
-    }
-
+    const data = await this.notificationsRepository.findExpiringEnrollments(nowISO, in30Days);
     if (!data?.length) return;
 
-    const rows = data as unknown as {
+    const rows = data as {
       user_id: string;
       course_id: string;
       validity_end_at: string;
@@ -115,22 +98,10 @@ export class ExpiryNotificationService implements OnModuleInit {
   private async notifyAlreadyExpired(now: Date) {
     const nowISO = now.toISOString();
 
-    const { data, error } = await this.db
-      .from('enrollments')
-      .select('user_id, course_id, validity_end_at, courses(title)')
-      .eq('status', 'active')
-      .lt('validity_end_at', nowISO);
-
-    if (error) {
-      this.logger.error(
-        `Failed to fetch expired enrollments: ${error.message}`,
-      );
-      return;
-    }
-
+    const data = await this.notificationsRepository.findExpiredEnrollments(nowISO);
     if (!data?.length) return;
 
-    const rows = data as unknown as {
+    const rows = data as {
       user_id: string;
       course_id: string;
       validity_end_at: string;

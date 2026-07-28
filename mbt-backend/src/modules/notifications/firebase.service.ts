@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
-import { SupabaseService } from '../supabase/supabase.service';
+import { NotificationsRepository } from './notifications.repository';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -10,7 +10,7 @@ export class FirebaseService implements OnModuleInit {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly supabaseService: SupabaseService,
+    private readonly notificationsRepository: NotificationsRepository,
   ) {}
 
   onModuleInit() {
@@ -104,17 +104,7 @@ export class FirebaseService implements OnModuleInit {
           this.logger.log(
             `Nullifying ${invalidTokens.length} invalid/unregistered FCM tokens.`,
           );
-          const db = this.supabaseService.getClient();
-          const { error } = await db
-            .from('devices')
-            .update({ fcm_token: null } as never)
-            .in('fcm_token', invalidTokens);
-
-          if (error) {
-            this.logger.error(
-              `Failed to nullify invalid FCM tokens: ${error.message}`,
-            );
-          }
+          await this.notificationsRepository.nullifyFcmTokens(invalidTokens);
         }
       }
     } catch (error) {

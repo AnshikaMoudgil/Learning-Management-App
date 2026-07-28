@@ -1,21 +1,20 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { NotificationsService } from './notifications.service';
-import { NotificationsController } from './notifications.controller';
 import { SupabaseModule } from '../supabase/supabase.module';
-import { ExpiryNotificationService } from './expiry-notification.service';
-import { FirebaseService } from './firebase.service';
+import { NotificationsService } from './notifications.service';
+import { NotificationsRepository } from './notifications.repository';
 import { NotificationDeliveryService } from './notification-delivery.service';
+import { FirebaseService } from './firebase.service';
+import { ExpiryNotificationService } from './expiry-notification.service';
 
 @Module({
-  imports: [SupabaseModule, ConfigModule],
-  controllers: [NotificationsController],
+  imports: [SupabaseModule],
   providers: [
     NotificationsService,
-    ExpiryNotificationService,
-    FirebaseService,
+    NotificationsRepository,
     NotificationDeliveryService,
+    FirebaseService,
+    ExpiryNotificationService,
   ],
-  exports: [NotificationsService, FirebaseService, NotificationDeliveryService],
+  exports: [NotificationsService],
 })
 export class NotificationsModule {}

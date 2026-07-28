@@ -1,10 +1,8 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
-  NotFoundException,
 } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { CouponsRepository } from './coupons.repository';
 import type {
   ActiveCouponResult,
   CouponRow,
@@ -14,36 +12,12 @@ import type {
 
 @Injectable()
 export class CouponsService {
-  constructor(private readonly supabaseService: SupabaseService) {}
-
-  private get db() {
-    return this.supabaseService.getClient();
-  }
+  constructor(private readonly couponsRepository: CouponsRepository) {}
 
   async getActiveCoupons(): Promise<ActiveCouponResult[]> {
     const now = new Date();
     const nowISO = now.toISOString();
-    const { data, error } = await this.db
-      .from('coupons')
-      .select(
-        'id, code, discount_type, discount_value, expires_at, max_uses, uses_count',
-      )
-      .eq('is_active', true)
-      .or(`starts_at.is.null,starts_at.lte.${nowISO}`)
-      .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
-
-    if (error)
-      throw new InternalServerErrorException('Failed to fetch active coupons');
-
-    const rows = (data ?? []) as {
-      id: string;
-      code: string;
-      discount_type: 'percentage' | 'fixed';
-      discount_value: number;
-      expires_at: string | null;
-      max_uses: number | null;
-      uses_count: number;
-    }[];
+    const rows = await this.couponsRepository.findActiveCoupons(nowISO);
 
     return rows
       .filter((c) => {
@@ -63,14 +37,7 @@ export class CouponsService {
     userId: string,
     couponId: string,
   ): Promise<void> {
-    const { data } = await this.db
-      .from('payments')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('coupon_id', couponId)
-      .eq('status', 'completed')
-      .limit(1)
-      .maybeSingle();
+    const data = await this.couponsRepository.findCompletedPaymentByUserAndCoupon(userId, couponId);
 
     if (data) {
       throw new BadRequestException('You have already used this coupon');
@@ -83,7 +50,7 @@ export class CouponsService {
     preloadedCourse?: CoursePriceRow,
     totalBaseAmount?: number,
   ): Promise<CouponValidationResult> {
-    const course = preloadedCourse ?? (await this.getCoursePrice(courseId));
+    const course = preloadedCourse ?? (await this.couponsRepository.findCoursePrice(courseId));
     const baseAmount = totalBaseAmount ?? this.getBaseAmount(course);
     const normalizedCode = code.trim().toUpperCase();
 
@@ -91,21 +58,13 @@ export class CouponsService {
       throw new BadRequestException('Coupon code is required');
     }
 
-    const { data: coupon, error } = await this.db
-      .from('coupons')
-      .select('*')
-      .ilike('code', normalizedCode)
-      .maybeSingle();
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to validate coupon');
-    }
+    const coupon = await this.couponsRepository.findByCode(normalizedCode);
 
     if (!coupon) {
       return this.invalid(baseAmount, 'Coupon not found');
     }
 
-    return this.evaluateCoupon(coupon as CouponRow, baseAmount);
+    return this.evaluateCoupon(coupon, baseAmount);
   }
 
   async validateCouponForCheckout(
@@ -114,7 +73,7 @@ export class CouponsService {
     userId?: string,
     preloadedCourse?: CoursePriceRow,
   ): Promise<CouponValidationResult> {
-    const course = preloadedCourse ?? (await this.getCoursePrice(courseId));
+    const course = preloadedCourse ?? (await this.couponsRepository.findCoursePrice(courseId));
     const baseAmount = this.getBaseAmount(course);
 
     if (!code?.trim()) {
@@ -184,52 +143,13 @@ export class CouponsService {
     courseIds: string[],
     userId: string,
   ): Promise<CouponValidationResult> {
-    const courses = await this.getCoursesPrices(courseIds);
+    const courses = await this.couponsRepository.findCoursesPrices(courseIds);
     const result = await this.validateCouponForCheckoutMulti(
       code,
       courses,
       userId,
     );
     return result;
-  }
-
-  private async getCoursePrice(courseId: string): Promise<CoursePriceRow> {
-    const { data, error } = await this.db
-      .from('courses')
-      .select('id, price, discount_price, is_published')
-      .eq('id', courseId)
-      .maybeSingle();
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to look up course');
-    }
-
-    if (!data || !(data as CoursePriceRow).is_published) {
-      throw new NotFoundException('Course not found');
-    }
-
-    return data as CoursePriceRow;
-  }
-
-  private async getCoursesPrices(
-    courseIds: string[],
-  ): Promise<CoursePriceRow[]> {
-    const { data, error } = await this.db
-      .from('courses')
-      .select('id, price, discount_price, is_published')
-      .in('id', courseIds);
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to look up courses');
-    }
-
-    const rows = (data ?? []) as CoursePriceRow[];
-    const missing = courseIds.filter((id) => !rows.find((r) => r.id === id));
-    if (missing.length > 0) {
-      throw new NotFoundException(`Courses not found: ${missing.join(', ')}`);
-    }
-
-    return rows;
   }
 
   private getBaseAmount(course: CoursePriceRow): number {

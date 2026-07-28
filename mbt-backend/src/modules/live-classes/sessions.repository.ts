@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PostgrestError } from '@supabase/supabase-js';
 import { SupabaseService } from '../supabase/supabase.service';
 
@@ -204,5 +204,90 @@ export class SessionsRepository {
 
     if (error) throw new BadRequestException(error.message);
     return data;
+  }
+
+  async findCourseInstructorId(courseId: string) {
+    const { data: course, error: courseError } = (await this.db
+      .from('courses')
+      .select('instructor_id')
+      .eq('id', courseId)
+      .single()) as unknown as {
+      data: { instructor_id: string | null } | null;
+      error: { message: string } | null;
+    };
+
+    if (courseError || !course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    return course.instructor_id;
+  }
+
+  async findEnrolledCourseIds(userId: string) {
+    const { data: enrollments } = await this.db
+      .from('enrollments')
+      .select('course_id')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .or(
+        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
+      );
+
+    return ((enrollments || []) as { course_id: string }[]).map((e) => e.course_id);
+  }
+
+  async findUserRole(userId: string) {
+    const { data: profile } = (await this.db
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()) as unknown as { data: { role: string } | null };
+    return profile?.role ?? null;
+  }
+
+  async findUserProfile(userId: string) {
+    const { data: userProfile, error: profileError } = await this.db
+      .from('profiles')
+      .select('full_name, role')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !userProfile) {
+      throw new NotFoundException('User profile not found');
+    }
+
+    return userProfile as { full_name: string | null; role: string };
+  }
+
+  async findActiveEnrollment(courseId: string, userId: string) {
+    const { data: enrollment, error: enrollError } = await this.db
+      .from('enrollments')
+      .select('id')
+      .eq('course_id', courseId)
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .or(
+        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
+      )
+      .maybeSingle();
+
+    if (enrollError || !enrollment) {
+      return null;
+    }
+
+    return enrollment as { id: string };
+  }
+
+  async findEnrolledUserIds(courseId: string) {
+    const { data: enrollments } = await this.db
+      .from('enrollments')
+      .select('user_id')
+      .eq('course_id', courseId)
+      .eq('status', 'active')
+      .or(
+        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
+      );
+
+    return ((enrollments ?? []) as { user_id: string }[]).map((e) => e.user_id);
   }
 }

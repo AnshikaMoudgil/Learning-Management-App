@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { InvoicesController } from './invoices.controller';
 import { InvoicesService } from './invoices.service';
+import { InvoicesRepository } from './invoices.repository';
 import { PdfGeneratorService } from './pdf-generator.service';
 import { InvoicesProcessor } from './invoices.processor';
 import { SupabaseModule } from '../supabase/supabase.module';
@@ -21,7 +22,7 @@ import { SupabaseModule } from '../supabase/supabase.module';
     SupabaseModule,
   ],
   controllers: [InvoicesController],
-  providers: [InvoicesService, PdfGeneratorService, InvoicesProcessor],
+  providers: [InvoicesService, InvoicesRepository, PdfGeneratorService, InvoicesProcessor],
   exports: [InvoicesService, BullModule],
 })
 export class InvoicesModule {}

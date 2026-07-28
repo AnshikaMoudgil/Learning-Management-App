@@ -69,3 +69,43 @@ export interface InvoiceItemRow {
   tax: number;
   total: number;
 }
+
+export interface CompanySnapshot {
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  taxNumber?: string;
+}
+
+export interface CustomerSnapshot {
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+export interface InvoiceItemData {
+  title: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+  tax: number;
+  total: number;
+}
+
+export interface InvoiceData {
+  invoiceNumber: string;
+  currency: string;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  issuedAt: Date;
+  paidAt: Date;
+  companySnapshot: CompanySnapshot;
+  customerSnapshot: CustomerSnapshot;
+  notes?: string;
+  items: InvoiceItemData[];
+}

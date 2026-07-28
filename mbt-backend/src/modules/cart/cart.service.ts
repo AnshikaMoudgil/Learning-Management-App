@@ -1,35 +1,19 @@
 import {
   ConflictException,
   Injectable,
-  InternalServerErrorException,
 } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { CartRepository } from './cart.repository';
 import type { CartItemRow } from '../../common/types/cart.types';
 
 @Injectable()
 export class CartService {
-  constructor(private readonly supabaseService: SupabaseService) {}
-
-  private get db() {
-    return this.supabaseService.getClient();
-  }
+  constructor(private readonly cartRepository: CartRepository) {}
 
   async findCart(userId: string) {
-    const cartId = await this.getOrCreateCartId(userId);
+    const cartId = await this.cartRepository.getOrCreateCartId(userId);
+    const items = await this.cartRepository.findCartItems(cartId);
 
-    const { data: items, error } = await this.db
-      .from('cart_items')
-      .select(
-        'id, course_id, created_at, courses:course_id(id, title, slug, short_description, thumbnail_url, price, discount_price, category, level, estimated_duration, total_lessons)',
-      )
-      .eq('cart_id', cartId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to fetch cart');
-    }
-
-    const cartItems = (items as unknown as CartItemRow[]).filter(
+    const cartItems = items.filter(
       (i) => i.courses,
     );
     const hardware = cartItems.filter((i) =>
@@ -48,67 +32,28 @@ export class CartService {
   }
 
   async addItem(userId: string, courseId: string) {
-    const cartId = await this.getOrCreateCartId(userId);
-
-    const { data: existing } = await this.db
-      .from('cart_items')
-      .select('id')
-      .eq('cart_id', cartId)
-      .eq('course_id', courseId)
-      .maybeSingle();
+    const cartId = await this.cartRepository.getOrCreateCartId(userId);
+    const existing = await this.cartRepository.findCartItem(cartId, courseId);
 
     if (existing) {
       throw new ConflictException('Course already in cart');
     }
 
-    const { error } = await this.db
-      .from('cart_items')
-      .insert({ cart_id: cartId, course_id: courseId } as never);
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to add item to cart');
-    }
+    await this.cartRepository.insertCartItem(cartId, courseId);
 
     return { success: true };
   }
 
   async removeItem(userId: string, courseId: string) {
-    const cartId = await this.getOrCreateCartId(userId);
-
-    const { error } = await this.db
-      .from('cart_items')
-      .delete()
-      .eq('cart_id', cartId)
-      .eq('course_id', courseId);
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to remove item from cart');
-    }
+    const cartId = await this.cartRepository.getOrCreateCartId(userId);
+    await this.cartRepository.deleteCartItem(cartId, courseId);
 
     return { success: true };
   }
 
   async getCartItemCourseIds(userId: string): Promise<string[]> {
-    const cartId = await this.getOrCreateCartId(userId);
-    const { data, error } = await this.db
-      .from('cart_items')
-      .select('course_id')
-      .eq('cart_id', cartId);
-
-    if (error) return [];
-    return (data as { course_id: string }[]).map((i) => i.course_id);
-  }
-
-  private async getOrCreateCartId(userId: string): Promise<string> {
-    const { data, error } = await this.db.rpc('get_or_create_cart', {
-      p_user_id: userId,
-    } as never);
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to get or create cart');
-    }
-
-    return data;
+    const cartId = await this.cartRepository.getOrCreateCartId(userId);
+    return this.cartRepository.getCartItemCourseIds(cartId);
   }
 
   private formatItems(items: CartItemRow[]) {

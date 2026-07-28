@@ -4,131 +4,76 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
-
-interface EnrolledCourse {
-  title: string;
-  thumbnail_url: string | null;
-  estimated_duration: string | null;
-  profiles: { full_name: string | null } | null;
-}
-
-interface LessonCountRow {
-  course_id: string;
-}
-
-interface EnrollmentRow {
-  id: string;
-  course_id: string;
-  status: string;
-  progress_percent: number;
-  validity_end_at: string | null;
-  enrolled_at: string;
-  courses: EnrolledCourse | null;
-}
+import { EnrollmentsRepository } from './enrollments.repository';
+import type {
+  LessonCountRow,
+  EnrollmentRow,
+} from '../../common/types/enrollments.types';
 
 @Injectable()
 export class EnrollmentsService {
   private readonly logger = new Logger(EnrollmentsService.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
-
-  private get db() {
-    return this.supabaseService.getClient();
-  }
+  constructor(private readonly enrollmentsRepository: EnrollmentsRepository) {}
 
   async enrollFromPayment(
     razorpayOrderId: string,
     razorpayPaymentId: string,
     razorpaySignature: string,
   ) {
-    const { data, error } = await this.db.rpc('complete_payment_and_enroll', {
-      p_order_id: razorpayOrderId,
-      p_payment_id: razorpayPaymentId,
-      p_signature: razorpaySignature,
-    } as never);
+    const result =
+      await this.enrollmentsRepository.callCompletePaymentAndEnroll(
+        razorpayOrderId,
+        razorpayPaymentId,
+        razorpaySignature,
+      );
 
-    if (error) {
+    if (result.error) {
       this.logger.error(
-        `RPC complete_payment_and_enroll failed: ${error.message}`,
+        `RPC complete_payment_and_enroll failed: ${result.error.message}`,
         {
           razorpayOrderId,
           razorpayPaymentId,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
+          details: result.error.details,
+          hint: result.error.hint,
+          code: result.error.code,
         },
       );
-      if (error.message?.includes('already enrolled')) {
-        throw new BadRequestException(error.message);
+      if (result.error.message?.includes('already enrolled')) {
+        throw new BadRequestException(result.error.message);
       }
       throw new InternalServerErrorException('Failed to complete enrollment');
     }
 
-    return data;
+    return result.data;
   }
 
   async getMyEnrollments(userId: string) {
-    const { data, error } = await this.db
-      .from('enrollments')
-      .select(
-        `
-        id,
-        course_id,
-        status,
-        progress_percent,
-        validity_end_at,
-        enrolled_at,
-        courses (
-          title,
-          thumbnail_url,
-          estimated_duration,
-          profiles!instructor_id (
-            full_name
-          )
-        )
-      `,
-      )
-      .eq('user_id', userId);
-
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-
-    const rows = (data as unknown as EnrollmentRow[]) ?? [];
+    const rows = (await this.enrollmentsRepository.findEnrollmentsByUserId(
+      userId,
+    )) as EnrollmentRow[];
     if (rows.length === 0) return [];
 
     const courseIds = rows.map((r) => r.course_id);
 
     const [lessonCountsResult, completedResult] = await Promise.all([
-      this.db
-        .from('course_lessons')
-        .select('course_id')
-        .in('course_id', courseIds),
-      this.db
-        .from('user_lesson_progress')
-        .select('course_id')
-        .eq('user_id', userId)
-        .eq('is_completed', true)
-        .in('course_id', courseIds),
+      this.enrollmentsRepository.findLessonCountsByCourseIds(courseIds),
+      this.enrollmentsRepository.findCompletedProgressByUserAndCourses(
+        userId,
+        courseIds,
+      ),
     ]);
 
-    if (lessonCountsResult.error) {
-      throw new BadRequestException(lessonCountsResult.error.message);
-    }
-
-    if (completedResult.error) {
-      throw new BadRequestException(completedResult.error.message);
-    }
+    const lessonCountsData = lessonCountsResult as LessonCountRow[];
+    const completedData = completedResult as { course_id: string }[];
 
     const totalMap = new Map<string, number>();
-    for (const lesson of (lessonCountsResult.data as unknown as LessonCountRow[]) ??
-      []) {
+    for (const lesson of lessonCountsData ?? []) {
       totalMap.set(lesson.course_id, (totalMap.get(lesson.course_id) ?? 0) + 1);
     }
 
     const completedMap = new Map<string, number>();
-    for (const lp of (completedResult.data as { course_id: string }[]) ?? []) {
+    for (const lp of completedData ?? []) {
       completedMap.set(lp.course_id, (completedMap.get(lp.course_id) ?? 0) + 1);
     }
 

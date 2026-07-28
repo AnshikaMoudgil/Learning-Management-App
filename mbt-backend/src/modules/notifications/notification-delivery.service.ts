@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { NotificationsRepository } from './notifications.repository';
 import { FirebaseService } from './firebase.service';
 import { NotificationType } from './notifications.service';
 
@@ -11,22 +11,12 @@ export interface DeliveryPayload {
   data?: Record<string, string>;
 }
 
-interface NotificationSettingsRow {
-  user_id: string;
-  push_notifications: boolean | null;
-  live_class_reminders: boolean | null;
-  course_expiry_alerts: boolean | null;
-  payment_confirmations: boolean | null;
-  device_transfer_status: boolean | null;
-  promotional_marketing: boolean | null;
-}
-
 @Injectable()
 export class NotificationDeliveryService {
   private readonly logger = new Logger(NotificationDeliveryService.name);
 
   constructor(
-    private readonly supabaseService: SupabaseService,
+    private readonly notificationsRepository: NotificationsRepository,
     private readonly firebaseService: FirebaseService,
   ) {}
 
@@ -37,32 +27,14 @@ export class NotificationDeliveryService {
     if (!userIds || userIds.length === 0) return;
 
     try {
-      const db = this.supabaseService.getClient();
+      const settingsList = await this.notificationsRepository.findSettingsByUserIds(userIds);
 
-      // Retrieve notification settings for the targeted users
-      const { data: settingsRaw, error: settingsError } = await db
-        .from('notification_settings')
-        .select('*')
-        .in('user_id', userIds);
-
-      if (settingsError) {
-        this.logger.error(
-          `Failed to fetch notification settings: ${settingsError.message}`,
-        );
-      }
-
-      const settingsList = settingsRaw as NotificationSettingsRow[] | null;
-
-      // Filter userIds based on their preferences
       const allowedUserIds = userIds.filter((userId) => {
-        const userSettings: NotificationSettingsRow | undefined =
-          settingsList?.find((s) => s.user_id === userId);
-        if (!userSettings) return true; // Default to true if no settings row exists yet
+        const userSettings = settingsList?.find((s) => s.user_id === userId);
+        if (!userSettings) return true;
 
-        // 1. Check if push notifications are enabled globally
         if (userSettings.push_notifications === false) return false;
 
-        // 2. Check specific category preference
         const type = payload.type;
         if (
           type === 'session_live' ||
@@ -97,20 +69,7 @@ export class NotificationDeliveryService {
         return;
       }
 
-      // Retrieve all active FCM tokens for the filtered targeted users
-      const { data: devices, error } = await db
-        .from('devices')
-        .select('fcm_token')
-        .in('user_id', allowedUserIds)
-        .eq('is_active', true)
-        .not('fcm_token', 'is', null);
-
-      if (error) {
-        this.logger.error(
-          `Failed to fetch active device tokens: ${error.message}`,
-        );
-        return;
-      }
+      const devices = await this.notificationsRepository.findActiveDeviceTokens(allowedUserIds);
 
       if (!devices || devices.length === 0) {
         this.logger.log(
@@ -125,7 +84,6 @@ export class NotificationDeliveryService {
 
       if (tokens.length === 0) return;
 
-      // Construct rich data payload for mobile navigation
       const pushData: Record<string, string> = {};
 
       if (payload.notificationId) {

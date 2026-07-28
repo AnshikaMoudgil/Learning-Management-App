@@ -6,6 +6,14 @@ import { ZoomRecordingService } from '../../zoom/zoom-recording.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { StorageService } from '../../../storage/storage.service';
+import type {
+  ZoomCreateJob,
+  ZoomUpdateJob,
+  ZoomDeleteJob,
+  ZoomDownloadJob,
+  ZoomUploadJob,
+  ZoomReminderJob,
+} from '../../../common/types/queues.types';
 
 interface SessionRow {
   title: string;
@@ -14,41 +22,6 @@ interface SessionRow {
 }
 interface EnrollmentRow {
   user_id: string;
-}
-interface ZoomCreateJob {
-  sessionId: string;
-  instructorId: string;
-  title: string;
-  startTime: string;
-  duration: number;
-}
-interface ZoomUpdateJob {
-  instructorId: string;
-  meetingId: string;
-  topic?: string;
-  start_time?: string;
-  duration?: number;
-}
-interface ZoomDeleteJob {
-  instructorId: string;
-  meetingId: string;
-}
-interface ZoomDownloadJob {
-  sessionId: string;
-  instructorId: string;
-  recordingId: string;
-  downloadUrl: string;
-  fileSize?: number;
-}
-interface ZoomUploadJob {
-  sessionId: string;
-  recordingId: string;
-  fileBase64: string;
-  fileSize?: number;
-}
-interface ZoomReminderJob {
-  sessionId: string;
-  type: 'reminder_24h' | 'reminder_1h' | 'reminder_10min';
 }
 
 const REMINDER_MESSAGES: Record<

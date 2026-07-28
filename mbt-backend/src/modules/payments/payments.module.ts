@@ -5,6 +5,7 @@ import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
+import { PaymentsRepository } from './payments.repository';
 import { RazorpayService } from './razorpay.service';
 import { InvoicesModule } from '../invoices/invoices.module';
 
@@ -17,6 +18,6 @@ import { InvoicesModule } from '../invoices/invoices.module';
     NotificationsModule,
   ],
   controllers: [PaymentsController],
-  providers: [PaymentsService, RazorpayService],
+  providers: [PaymentsService, PaymentsRepository, RazorpayService],
 })
 export class PaymentsModule {}

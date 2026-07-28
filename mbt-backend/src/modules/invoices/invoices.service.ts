@@ -1,14 +1,9 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
+import { InvoicesRepository } from './invoices.repository';
 import { PdfGeneratorService } from './pdf-generator.service';
 import type {
-  PaymentRow,
-  ProfileRow,
-  CourseRow,
-  PaymentItemRow,
-  NewInvoiceRow,
-  ExistingInvoiceRow,
   InvoiceRow,
   InvoiceItemRow,
 } from '../../common/types/invoices.types';
@@ -27,6 +22,7 @@ export class InvoicesService {
   private readonly logger = new Logger(InvoicesService.name);
 
   constructor(
+    private readonly invoicesRepository: InvoicesRepository,
     private readonly supabaseService: SupabaseService,
     private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly configService: ConfigService,
@@ -36,9 +32,6 @@ export class InvoicesService {
     return this.supabaseService.getClient();
   }
 
-  /**
-   * Generates a daily-based sequential invoice number: MBT-YYYYMMDD-XXXXXX
-   */
   async generateDailyInvoiceNumber(): Promise<string> {
     const dateObj = new Date();
     const yyyy = dateObj.getFullYear();
@@ -47,38 +40,15 @@ export class InvoicesService {
     const yyyymmdd = `${yyyy}${mm}${dd}`;
     const prefix = `MBT-${yyyymmdd}-`;
 
-    const { data } = await this.db
-      .from('invoices')
-      .select('invoice_number')
-      .like('invoice_number', `${prefix}%`)
-      .order('invoice_number', { ascending: false })
-      .limit(1);
-
-    const row = data?.[0] as { invoice_number: string } | undefined;
+    const row = await this.invoicesRepository.findLatestInvoiceNumber(prefix);
     const seq = row ? parseInt(row.invoice_number.slice(-6), 10) + 1 : 1;
     return `${prefix}${String(seq).padStart(6, '0')}`;
   }
 
-  /**
-   * Generates an invoice for a completed payment
-   */
   async createInvoiceForPayment(paymentId: string): Promise<void> {
     this.logger.log(`Starting invoice generation for payment ID: ${paymentId}`);
 
-    // 1. Fetch payment details
-    const { data: payment, error: paymentError } = (await this.db
-      .from('payments')
-      .select('status, user_id, course_id, base_amount, discount_amount, amount_paid, currency, updated_at')
-      .eq('id', paymentId)
-      .single()) as unknown as {
-      data: PaymentRow | null;
-      error: { message: string } | null;
-    };
-
-    if (paymentError || !payment) {
-      this.logger.error(`Failed to find payment: ${paymentError?.message}`);
-      throw new NotFoundException(`Payment not found: ${paymentId}`);
-    }
+    const payment = await this.invoicesRepository.findPaymentById(paymentId);
 
     if (payment.status !== 'completed') {
       this.logger.warn(
@@ -87,14 +57,7 @@ export class InvoicesService {
       return;
     }
 
-    // Check if invoice already exists for this payment to ensure idempotency
-    const { data: existingInvoice } = (await this.db
-      .from('invoices')
-      .select('id, invoice_number, pdf_url')
-      .eq('payment_id', paymentId)
-      .single()) as unknown as {
-      data: ExistingInvoiceRow | null;
-    };
+    const existingInvoice = await this.invoicesRepository.findInvoiceByPaymentId(paymentId);
 
     if (existingInvoice) {
       this.logger.log(
@@ -103,15 +66,8 @@ export class InvoicesService {
       return;
     }
 
-    // 2. Fetch User profile and Auth credentials
     const userId = payment.user_id;
-    const { data: profile } = (await this.db
-      .from('profiles')
-      .select('full_name')
-      .eq('id', userId)
-      .single()) as unknown as {
-      data: ProfileRow | null;
-    };
+    const profile = await this.invoicesRepository.findProfileById(userId);
 
     const { data: authUserResult } = (await this.db.auth.admin.getUserById(
       userId,
@@ -135,7 +91,6 @@ export class InvoicesService {
       phone: authUser?.phone || undefined,
     };
 
-    // 3. Fetch invoice items (single course or grouped checkout)
     const isGrouped = !payment.course_id;
 
     interface InvoiceItemData {
@@ -150,12 +105,7 @@ export class InvoicesService {
     let invoiceItemsData: InvoiceItemData[];
 
     if (isGrouped) {
-      const { data: paymentItems } = (await this.db
-        .from('payment_items')
-        .select('course_id, base_amount, discount_amount, amount_paid')
-        .eq('payment_id', paymentId)) as unknown as {
-        data: PaymentItemRow[] | null;
-      };
+      const paymentItems = await this.invoicesRepository.findPaymentItemsByPaymentId(paymentId);
 
       if (!paymentItems?.length) {
         throw new NotFoundException(
@@ -164,12 +114,7 @@ export class InvoicesService {
       }
 
       const courseIds = paymentItems.map((i) => i.course_id);
-      const { data: courses } = (await this.db
-        .from('courses')
-        .select('id, title, short_description')
-        .in('id', courseIds)) as unknown as {
-        data: CourseRow[] | null;
-      };
+      const courses = await this.invoicesRepository.findCoursesByIds(courseIds);
 
       const courseMap = new Map<
         string,
@@ -200,13 +145,7 @@ export class InvoicesService {
         );
       }
 
-      const { data: course } = (await this.db
-        .from('courses')
-        .select('title, short_description')
-        .eq('id', singleCourseId)
-        .single()) as unknown as {
-        data: { title: string; short_description: string | null } | null;
-      };
+      const course = await this.invoicesRepository.findCourseById(singleCourseId);
 
       if (!course) {
         throw new NotFoundException(
@@ -226,10 +165,8 @@ export class InvoicesService {
       ];
     }
 
-    // 4. Generate daily invoice number
     const invoiceNumber = await this.generateDailyInvoiceNumber();
 
-    // 5. Compute totals
     const subtotal = invoiceItemsData.reduce((s, i) => s + i.base_amount, 0);
     const discount = invoiceItemsData.reduce(
       (s, i) => s + i.discount_amount,
@@ -238,35 +175,21 @@ export class InvoicesService {
     const total = invoiceItemsData.reduce((s, i) => s + i.amount_paid, 0);
     const currency = payment.currency || 'INR';
 
-    // 6. Create Invoice in database
-    const { data: newInvoice, error: invoiceError } = (await this.db
-      .from('invoices')
-      .insert({
-        invoice_number: invoiceNumber,
-        payment_id: paymentId,
-        user_id: userId,
-        status: 'paid',
-        currency,
-        subtotal,
-        discount,
-        tax: 0.0,
-        total,
-        paid_at: payment.updated_at || new Date().toISOString(),
-        company_snapshot: COMPANY_SNAPSHOT,
-        customer_snapshot: customerSnapshot,
-      } as never)
-      .select('id, issued_at')
-      .single()) as unknown as {
-      data: NewInvoiceRow | null;
-      error: { message: string } | null;
-    };
+    const newInvoice = await this.invoicesRepository.insertInvoice({
+      invoice_number: invoiceNumber,
+      payment_id: paymentId,
+      user_id: userId,
+      status: 'paid',
+      currency,
+      subtotal,
+      discount,
+      tax: 0.0,
+      total,
+      paid_at: payment.updated_at || new Date().toISOString(),
+      company_snapshot: COMPANY_SNAPSHOT,
+      customer_snapshot: customerSnapshot,
+    });
 
-    if (invoiceError || !newInvoice) {
-      this.logger.error(`Failed to create invoice: ${invoiceError?.message}`);
-      throw new Error(`Failed to create invoice: ${invoiceError?.message}`);
-    }
-
-    // 7. Create Invoice Items in database (batch insert)
     const invoiceItems: InvoiceItemRow[] = invoiceItemsData.map((item) => ({
       invoice_id: newInvoice.id,
       item_type: 'course',
@@ -279,16 +202,9 @@ export class InvoicesService {
       tax: 0.0,
       total: item.amount_paid,
     }));
-    const { error: itemError } = await this.db
-      .from('invoice_items')
-      .insert(invoiceItems as never);
 
-    if (itemError) {
-      this.logger.error(`Failed to create invoice items: ${itemError.message}`);
-      throw new Error(`Failed to create invoice items: ${itemError.message}`);
-    }
+    await this.invoicesRepository.insertInvoiceItems(invoiceItems);
 
-    // 8. Generate PDF
     const pdfItems = invoiceItemsData.map((item) => ({
       title: item.title,
       description: item.short_description || undefined,
@@ -313,7 +229,6 @@ export class InvoicesService {
       items: pdfItems,
     });
 
-    // 9. Upload PDF to Supabase Storage
     const fileName = `${invoiceNumber}.pdf`;
     const filePath = `invoices/${fileName}`;
 
@@ -329,25 +244,11 @@ export class InvoicesService {
       throw new Error(`Failed to upload invoice PDF: ${uploadError.message}`);
     }
 
-    // Get PDF public URL
     const { data: urlData } = this.db.storage
       .from('invoices')
       .getPublicUrl(filePath);
 
-    // 10. Update Invoice with pdfUrl
-    const { error: updateError } = await this.db
-      .from('invoices')
-      .update({ pdf_url: urlData.publicUrl } as never)
-      .eq('id', newInvoice.id);
-
-    if (updateError) {
-      this.logger.error(
-        `Failed to update invoice pdfUrl: ${updateError.message}`,
-      );
-      throw new Error(
-        `Failed to update invoice pdfUrl: ${updateError.message}`,
-      );
-    }
+    await this.invoicesRepository.updateInvoicePdfUrl(newInvoice.id, urlData.publicUrl);
 
     this.logger.log(
       `Invoice ${invoiceNumber} generated and uploaded successfully!`,
@@ -355,78 +256,13 @@ export class InvoicesService {
   }
 
   async findByUser(userId: string): Promise<InvoiceRow[]> {
-    const { data, error } = (await this.db
-      .from('invoices')
-      .select(
-        `
-        id,
-        invoice_number,
-        status,
-        currency,
-        subtotal,
-        discount,
-        tax,
-        total,
-        issued_at,
-        paid_at,
-        pdf_url,
-        payment_id,
-        customer_snapshot,
-        company_snapshot
-      `,
-      )
-      .eq('user_id', userId)
-      .order('issued_at', { ascending: false })) as unknown as {
-      data: InvoiceRow[] | null;
-      error: { message: string } | null;
-    };
-
-    if (error) {
-      this.logger.error(
-        `Failed to fetch invoices for user ${userId}: ${error.message}`,
-      );
-      throw new Error('Failed to fetch invoices');
-    }
-
-    return data || [];
+    return this.invoicesRepository.findInvoicesByUserId(userId);
   }
 
   async findOneForUser(
     id: string,
     userId: string,
   ): Promise<InvoiceRow & { invoice_items?: unknown }> {
-    const { data, error } = (await this.db
-      .from('invoices')
-      .select(
-        `
-        id,
-        invoice_number,
-        status,
-        currency,
-        subtotal,
-        discount,
-        tax,
-        total,
-        issued_at,
-        paid_at,
-        pdf_url,
-        payment_id,
-        customer_snapshot,
-        company_snapshot,
-        invoice_items (*)
-      `,
-      )
-      .eq('id', id)
-      .eq('user_id', userId)
-      .single()) as unknown as {
-      data: InvoiceRow | null;
-      error: { message: string } | null;
-    };
-
-    if (error || !data) {
-      throw new NotFoundException('Invoice not found');
-    }
-
-    return data;
+    return this.invoicesRepository.findInvoiceByIdAndUser(id, userId);
   }
 }

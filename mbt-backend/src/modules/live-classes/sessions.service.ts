@@ -11,45 +11,23 @@ import { Queue } from 'bullmq';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { JoinSessionResponseDto } from './dto/join-session-response.dto';
-import { SupabaseService } from '../supabase/supabase.service';
 import { ConfigService } from '@nestjs/config';
-import {
-  NotificationsService,
-  type NotificationPayload,
-} from '../notifications/notifications.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import type { NotificationPayload } from '../../common/types/notifications.types';
 
 @Injectable()
 export class SessionsService {
   constructor(
     private readonly sessionsRepository: SessionsRepository,
     private readonly zoomSdkService: ZoomSdkService,
-    private readonly supabaseService: SupabaseService,
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
     @InjectQueue('zoom-task')
     private readonly zoomTaskQueue: Queue,
   ) {}
 
-  private get db() {
-    return this.supabaseService.getClient();
-  }
-
   async createSession(userId: string, dto: CreateSessionDto) {
-    // Look up the course to get its assigned instructor
-    const { data: course, error: courseError } = (await this.db
-      .from('courses')
-      .select('instructor_id')
-      .eq('id', dto.course_id)
-      .single()) as unknown as {
-      data: { instructor_id: string | null } | null;
-      error: { message: string } | null;
-    };
-
-    if (courseError || !course) {
-      throw new NotFoundException('Course not found');
-    }
-
-    const courseInstructorId = course.instructor_id;
+    const courseInstructorId = await this.sessionsRepository.findCourseInstructorId(dto.course_id);
     if (!courseInstructorId) {
       throw new BadRequestException('Course has no assigned instructor');
     }
@@ -185,17 +163,7 @@ export class SessionsService {
   }
 
   async getUpcomingSessions(userId: string) {
-    const { data: enrollments } = await this.db
-      .from('enrollments')
-      .select('course_id')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .or(
-        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
-      );
-
-    const rows = (enrollments || []) as { course_id: string }[];
-    const courseIds = rows.map((e) => e.course_id);
+    const courseIds = await this.sessionsRepository.findEnrolledCourseIds(userId);
     if (courseIds.length === 0) return [];
 
     return this.sessionsRepository.findUpcomingByCourseIds(courseIds);
@@ -206,14 +174,8 @@ export class SessionsService {
   }
 
   private async isAdminOrSuperadmin(userId: string): Promise<boolean> {
-    const { data: profile } = (await this.db
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .single()) as unknown as { data: { role: string } | null };
-    return profile?.role
-      ? ['admin', 'superadmin'].includes(profile.role)
-      : false;
+    const role = await this.sessionsRepository.findUserRole(userId);
+    return role ? ['admin', 'superadmin'].includes(role) : false;
   }
 
   async startSession(id: string, userId: string) {
@@ -267,18 +229,7 @@ export class SessionsService {
       throw new BadRequestException('This session has been cancelled');
     }
 
-    // Fetch user profile
-    const { data: userProfile, error: profileError } = await this.db
-      .from('profiles')
-      .select('full_name, role')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !userProfile) {
-      throw new NotFoundException('User profile not found');
-    }
-
-    const profile = userProfile as { full_name: string | null; role: string };
+    const profile = await this.sessionsRepository.findUserProfile(userId);
 
     const isInstructor =
       profile.role === 'instructor' && session.instructor_id === userId;
@@ -286,18 +237,8 @@ export class SessionsService {
 
     // If student, verify enrollment
     if (!isInstructor && !isAdmin) {
-      const { data: enrollment, error: enrollError } = await this.db
-        .from('enrollments')
-        .select('id')
-        .eq('course_id', session.course_id)
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .or(
-          `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
-        )
-        .maybeSingle();
-
-      if (enrollError || !enrollment) {
+      const enrollment = await this.sessionsRepository.findActiveEnrollment(session.course_id, userId);
+      if (!enrollment) {
         throw new ForbiddenException('You are not enrolled in this course');
       }
     }
@@ -359,18 +300,7 @@ export class SessionsService {
     courseId: string,
     payload: NotificationPayload,
   ) {
-    const { data: enrollments } = await this.db
-      .from('enrollments')
-      .select('user_id')
-      .eq('course_id', courseId)
-      .eq('status', 'active')
-      .or(
-        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
-      );
-
-    const userIds = ((enrollments ?? []) as { user_id: string }[]).map(
-      (e) => e.user_id,
-    );
+    const userIds = await this.sessionsRepository.findEnrolledUserIds(courseId);
 
     if (userIds.length > 0) {
       await this.notificationsService.notifyMany(userIds, payload);
