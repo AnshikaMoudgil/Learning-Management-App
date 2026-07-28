@@ -5,6 +5,8 @@ import { ZoomOAuthService } from './zoom-oauth.service';
 import { ZoomMeetingService } from './zoom-meeting.service';
 import { ZoomSdkService } from './zoom-sdk.service';
 import { ZoomRecordingService } from './zoom-recording.service';
+import { ZoomAttendanceRepository } from './zoom-attendance.repository';
+import { ZoomOAuthRepository } from './zoom-oauth.repository';
 import { ZoomAttendanceService } from './zoom-attendance.service';
 import { ZoomWebhookController } from './zoom-webhook.controller';
 import { ZoomOAuthController } from './zoom-oauth.controller';
@@ -21,6 +23,8 @@ import { SupabaseModule } from '../supabase/supabase.module';
     ZoomSdkService,
     ZoomRecordingService,
     ZoomAttendanceService,
+    ZoomAttendanceRepository,
+    ZoomOAuthRepository,
   ],
   exports: [
     ZoomAuthService,

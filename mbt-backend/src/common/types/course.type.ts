@@ -1,5 +1,17 @@
 export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
 
+export interface CourseFilters {
+  category?: string;
+  level?: CourseLevel;
+  is_published?: boolean;
+  search?: string;
+}
+
+export interface PaginationParams {
+  page: number;
+  limit: number;
+}
+
 export interface Course {
   id: string;
   title: string;

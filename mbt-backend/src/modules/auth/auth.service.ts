@@ -4,13 +4,17 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { AuthRepository } from './auth.repository';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import type { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../../common/types/profile.type';
 
 @Injectable()
 export class AuthService {
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(
+    private supabaseService: SupabaseService,
+    private readonly authRepository: AuthRepository,
+  ) {}
 
   private get client() {
     return this.supabaseService.getClient();
@@ -22,8 +26,6 @@ export class AuthService {
     if (error) {
       throw new BadRequestException(`Failed to send OTP: ${error.message}`);
     }
-
-    // await this.supabaseService.clearAuthSession();
 
     return { message: 'OTP sent successfully' };
   }
@@ -42,8 +44,6 @@ export class AuthService {
     }
 
     const response = await this.buildAuthResponse(data.session, data.user!);
-
-    // await this.supabaseService.clearAuthSession();
 
     return response;
   }
@@ -65,8 +65,6 @@ export class AuthService {
     }
 
     const response = await this.buildAuthResponse(data.session, data.user);
-
-    // await this.supabaseService.clearAuthSession();
 
     return response;
   }
@@ -97,17 +95,7 @@ export class AuthService {
   private async checkSession(
     userId: string,
   ): Promise<AuthResponseDto['profile']> {
-    const { data, error } = await this.client
-      .from('profiles')
-      .select(
-        'id, full_name, avatar_url, phone, email, role, status, about, is_active, is_deleted, onboarding_completed, last_login_at',
-      )
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
+    const data = await this.authRepository.findProfileById(userId);
 
     if (!data) {
       return null;

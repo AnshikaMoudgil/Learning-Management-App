@@ -6,7 +6,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SupabaseService } from '../supabase/supabase.service';
+import { ZoomOAuthRepository } from './zoom-oauth.repository';
 import * as crypto from 'crypto';
 
 export interface ProviderAccount {
@@ -34,17 +34,13 @@ export class ZoomOAuthService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly supabaseService: SupabaseService,
+    private readonly zoomOAuthRepository: ZoomOAuthRepository,
   ) {
     this.clientId = this.configService.get<string>('zoom.clientId')!;
     this.clientSecret = this.configService.get<string>('zoom.clientSecret')!;
     this.redirectUri = this.configService.get<string>('zoom.redirectUri')!;
     const keyHex = this.configService.get<string>('zoom.tokenEncryptionKey')!;
     this.encryptionKey = Buffer.from(keyHex, 'hex');
-  }
-
-  private get db() {
-    return this.supabaseService.getClient();
   }
 
   getAuthorizationUrl(state: string): string {
@@ -73,42 +69,24 @@ export class ZoomOAuthService {
 
     const zoomUser = await this.getZoomUser(tokenResponse.access_token);
 
-    const { data: existing } = await (
-      this.db.from('meeting_provider_accounts') as any
-    )
-      .select('id')
-      .eq('provider', 'zoom')
-      .maybeSingle();
+    const existing = await this.zoomOAuthRepository.findExistingProvider('zoom');
 
-    let query;
+    const data = {
+      access_token: encryptedAccess,
+      refresh_token: encryptedRefresh,
+      expires_at: expiresAt,
+      status: 'connected',
+      provider_user_id: zoomUser.id,
+      email: zoomUser.email,
+    };
+
     if (existing) {
-      query = (this.db.from('meeting_provider_accounts') as any)
-        .update({
-          access_token: encryptedAccess,
-          refresh_token: encryptedRefresh,
-          expires_at: expiresAt,
-          status: 'connected',
-          provider_user_id: zoomUser.id,
-          email: zoomUser.email,
-        })
-        .eq('id', existing.id);
+      await this.zoomOAuthRepository.upsertProvider(data, existing.id);
     } else {
-      query = (this.db.from('meeting_provider_accounts') as any).insert({
+      await this.zoomOAuthRepository.upsertProvider({
         provider: 'zoom',
-        access_token: encryptedAccess,
-        refresh_token: encryptedRefresh,
-        expires_at: expiresAt,
-        status: 'connected',
-        provider_user_id: zoomUser.id,
-        email: zoomUser.email,
+        ...data,
       });
-    }
-
-    const { error } = await query;
-
-    if (error) {
-      this.logger.error(`Failed to store Zoom tokens: ${error.message}`);
-      throw new InternalServerErrorException('Failed to store Zoom connection');
     }
 
     this.logger.log(
@@ -117,24 +95,18 @@ export class ZoomOAuthService {
   }
 
   async disconnect(): Promise<void> {
-    await (this.db.from('meeting_provider_accounts') as any)
-      .update({ status: 'disconnected' })
-      .eq('provider', 'zoom');
+    await this.zoomOAuthRepository.updateProviderStatus('zoom', 'disconnected');
   }
 
   async getConnection(): Promise<ProviderAccount | null> {
-    const { data } = await (this.db.from('meeting_provider_accounts') as any)
-      .select('*')
-      .eq('provider', 'zoom')
-      .eq('status', 'connected')
-      .maybeSingle();
+    const data = await this.zoomOAuthRepository.findActiveConnection('zoom');
 
     if (!data) return null;
 
     return {
       ...data,
-      access_token: this.decrypt(data.access_token),
-      refresh_token: this.decrypt(data.refresh_token),
+      access_token: this.decrypt(data.access_token as string),
+      refresh_token: this.decrypt(data.refresh_token as string),
     } as ProviderAccount;
   }
 
@@ -163,9 +135,7 @@ export class ZoomOAuthService {
         `Failed to refresh Zoom token: ${response.status} ${text}`,
       );
 
-      await (this.db.from('meeting_provider_accounts') as any)
-        .update({ status: 'expired' })
-        .eq('id', account.id);
+      await this.zoomOAuthRepository.updateAccount(account.id, { status: 'expired' });
 
       throw new InternalServerErrorException(
         'Zoom token expired. Please reconnect your Zoom account.',
@@ -184,14 +154,12 @@ export class ZoomOAuthService {
       Date.now() + data.expires_in * 1000,
     ).toISOString();
 
-    await (this.db.from('meeting_provider_accounts') as any)
-      .update({
-        access_token: encryptedAccess,
-        refresh_token: encryptedRefresh,
-        expires_at: expiresAt,
-        status: 'connected',
-      })
-      .eq('id', account.id);
+    await this.zoomOAuthRepository.updateAccount(account.id, {
+      access_token: encryptedAccess,
+      refresh_token: encryptedRefresh,
+      expires_at: expiresAt,
+      status: 'connected',
+    });
 
     this.logger.log('Zoom token refreshed');
     return data.access_token;

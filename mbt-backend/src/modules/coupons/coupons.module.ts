@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { CouponsController } from './coupons.controller';
 import { CouponsService } from './coupons.service';
+import { CouponsRepository } from './coupons.repository';
 
 @Module({
   imports: [SupabaseModule],
   controllers: [CouponsController],
-  providers: [CouponsService],
+  providers: [CouponsService, CouponsRepository],
   exports: [CouponsService],
 })
 export class CouponsModule {}

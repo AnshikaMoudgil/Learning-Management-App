@@ -11,11 +11,11 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { SupabaseService } from '../supabase/supabase.service';
 import { CouponsService } from '../coupons/coupons.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RazorpayService } from './razorpay.service';
+import { PaymentsRepository } from './payments.repository';
 import type { CourseRow, PaymentRow } from '../../common/types/payments.types';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class PaymentsService {
   private readonly pendingMinutes = 20;
 
   constructor(
-    private readonly supabaseService: SupabaseService,
+    private readonly paymentsRepository: PaymentsRepository,
     private readonly couponsService: CouponsService,
     private readonly enrollmentsService: EnrollmentsService,
     private readonly notificationsService: NotificationsService,
@@ -32,10 +32,6 @@ export class PaymentsService {
     private readonly configService: ConfigService,
     @InjectQueue('invoices-queue') private readonly invoicesQueue: Queue,
   ) {}
-
-  private get db() {
-    return this.supabaseService.getClient();
-  }
 
   private get currency(): string {
     return this.configService.get<string>('razorpay.currency') ?? 'INR';
@@ -51,7 +47,7 @@ export class PaymentsService {
       throw new BadRequestException('At least one course is required');
     }
 
-    const courses = await this.getCourses(courseIds);
+    const courses = await this.paymentsRepository.findCoursesByIds(courseIds);
 
     if (!allowRenewal) {
       for (const course of courses) {
@@ -95,32 +91,28 @@ export class PaymentsService {
     });
     const expiresAt = new Date(Date.now() + this.pendingMinutes * 60_000);
 
-    const { data: payment, error } = await this.db
-      .from('payments')
-      .insert({
-        user_id: userId,
-        course_id: null,
-        coupon_id: coupon.couponId ?? null,
-        base_amount: coupon.baseAmount,
-        discount_amount: coupon.discountAmount,
-        amount_paid: coupon.finalPrice,
-        amount_subunits: amountSubunits,
-        currency: this.currency,
-        razorpay_order_id: razorpayOrder.id,
-        status: 'pending',
-        expires_at: expiresAt.toISOString(),
-      } as never)
-      .select('*')
-      .single();
+    const result = await this.paymentsRepository.insertPayment({
+      user_id: userId,
+      course_id: null,
+      coupon_id: coupon.couponId ?? null,
+      base_amount: coupon.baseAmount,
+      discount_amount: coupon.discountAmount,
+      amount_paid: coupon.finalPrice,
+      amount_subunits: amountSubunits,
+      currency: this.currency,
+      razorpay_order_id: razorpayOrder.id,
+      status: 'pending',
+      expires_at: expiresAt.toISOString(),
+    });
 
-    if (error) {
-      this.logger.error(`Failed to insert payment: ${error.message}`, {
+    if (result.error) {
+      this.logger.error(`Failed to insert payment: ${result.error.message}`, {
         userId,
       });
       throw new InternalServerErrorException('Failed to create payment order');
     }
 
-    const paymentId = (payment as unknown as PaymentRow).id;
+    const paymentId = result.data.id;
 
     const paymentItems = courses.map((course) => {
       const itemBase = this.effectivePrice(course);
@@ -139,16 +131,15 @@ export class PaymentsService {
       };
     });
 
-    const { error: itemsError } = await this.db
-      .from('payment_items')
-      .insert(paymentItems as never);
+    const { error: itemsError } =
+      await this.paymentsRepository.insertPaymentItems(paymentItems);
 
     if (itemsError) {
       this.logger.error(
         `Failed to insert payment items: ${itemsError.message}`,
         { paymentId },
       );
-      await this.db.from('payments').delete().eq('id', paymentId);
+      await this.paymentsRepository.deletePayment(paymentId);
       throw new InternalServerErrorException('Failed to create payment order');
     }
 
@@ -181,28 +172,24 @@ export class PaymentsService {
     this.logger.log(
       `Free enrollment for user ${userId} for ${courses.length} courses`,
     );
-    const { data: payment, error } = await this.db
-      .from('payments')
-      .insert({
-        user_id: userId,
-        course_id: null,
-        coupon_id: coupon.couponId ?? null,
-        base_amount: coupon.baseAmount,
-        discount_amount: coupon.discountAmount,
-        amount_paid: 0,
-        amount_subunits: 0,
-        currency: this.currency,
-        razorpay_order_id: `free_${Date.now()}_${userId.slice(0, 8)}`,
-        status: 'completed',
-        razorpay_payment_id: `free_${Date.now()}`,
-        razorpay_signature: 'free',
-        expires_at: new Date(Date.now() + 3600_000).toISOString(),
-      } as never)
-      .select('*')
-      .single();
+    const result = await this.paymentsRepository.insertPayment({
+      user_id: userId,
+      course_id: null,
+      coupon_id: coupon.couponId ?? null,
+      base_amount: coupon.baseAmount,
+      discount_amount: coupon.discountAmount,
+      amount_paid: 0,
+      amount_subunits: 0,
+      currency: this.currency,
+      razorpay_order_id: `free_${Date.now()}_${userId.slice(0, 8)}`,
+      status: 'completed',
+      razorpay_payment_id: `free_${Date.now()}`,
+      razorpay_signature: 'free',
+      expires_at: new Date(Date.now() + 3600_000).toISOString(),
+    });
 
-    if (error) {
-      this.logger.error(`Free enrollment insert failed: ${error.message}`, {
+    if (result.error) {
+      this.logger.error(`Free enrollment insert failed: ${result.error.message}`, {
         userId,
       });
       throw new InternalServerErrorException(
@@ -210,7 +197,8 @@ export class PaymentsService {
       );
     }
 
-    const paymentId = (payment as unknown as PaymentRow).id;
+    const payment = result.data;
+    const paymentId = payment.id;
     const totalBaseAmount = courses.reduce(
       (s, c) => s + this.effectivePrice(c),
       0,
@@ -231,17 +219,17 @@ export class PaymentsService {
       };
     });
 
-    await this.db.from('payment_items').insert(paymentItems as never);
+    await this.paymentsRepository.insertPaymentItems(paymentItems);
 
-    const result = await this.enrollmentsService.enrollFromPayment(
-      (payment as unknown as PaymentRow).razorpay_order_id,
+    const enrollmentResult = await this.enrollmentsService.enrollFromPayment(
+      payment.razorpay_order_id,
       `free_${Date.now()}`,
       'free',
     );
-    const resultData = result as { paymentId?: string } | null;
+    const resultData = enrollmentResult as { paymentId?: string } | null;
     const resultPaymentId = resultData?.paymentId || paymentId;
     await this.queueInvoiceGeneration(resultPaymentId);
-    return result;
+    return enrollmentResult;
   }
 
   async verifyPayment(input: {
@@ -249,7 +237,9 @@ export class PaymentsService {
     razorpayPaymentId: string;
     razorpaySignature: string;
   }) {
-    const payment = await this.getPaymentByOrderId(input.razorpayOrderId);
+    const payment = await this.paymentsRepository.findPaymentByOrderId(
+      input.razorpayOrderId,
+    );
     const gateway = await this.getGatewayForPayment(payment);
 
     this.verifyCheckoutSignature(
@@ -276,10 +266,10 @@ export class PaymentsService {
           razorpayPaymentId: input.razorpayPaymentId,
         },
       );
-      await this.db
-        .from('payments')
-        .update({ status: 'failed' } as never)
-        .eq('razorpay_order_id', input.razorpayOrderId);
+      await this.paymentsRepository.updatePaymentStatusByOrderId(
+        input.razorpayOrderId,
+        'failed',
+      );
       throw err;
     }
   }
@@ -332,7 +322,7 @@ export class PaymentsService {
 
     let payment: PaymentRow;
     try {
-      payment = await this.getPaymentByOrderId(orderId);
+      payment = await this.paymentsRepository.findPaymentByOrderId(orderId);
     } catch {
       return { received: true, processed: false };
     }
@@ -359,10 +349,10 @@ export class PaymentsService {
           razorpayPaymentId: paymentId,
         },
       );
-      await this.db
-        .from('payments')
-        .update({ status: 'failed' } as never)
-        .eq('razorpay_order_id', orderId);
+      await this.paymentsRepository.updatePaymentStatusByOrderId(
+        orderId,
+        'failed',
+      );
       throw err;
     }
 
@@ -407,117 +397,33 @@ export class PaymentsService {
     }
   }
 
-  private async getCourse(courseId: string): Promise<CourseRow> {
-    const { data, error } = await this.db
-      .from('courses')
-      .select('id, title, category, price, discount_price, is_published')
-      .eq('id', courseId)
-      .maybeSingle();
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to look up course');
-    }
-
-    if (!data || !(data as CourseRow).is_published) {
-      throw new NotFoundException('Course not found');
-    }
-
-    return data as CourseRow;
-  }
-
-  private async getCourses(courseIds: string[]): Promise<CourseRow[]> {
-    const { data, error } = await this.db
-      .from('courses')
-      .select('id, title, category, price, discount_price, is_published')
-      .in('id', courseIds);
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to look up courses');
-    }
-
-    const rows = (data ?? []) as CourseRow[];
-    const missing = courseIds.filter(
-      (id) =>
-        !rows.find((r) => r.id === id) ||
-        !rows.find((r) => r.id === id && r.is_published),
-    );
-    if (missing.length > 0) {
-      throw new NotFoundException(`Courses not found: ${missing.join(', ')}`);
-    }
-
-    return rows;
-  }
-
   private async assertNotEnrolled(userId: string, courseId: string) {
-    const { data, error } = await this.db
-      .from('enrollments')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('course_id', courseId)
-      .eq('status', 'active')
-      .or(
-        `validity_end_at.is.null,validity_end_at.gt.${new Date().toISOString()}`,
-      )
-      .maybeSingle();
+    const enrollment =
+      await this.paymentsRepository.findActiveEnrollment(userId, courseId);
 
-    if (error) {
-      throw new InternalServerErrorException(
-        'Failed to check enrollment status',
-      );
-    }
-
-    if (data) {
+    if (enrollment) {
       throw new ConflictException('User is already enrolled in this course');
     }
   }
 
-  private async getPaymentByOrderId(orderId: string): Promise<PaymentRow> {
-    const { data, error } = await this.db
-      .from('payments')
-      .select('*')
-      .eq('razorpay_order_id', orderId)
-      .maybeSingle();
-
-    if (error) {
-      throw new InternalServerErrorException('Failed to look up payment');
-    }
-
-    if (!data) {
-      throw new NotFoundException('Payment order not found');
-    }
-
-    return data as PaymentRow;
-  }
-
   private async getGatewayForPayment(payment: PaymentRow) {
     if (payment.course_id) {
-      const course = await this.getCourse(payment.course_id);
+      const course = await this.paymentsRepository.findCourseById(
+        payment.course_id,
+      );
       return this.razorpayService.getGatewayForCategory(course.category);
     }
 
-    const { data: firstItem } = await this.db
-      .from('payment_items')
-      .select('course_id, courses(category)')
-      .eq('payment_id', payment.id)
-      .limit(1)
-      .maybeSingle();
+    const firstItem =
+      await this.paymentsRepository.findFirstPaymentItem(payment.id);
 
     if (firstItem) {
-      const item = firstItem as {
-        course_id: string;
-        courses: { category: string | null } | null;
-      };
       return this.razorpayService.getGatewayForCategory(
-        item.courses?.category ?? null,
+        firstItem.courses?.category ?? null,
       );
     }
 
     return this.razorpayService.getGatewayForCategory(null);
-  }
-
-  private async getCategoryForCourse(courseId: string): Promise<string | null> {
-    const course = await this.getCourse(courseId);
-    return course.category;
   }
 
   private inferCategory(courses: CourseRow[]): string | null {
@@ -552,7 +458,9 @@ export class PaymentsService {
     orderId: string,
   ): Promise<boolean> {
     try {
-      const payment = await this.getPaymentByOrderId(orderId);
+      const payment = await this.paymentsRepository.findPaymentByOrderId(
+        orderId,
+      );
       const gateway = await this.getGatewayForPayment(payment);
       return this.verifyWebhookSecret(rawBody, signature, gateway.name);
     } catch {
@@ -648,14 +556,14 @@ export class PaymentsService {
     payload: Record<string, unknown>;
     signatureVerified: boolean;
   }): Promise<boolean> {
-    const { error } = await this.db.from('webhook_logs').insert({
+    const { error } = await this.paymentsRepository.insertWebhookLog({
       razorpay_event_id: input.eventId,
       razorpay_order_id: input.orderId || null,
       razorpay_payment_id: input.paymentId || null,
       event_type: input.eventType,
       payload: input.payload,
       signature_verified: input.signatureVerified,
-    } as never);
+    });
 
     if (!error) return true;
 
@@ -673,10 +581,7 @@ export class PaymentsService {
   private async markWebhookProcessed(eventId: string | null) {
     if (!eventId) return;
 
-    await this.db
-      .from('webhook_logs')
-      .update({ processed_at: new Date().toISOString() } as never)
-      .eq('razorpay_event_id', eventId);
+    await this.paymentsRepository.updateWebhookProcessed(eventId);
   }
 
   private toSubunits(amount: number): number {

@@ -10,7 +10,7 @@ import {
 import { createHash, randomBytes } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SupabaseService } from '../supabase/supabase.service';
+import { MediaAssetsRepository } from './media-assets.repository';
 import { StorageService } from '../../storage/storage.service';
 
 interface MediaAssetRow {
@@ -32,25 +32,13 @@ interface MediaAssetRow {
   processing_error: string | null;
 }
 
-interface LessonAccessRow {
-  id: string;
-  course_id: string;
-  is_free_preview: boolean;
-}
-
-interface ProfileRow {
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-}
-
 @Injectable()
 export class MediaAssetsService implements OnModuleInit {
   private readonly playbackExpiresInSeconds = 45;
   private readonly logger = new Logger(MediaAssetsService.name);
 
   constructor(
-    private readonly supabaseService: SupabaseService,
+    private readonly mediaAssetsRepository: MediaAssetsRepository,
     private readonly storageService: StorageService,
   ) {}
 
@@ -89,10 +77,6 @@ export class MediaAssetsService implements OnModuleInit {
     }
   }
 
-  private get db() {
-    return this.supabaseService.getClient();
-  }
-
   private getFileChecksum(filePath: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const hash = createHash('sha256');
@@ -124,35 +108,26 @@ export class MediaAssetsService implements OnModuleInit {
       );
     }
 
-    const existing = await this.findExistingAsset(checksum);
+    const existing = await this.mediaAssetsRepository.findExistingAssetByChecksum(checksum);
     if (existing) {
       await fs.promises.unlink(file.path).catch(() => {});
       if (lessonId) {
-        await this.attachAssetToLesson(existing.id, lessonId);
+        await this.mediaAssetsRepository.updateLessonVideoAsset(lessonId, existing.id as string);
       }
       return { asset: existing, duplicate: true };
     }
 
-    const { data: insertData, error: insertError } = await this.db
-      .from('media_assets')
-      .insert({
-        provider: 'pending',
-        checksum,
-        mime_type: file.mimetype,
-        size: file.size,
-        status: 'UPLOADING',
-        uploaded_by: userId,
-        uploaded_at: new Date().toISOString(),
-      } satisfies Record<string, unknown>)
-      .select('id')
-      .single();
+    const insertData = await this.mediaAssetsRepository.insertMediaAsset({
+      provider: 'pending',
+      checksum,
+      mime_type: file.mimetype,
+      size: file.size,
+      status: 'UPLOADING',
+      uploaded_by: userId,
+      uploaded_at: new Date().toISOString(),
+    });
 
-    if (insertError) {
-      await fs.promises.unlink(file.path).catch(() => {});
-      throw new BadRequestException(insertError.message);
-    }
-
-    const assetId = (insertData as { id: string }).id;
+    const assetId = insertData.id;
     const fileName = this.buildStorageKey(assetId, file.originalname);
 
     try {
@@ -165,16 +140,12 @@ export class MediaAssetsService implements OnModuleInit {
       await this.markReady(assetId, uploadResult);
 
       if (lessonId) {
-        await this.attachAssetToLesson(assetId, lessonId);
+        await this.mediaAssetsRepository.updateLessonVideoAsset(lessonId, assetId);
       }
 
       await this.audit(userId, 'upload', assetId, { lessonId });
 
-      const { data: asset } = await this.db
-        .from('media_assets')
-        .select('*')
-        .eq('id', assetId)
-        .single();
+      const asset = await this.mediaAssetsRepository.findMediaAssetById(assetId);
 
       return { asset: asset as unknown as MediaAssetRow, duplicate: false };
     } catch (uploadError) {
@@ -216,48 +187,39 @@ export class MediaAssetsService implements OnModuleInit {
     }
 
     const checksum = createHash('sha256').update(trimmedUrl).digest('hex');
-    const existing = await this.findExistingAsset(checksum);
+    const existing = await this.mediaAssetsRepository.findExistingAssetByChecksum(checksum);
     if (existing) {
       if (lessonId) {
-        await this.attachAssetToLesson(existing.id, lessonId);
+        await this.mediaAssetsRepository.updateLessonVideoAsset(lessonId, existing.id as string);
       }
       return { asset: existing, duplicate: true };
     }
 
-    const { data, error } = await this.db
-      .from('media_assets')
-      .insert({
-        provider: 'direct_url',
-        storage_key: trimmedUrl,
-        storage_url: trimmedUrl,
-        checksum,
-        mime_type: 'video/external',
-        size: 0,
-        status: 'READY',
-        uploaded_by: userId,
-        uploaded_at: new Date().toISOString(),
-      } satisfies Record<string, unknown>)
-      .select('*')
-      .single();
+    const asset = await this.mediaAssetsRepository.insertMediaAssetFull({
+      provider: 'direct_url',
+      storage_key: trimmedUrl,
+      storage_url: trimmedUrl,
+      checksum,
+      mime_type: 'video/external',
+      size: 0,
+      status: 'READY',
+      uploaded_by: userId,
+      uploaded_at: new Date().toISOString(),
+    });
 
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-
-    const asset = data as unknown as MediaAssetRow;
     if (lessonId) {
-      await this.attachAssetToLesson(asset.id, lessonId);
+      await this.mediaAssetsRepository.updateLessonVideoAsset(lessonId, asset.id as string);
     }
-    await this.audit(userId, 'upload', asset.id, { lessonId, directUrl: true });
+    await this.audit(userId, 'upload', asset.id as string, { lessonId, directUrl: true });
 
-    return { asset, duplicate: false };
+    return { asset: asset as unknown as MediaAssetRow, duplicate: false };
   }
 
   async markReady(
     assetId: string,
     uploadResult: Awaited<ReturnType<StorageService['upload']>>,
   ) {
-    await this.updateAsset(assetId, {
+    await this.mediaAssetsRepository.updateMediaAsset(assetId, {
       provider: uploadResult.provider,
       storage_key: uploadResult.key,
       storage_url: uploadResult.url,
@@ -278,23 +240,20 @@ export class MediaAssetsService implements OnModuleInit {
   async markFailed(assetId: string, error: unknown) {
     const message =
       error instanceof Error ? error.message : 'Unknown processing failure';
-    await this.updateAsset(assetId, {
+    await this.mediaAssetsRepository.updateMediaAsset(assetId, {
       status: 'FAILED',
       processing_error: message,
     });
-    await this.db
-      .from('media_asset_audit_logs')
-      .insert({
-        media_asset_id: assetId,
-        action: 'processing_failure',
-        metadata: { message },
-      } satisfies Record<string, unknown>)
-      .then(() => undefined);
+    await this.mediaAssetsRepository.insertAuditLog({
+      media_asset_id: assetId,
+      action: 'processing_failure',
+      metadata: { message },
+    });
   }
 
   async getPlaybackInfo(assetId: string, userId: string) {
     const asset = await this.getReadyAsset(assetId);
-    await this.assertPlaybackAccess(asset.id, userId);
+    await this.assertPlaybackAccess(asset.id as string, userId);
 
     if (!asset.storage_key) {
       throw new NotFoundException('Media asset storage key is missing');
@@ -304,18 +263,18 @@ export class MediaAssetsService implements OnModuleInit {
       asset.provider === 'direct_url'
         ? Promise.resolve(asset.storage_url ?? asset.storage_key)
         : this.storageService.getSignedUrl(
-            asset.storage_key,
+            asset.storage_key as string,
             this.playbackExpiresInSeconds,
           ),
-      this.getUserProfile(userId),
+      this.mediaAssetsRepository.findProfileById(userId),
     ]);
 
     if (!playbackUrl) {
       throw new NotFoundException('Media asset playback URL is missing');
     }
 
-    const watermark = this.buildWatermark(userId, profile);
-    await this.audit(userId, 'playback_request', asset.id, {
+    const watermark = this.buildWatermark(userId, profile as { full_name: string | null; email: string | null; phone: string | null } | null);
+    await this.audit(userId, 'playback_request', asset.id as string, {
       expiresIn: this.playbackExpiresInSeconds,
       sessionId: watermark.sessionId,
     });
@@ -337,19 +296,8 @@ export class MediaAssetsService implements OnModuleInit {
   }
 
   async getPlaybackInfoForLesson(lessonId: string, userId: string) {
-    const { data, error } = await this.db
-      .from('course_lessons')
-      .select('video_asset_id, video_url')
-      .eq('id', lessonId)
-      .maybeSingle();
+    const lesson = await this.mediaAssetsRepository.findLessonVideoInfo(lessonId);
 
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-    const lesson = data as {
-      video_asset_id?: string | null;
-      video_url?: string | null;
-    } | null;
     if (!lesson) {
       throw new NotFoundException('Lesson not found');
     }
@@ -378,48 +326,19 @@ export class MediaAssetsService implements OnModuleInit {
     throw new NotFoundException('Lesson does not have a media asset');
   }
 
-  private async findExistingAsset(checksum: string) {
-    const { data, error } = await this.db
-      .from('media_assets')
-      .select('*')
-      .eq('checksum', checksum)
-      .neq('status', 'DELETED')
-      .maybeSingle();
-
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-    return data as unknown as MediaAssetRow | null;
-  }
-
   private async getReadyAsset(assetId: string) {
-    const { data, error } = await this.db
-      .from('media_assets')
-      .select('id, storage_key, provider, storage_url, mime_type, duration, width, height, thumbnail_url')
-      .eq('id', assetId)
-      .eq('status', 'READY')
-      .maybeSingle();
+    const data = await this.mediaAssetsRepository.findReadyAsset(assetId);
 
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
     if (!data) {
       throw new NotFoundException('Ready media asset not found');
     }
-    return data as unknown as MediaAssetRow;
+    return data as Record<string, unknown>;
   }
 
   private async assertPlaybackAccess(assetId: string, userId: string) {
-    const { data: lessons, error } = await this.db
-      .from('course_lessons')
-      .select('id, course_id, is_free_preview')
-      .eq('video_asset_id', assetId);
+    const lessons = await this.mediaAssetsRepository.findLessonsByAssetId(assetId);
 
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-
-    const rows = (lessons ?? []) as unknown as LessonAccessRow[];
+    const rows = lessons as unknown as Array<{ id: string; course_id: string; is_free_preview: boolean }>;
     if (rows.some((lesson) => lesson.is_free_preview)) {
       return;
     }
@@ -429,54 +348,14 @@ export class MediaAssetsService implements OnModuleInit {
       throw new ForbiddenException('Media asset is not attached to a lesson');
     }
 
-    const { data: enrollments, error: enrollmentError } = await this.db
-      .from('enrollments')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .in('course_id', courseIds)
-      .limit(1);
+    const enrollments = await this.mediaAssetsRepository.findEnrollmentsByUserAndCourses(userId, courseIds);
 
-    if (enrollmentError) {
-      throw new BadRequestException(enrollmentError.message);
-    }
     if (!enrollments?.length) {
       throw new ForbiddenException('You are not enrolled for this media asset');
     }
   }
 
-  private async attachAssetToLesson(assetId: string, lessonId: string) {
-    const { error } = await this.db
-      .from('course_lessons')
-      .update({ video_asset_id: assetId } satisfies Record<string, unknown>)
-      .eq('id', lessonId);
-
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
-
-  private async updateAsset(assetId: string, patch: Record<string, unknown>) {
-    const { error } = await this.db
-      .from('media_assets')
-      .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq('id', assetId);
-
-    if (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
-
-  private async getUserProfile(userId: string) {
-    const { data } = await this.db
-      .from('profiles')
-      .select('full_name, email, phone')
-      .eq('id', userId)
-      .maybeSingle();
-    return data as unknown as ProfileRow | null;
-  }
-
-  private buildWatermark(userId: string, profile: ProfileRow | null) {
+  private buildWatermark(userId: string, profile: { full_name: string | null; email: string | null; phone: string | null } | null) {
     const sessionId = randomBytes(3).toString('hex').toUpperCase();
     return {
       userName: profile?.full_name ?? 'Learner',
@@ -506,14 +385,11 @@ export class MediaAssetsService implements OnModuleInit {
     assetId: string,
     metadata?: Record<string, unknown>,
   ) {
-    await this.db
-      .from('media_asset_audit_logs')
-      .insert({
-        user_id: userId,
-        media_asset_id: assetId,
-        action,
-        metadata: metadata ?? {},
-      } satisfies Record<string, unknown>)
-      .then(() => undefined);
+    await this.mediaAssetsRepository.insertAuditLog({
+      user_id: userId,
+      media_asset_id: assetId,
+      action,
+      metadata: metadata ?? {},
+    });
   }
 }
