@@ -38,9 +38,9 @@ export class CoursesService {
       try {
         const cached = await redis.get(cacheKey);
         if (cached) {
-          return JSON.parse(cached);
+          return JSON.parse(cached) as PaginatedResult<Course>;
         }
-      } catch (err) {
+      } catch {
         // Fallback to database
       }
     }
@@ -63,7 +63,7 @@ export class CoursesService {
     if (redis) {
       try {
         await redis.set(cacheKey, JSON.stringify(result), 'EX', 60);
-      } catch (err) {
+      } catch {
         // Ignore cache set failure
       }
     }
@@ -83,13 +83,13 @@ export class CoursesService {
       try {
         const cached = await redis.get(cacheKey);
         if (cached) {
-          const course = JSON.parse(cached);
+          const course = JSON.parse(cached) as Course;
           if (!userId) {
             return course;
           }
           return this.coursesRepository.findDetailForUser(course, userId);
         }
-      } catch (err) {
+      } catch {
         // Fallback to database
       }
     }
@@ -105,7 +105,7 @@ export class CoursesService {
     if (redis) {
       try {
         await redis.set(cacheKey, JSON.stringify(course), 'EX', 60);
-      } catch (err) {
+      } catch {
         // Ignore cache set failure
       }
     }

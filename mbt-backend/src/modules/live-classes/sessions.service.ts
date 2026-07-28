@@ -4,7 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { SessionsRepository } from './sessions.repository';
+import { SessionsRepository, Session, LiveSessionMeeting } from './sessions.repository';
 import { ZoomSdkService } from '../zoom/zoom-sdk.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -264,8 +264,11 @@ export class SessionsService {
       }
     }
 
-    const preFetchedMeetings = (session as any).live_session_meetings;
-    let meeting = Array.isArray(preFetchedMeetings)
+    const sessionsWithMeetings = session as Session & {
+      live_session_meetings: LiveSessionMeeting[];
+    };
+    const preFetchedMeetings = sessionsWithMeetings.live_session_meetings;
+    let meeting: LiveSessionMeeting | null = Array.isArray(preFetchedMeetings)
       ? preFetchedMeetings[0]
       : preFetchedMeetings;
 
