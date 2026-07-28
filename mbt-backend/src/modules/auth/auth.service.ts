@@ -101,7 +101,7 @@ export class AuthService {
       return null;
     }
 
-    const profile = data as Profile;
+    const profile = data;
 
     if (profile.is_deleted) {
       throw new UnauthorizedException(

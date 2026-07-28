@@ -5,7 +5,6 @@ import { NotificationsRepository } from './notifications.repository';
 import { NotificationDeliveryService } from './notification-delivery.service';
 import { FirebaseService } from './firebase.service';
 import { ExpiryNotificationService } from './expiry-notification.service';
-import { NotificationsController } from './notifications.controller';
 
 @Module({
   imports: [SupabaseModule],

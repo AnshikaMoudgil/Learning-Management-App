@@ -13,7 +13,7 @@ export class CartService {
     const cartId = await this.cartRepository.getOrCreateCartId(userId);
     const items = await this.cartRepository.findCartItems(cartId);
 
-    const cartItems = (items as unknown as CartItemRow[]).filter(
+    const cartItems = items.filter(
       (i) => i.courses,
     );
     const hardware = cartItems.filter((i) =>

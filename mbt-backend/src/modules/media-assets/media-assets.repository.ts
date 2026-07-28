@@ -39,14 +39,14 @@ export class MediaAssetsRepository {
     return data as Record<string, unknown>;
   }
 
-  async findMediaAssetById(assetId: string) {
+  async findMediaAssetById(assetId: string): Promise<Record<string, unknown> | null> {
     const { data: asset } = await this.db
       .from('media_assets')
       .select('*')
       .eq('id', assetId)
       .single();
 
-    return asset as Record<string, unknown> | null;
+    return asset;
   }
 
   async findLessonVideoInfo(lessonId: string) {
@@ -65,7 +65,7 @@ export class MediaAssetsRepository {
     } | null;
   }
 
-  async findExistingAssetByChecksum(checksum: string) {
+  async findExistingAssetByChecksum(checksum: string): Promise<Record<string, unknown> | null> {
     const { data, error } = await this.db
       .from('media_assets')
       .select('*')
@@ -76,7 +76,7 @@ export class MediaAssetsRepository {
     if (error) {
       throw new BadRequestException(error.message);
     }
-    return data as Record<string, unknown> | null;
+    return data;
   }
 
   async findReadyAsset(assetId: string) {

@@ -273,7 +273,7 @@ export class MediaAssetsService implements OnModuleInit {
       throw new NotFoundException('Media asset playback URL is missing');
     }
 
-    const watermark = this.buildWatermark(userId, profile as { full_name: string | null; email: string | null; phone: string | null } | null);
+    const watermark = this.buildWatermark(userId, profile);
     await this.audit(userId, 'playback_request', asset.id as string, {
       expiresIn: this.playbackExpiresInSeconds,
       sessionId: watermark.sessionId,
@@ -332,7 +332,7 @@ export class MediaAssetsService implements OnModuleInit {
     if (!data) {
       throw new NotFoundException('Ready media asset not found');
     }
-    return data as Record<string, unknown>;
+    return data;
   }
 
   private async assertPlaybackAccess(assetId: string, userId: string) {

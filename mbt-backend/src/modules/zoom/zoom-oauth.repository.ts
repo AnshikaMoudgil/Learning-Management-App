@@ -10,7 +10,8 @@ export class ZoomOAuthRepository {
   }
 
   async findExistingProvider(provider: string) {
-    const { data: existing } = await (this.db.from('meeting_provider_accounts') as any)
+    const { data: existing } = await this.db
+      .from('meeting_provider_accounts')
       .select('id')
       .eq('provider', provider)
       .maybeSingle();
@@ -19,15 +20,9 @@ export class ZoomOAuthRepository {
   }
 
   async upsertProvider(data: Record<string, unknown>, existingId?: string) {
-    let query;
-
-    if (existingId) {
-      query = (this.db.from('meeting_provider_accounts') as any)
-        .update(data)
-        .eq('id', existingId);
-    } else {
-      query = (this.db.from('meeting_provider_accounts') as any).insert(data);
-    }
+    const query = existingId
+      ? this.db.from('meeting_provider_accounts').update(data).eq('id', existingId)
+      : this.db.from('meeting_provider_accounts').insert(data);
 
     const { error } = await query;
 
@@ -37,23 +32,26 @@ export class ZoomOAuthRepository {
   }
 
   async updateProviderStatus(provider: string, status: string) {
-    await (this.db.from('meeting_provider_accounts') as any)
+    await this.db
+      .from('meeting_provider_accounts')
       .update({ status })
       .eq('provider', provider);
   }
 
-  async findActiveConnection(provider: string) {
-    const { data } = await (this.db.from('meeting_provider_accounts') as any)
+  async findActiveConnection(provider: string): Promise<Record<string, unknown> | null> {
+    const { data } = await this.db
+      .from('meeting_provider_accounts')
       .select('*')
       .eq('provider', provider)
       .eq('status', 'connected')
       .maybeSingle();
 
-    return data as Record<string, unknown> | null;
+    return data;
   }
 
   async updateAccount(id: string, data: Record<string, unknown>) {
-    await (this.db.from('meeting_provider_accounts') as any)
+    await this.db
+      .from('meeting_provider_accounts')
       .update(data)
       .eq('id', id);
   }

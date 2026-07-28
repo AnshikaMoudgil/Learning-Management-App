@@ -64,7 +64,7 @@ export class CouponsService {
       return this.invalid(baseAmount, 'Coupon not found');
     }
 
-    return this.evaluateCoupon(coupon as CouponRow, baseAmount);
+    return this.evaluateCoupon(coupon, baseAmount);
   }
 
   async validateCouponForCheckout(

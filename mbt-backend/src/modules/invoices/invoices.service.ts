@@ -4,7 +4,6 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { InvoicesRepository } from './invoices.repository';
 import { PdfGeneratorService } from './pdf-generator.service';
 import type {
-  PaymentRow,
   InvoiceRow,
   InvoiceItemRow,
 } from '../../common/types/invoices.types';

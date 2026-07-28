@@ -82,6 +82,6 @@ export class CartRepository {
       throw new InternalServerErrorException('Failed to get or create cart');
     }
 
-    return data as string;
+    return data;
   }
 }

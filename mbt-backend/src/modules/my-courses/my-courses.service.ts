@@ -247,10 +247,10 @@ export class MyCoursesService {
       title: course.title,
       thumbnail_url: course.thumbnail_url,
       enrollment: {
-        enrollment_id: enrollment.id as string,
+        enrollment_id: enrollment.id,
         progress_percent: computedProgress,
-        validity_end_at: enrollment.validity_end_at as string | null,
-        status: enrollment.status as string,
+        validity_end_at: enrollment.validity_end_at,
+        status: enrollment.status,
       },
       sections,
       all_live_classes: sessionsData,
