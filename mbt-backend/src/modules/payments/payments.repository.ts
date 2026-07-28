@@ -105,7 +105,7 @@ export class PaymentsRepository {
   async findPaymentByOrderId(orderId: string): Promise<PaymentRow> {
     const { data, error } = await this.db
       .from('payments')
-      .select('*')
+      .select('id, user_id, course_id, coupon_id, amount_subunits, currency, razorpay_order_id, razorpay_payment_id, status, expires_at')
       .eq('razorpay_order_id', orderId)
       .maybeSingle();
 

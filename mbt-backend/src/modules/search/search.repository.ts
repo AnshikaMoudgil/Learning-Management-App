@@ -30,7 +30,7 @@ export class SearchRepository {
         // 1. Search Courses via FTS (with ILIKE fallback)
         this.db
           .from('courses')
-          .select('*, profiles!courses_instructor_id_fkey(full_name)')
+          .select('id, title, slug, short_description, thumbnail_url, category, level, price, discount_price, average_rating, reviews_count, is_bestseller, profiles!courses_instructor_id_fkey(full_name)')
           .textSearch('search_document', ftsQuery, { config: 'english' })
           .eq('is_published', true)
           .limit(20),
@@ -47,7 +47,7 @@ export class SearchRepository {
         // 3. Search Teachers via FTS
         this.db
           .from('profiles')
-          .select('*')
+          .select('id, full_name, avatar_url, role')
           .eq('role', 'instructor')
           .textSearch('search_document', ftsQuery, { config: 'english' })
           .limit(20),
@@ -66,7 +66,7 @@ export class SearchRepository {
       );
       const fallback = await this.db
         .from('courses')
-        .select('*, profiles!courses_instructor_id_fkey(full_name)')
+        .select('id, title, slug, short_description, thumbnail_url, category, level, price, discount_price, average_rating, reviews_count, is_bestseller, profiles!courses_instructor_id_fkey(full_name)')
         .or(
           `title.ilike.${searchTerm},description.ilike.${searchTerm},category.ilike.${searchTerm}`,
         )
@@ -97,7 +97,7 @@ export class SearchRepository {
       );
       const fallback = await this.db
         .from('profiles')
-        .select('*')
+        .select('id, full_name, avatar_url, role')
         .eq('role', 'instructor')
         .ilike('full_name', searchTerm)
         .limit(20);

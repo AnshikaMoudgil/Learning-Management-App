@@ -74,20 +74,10 @@ export class NotificationsService {
   }
 
   async notifyAll(payload: NotificationPayload): Promise<void> {
-    const BATCH_SIZE = 1000;
-    let page = 0;
-    let total = 0;
-    do {
-      const from = page * BATCH_SIZE;
-      const to = from + BATCH_SIZE - 1;
-      const { profiles, count } = await this.notificationsRepository.findAllProfileIds(from, to);
-      total = count;
-      const userIds = profiles.map((p) => p.id);
-      if (userIds.length > 0) {
-        await this.notifyMany(userIds, payload);
-      }
-      page++;
-    } while (page * BATCH_SIZE < total);
+    const userIds = await this.notificationsRepository.getAllProfileIds();
+    if (userIds.length > 0) {
+      await this.notifyMany(userIds, payload);
+    }
   }
 
   async notifyMany(

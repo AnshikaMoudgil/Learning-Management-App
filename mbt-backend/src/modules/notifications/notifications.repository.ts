@@ -165,6 +165,19 @@ export class NotificationsRepository {
     return { profiles: ((profiles ?? []) as { id: string }[]), count: count ?? 0 };
   }
 
+  async getAllProfileIds(): Promise<string[]> {
+    const { data, error } = await this.db
+      .from('profiles')
+      .select('id');
+
+    if (error) {
+      this.logger.error(`Failed to fetch all profile IDs: ${error.message}`);
+      return [];
+    }
+
+    return ((data ?? []) as { id: string }[]).map((p) => p.id);
+  }
+
   // --- notification_settings table ---
 
   async findSettingsByUserId(userId: string) {
