@@ -8,6 +8,8 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { ThrottleGuard } from '../../common/guards/throttle.guard';
+import { Throttle } from '../../common/decorators/throttle.decorator';
 import { InvoicesService } from './invoices.service';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 
@@ -31,7 +33,8 @@ export class InvoicesController {
   }
 
   @Get(':id/pdf')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ThrottleGuard)
+  @Throttle({ limit: 10, windowMs: 60000 })
   async downloadPdf(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,

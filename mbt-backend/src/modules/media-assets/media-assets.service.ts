@@ -13,6 +13,64 @@ import * as path from 'path';
 import { MediaAssetsRepository } from './media-assets.repository';
 import { StorageService } from '../../storage/storage.service';
 
+const VIDEO_MAGIC_BYTES: {
+  mime: string;
+  signature: (buf: Buffer) => boolean;
+}[] = [
+  {
+    mime: 'video/mp4',
+    signature: (buf) => {
+      if (buf.length < 8) return false;
+      return buf.subarray(4, 8).toString() === 'ftyp';
+    },
+  },
+  {
+    mime: 'video/quicktime',
+    signature: (buf) => {
+      if (buf.length < 8) return false;
+      return buf.subarray(4, 8).toString() === 'ftyp';
+    },
+  },
+  {
+    mime: 'video/webm',
+    signature: (buf) => {
+      if (buf.length < 4) return false;
+      return (
+        buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3
+      );
+    },
+  },
+  {
+    mime: 'video/x-matroska',
+    signature: (buf) => {
+      if (buf.length < 4) return false;
+      return (
+        buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3
+      );
+    },
+  },
+];
+
+function validateVideoMagicBytes(filePath: string): string {
+  const fd = fs.openSync(filePath, 'r');
+  const buf = Buffer.alloc(16);
+  try {
+    fs.readSync(fd, buf, 0, 16, 0);
+  } finally {
+    fs.closeSync(fd);
+  }
+
+  for (const format of VIDEO_MAGIC_BYTES) {
+    if (format.signature(buf)) {
+      return format.mime;
+    }
+  }
+
+  throw new BadRequestException(
+    'File content does not match any supported video format (MP4, MOV, WebM, MKV)',
+  );
+}
+
 interface MediaAssetRow {
   id: string;
   provider: string;
@@ -96,6 +154,8 @@ export class MediaAssetsService implements OnModuleInit {
       throw new BadRequestException('No video file uploaded');
     }
 
+    const detectedMime = validateVideoMagicBytes(file.path);
+
     let checksum: string;
     try {
       checksum = await this.getFileChecksum(file.path);
@@ -108,11 +168,15 @@ export class MediaAssetsService implements OnModuleInit {
       );
     }
 
-    const existing = await this.mediaAssetsRepository.findExistingAssetByChecksum(checksum);
+    const existing =
+      await this.mediaAssetsRepository.findExistingAssetByChecksum(checksum);
     if (existing) {
       await fs.promises.unlink(file.path).catch(() => {});
       if (lessonId) {
-        await this.mediaAssetsRepository.updateLessonVideoAsset(lessonId, existing.id as string);
+        await this.mediaAssetsRepository.updateLessonVideoAsset(
+          lessonId,
+          existing.id as string,
+        );
       }
       return { asset: existing, duplicate: true };
     }
@@ -120,7 +184,7 @@ export class MediaAssetsService implements OnModuleInit {
     const insertData = await this.mediaAssetsRepository.insertMediaAsset({
       provider: 'pending',
       checksum,
-      mime_type: file.mimetype,
+      mime_type: detectedMime,
       size: file.size,
       status: 'UPLOADING',
       uploaded_by: userId,
@@ -140,12 +204,16 @@ export class MediaAssetsService implements OnModuleInit {
       await this.markReady(assetId, uploadResult);
 
       if (lessonId) {
-        await this.mediaAssetsRepository.updateLessonVideoAsset(lessonId, assetId);
+        await this.mediaAssetsRepository.updateLessonVideoAsset(
+          lessonId,
+          assetId,
+        );
       }
 
       await this.audit(userId, 'upload', assetId, { lessonId });
 
-      const asset = await this.mediaAssetsRepository.findMediaAssetById(assetId);
+      const asset =
+        await this.mediaAssetsRepository.findMediaAssetById(assetId);
 
       return { asset: asset as unknown as MediaAssetRow, duplicate: false };
     } catch (uploadError) {
@@ -187,10 +255,14 @@ export class MediaAssetsService implements OnModuleInit {
     }
 
     const checksum = createHash('sha256').update(trimmedUrl).digest('hex');
-    const existing = await this.mediaAssetsRepository.findExistingAssetByChecksum(checksum);
+    const existing =
+      await this.mediaAssetsRepository.findExistingAssetByChecksum(checksum);
     if (existing) {
       if (lessonId) {
-        await this.mediaAssetsRepository.updateLessonVideoAsset(lessonId, existing.id as string);
+        await this.mediaAssetsRepository.updateLessonVideoAsset(
+          lessonId,
+          existing.id as string,
+        );
       }
       return { asset: existing, duplicate: true };
     }
@@ -208,9 +280,15 @@ export class MediaAssetsService implements OnModuleInit {
     });
 
     if (lessonId) {
-      await this.mediaAssetsRepository.updateLessonVideoAsset(lessonId, asset.id as string);
+      await this.mediaAssetsRepository.updateLessonVideoAsset(
+        lessonId,
+        asset.id as string,
+      );
     }
-    await this.audit(userId, 'upload', asset.id as string, { lessonId, directUrl: true });
+    await this.audit(userId, 'upload', asset.id as string, {
+      lessonId,
+      directUrl: true,
+    });
 
     return { asset: asset as unknown as MediaAssetRow, duplicate: false };
   }
@@ -296,7 +374,8 @@ export class MediaAssetsService implements OnModuleInit {
   }
 
   async getPlaybackInfoForLesson(lessonId: string, userId: string) {
-    const lesson = await this.mediaAssetsRepository.findLessonVideoInfo(lessonId);
+    const lesson =
+      await this.mediaAssetsRepository.findLessonVideoInfo(lessonId);
 
     if (!lesson) {
       throw new NotFoundException('Lesson not found');
@@ -336,9 +415,14 @@ export class MediaAssetsService implements OnModuleInit {
   }
 
   private async assertPlaybackAccess(assetId: string, userId: string) {
-    const lessons = await this.mediaAssetsRepository.findLessonsByAssetId(assetId);
+    const lessons =
+      await this.mediaAssetsRepository.findLessonsByAssetId(assetId);
 
-    const rows = lessons as unknown as Array<{ id: string; course_id: string; is_free_preview: boolean }>;
+    const rows = lessons as unknown as Array<{
+      id: string;
+      course_id: string;
+      is_free_preview: boolean;
+    }>;
     if (rows.some((lesson) => lesson.is_free_preview)) {
       return;
     }
@@ -348,14 +432,25 @@ export class MediaAssetsService implements OnModuleInit {
       throw new ForbiddenException('Media asset is not attached to a lesson');
     }
 
-    const enrollments = await this.mediaAssetsRepository.findEnrollmentsByUserAndCourses(userId, courseIds);
+    const enrollments =
+      await this.mediaAssetsRepository.findEnrollmentsByUserAndCourses(
+        userId,
+        courseIds,
+      );
 
     if (!enrollments?.length) {
       throw new ForbiddenException('You are not enrolled for this media asset');
     }
   }
 
-  private buildWatermark(userId: string, profile: { full_name: string | null; email: string | null; phone: string | null } | null) {
+  private buildWatermark(
+    userId: string,
+    profile: {
+      full_name: string | null;
+      email: string | null;
+      phone: string | null;
+    } | null,
+  ) {
     const sessionId = randomBytes(3).toString('hex').toUpperCase();
     return {
       userName: profile?.full_name ?? 'Learner',

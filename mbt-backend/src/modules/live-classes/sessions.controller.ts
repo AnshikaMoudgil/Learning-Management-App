@@ -11,6 +11,10 @@
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { ThrottleGuard } from '../../common/guards/throttle.guard';
+import { Throttle } from '../../common/decorators/throttle.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
@@ -21,7 +25,9 @@ export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard, ThrottleGuard)
+  @Roles('instructor', 'admin', 'superadmin')
+  @Throttle({ limit: 10, windowMs: 60000 })
   async create(
     @Request() req: AuthenticatedRequest,
     @Body() dto: CreateSessionDto,
@@ -46,6 +52,7 @@ export class SessionsController {
   }
 
   @Get()
+  @UseGuards(AuthGuard)
   async getAll() {
     return this.sessionsService.getAllSessions();
   }
@@ -57,11 +64,13 @@ export class SessionsController {
   }
 
   @Get('course/:courseId')
+  @UseGuards(AuthGuard)
   async getCourseSessions(@Param('courseId') courseId: string) {
     return this.sessionsService.getCourseSessions(courseId);
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   async getDetail(@Param('id') id: string) {
     return this.sessionsService.getSessionDetail(id);
   }

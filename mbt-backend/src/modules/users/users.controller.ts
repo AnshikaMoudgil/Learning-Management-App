@@ -14,6 +14,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { DeviceGuard } from '../../common/guards/device.guard';
+import { ThrottleGuard } from '../../common/guards/throttle.guard';
+import { Throttle } from '../../common/decorators/throttle.decorator';
 import { SkipDeviceCheck } from '../../common/decorators/skip-device-check.decorator';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -53,6 +55,8 @@ export class UsersController {
   }
 
   @Post('me/photo')
+  @UseGuards(ThrottleGuard)
+  @Throttle({ limit: 5, windowMs: 60000 })
   @UseInterceptors(FileInterceptor('photo'))
   uploadAvatar(
     @Req() req: AuthenticatedRequest,

@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { DeviceGuard } from '../../common/guards/device.guard';
+import { ThrottleGuard } from '../../common/guards/throttle.guard';
+import { Throttle } from '../../common/decorators/throttle.decorator';
 import type { AuthenticatedRequest } from '../../common/types/authenticated-request.type';
 import { ValidateCouponDto } from './dto/validate-coupon.dto';
 import { ValidateCartCouponDto } from './dto/validate-cart-coupon.dto';
@@ -17,6 +19,8 @@ export class CouponsController {
   }
 
   @Post('validate')
+  @UseGuards(ThrottleGuard)
+  @Throttle({ limit: 10, windowMs: 60000 })
   async validate(
     @Req() req: AuthenticatedRequest,
     @Body() body: ValidateCouponDto,
@@ -35,6 +39,8 @@ export class CouponsController {
   }
 
   @Post('validate-cart')
+  @UseGuards(ThrottleGuard)
+  @Throttle({ limit: 10, windowMs: 60000 })
   validateCart(
     @Req() req: AuthenticatedRequest,
     @Body() body: ValidateCartCouponDto,
