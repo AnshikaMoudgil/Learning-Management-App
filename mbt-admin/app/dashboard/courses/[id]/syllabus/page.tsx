@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, startTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import { uploadVideo, createDirectUrlAsset } from '@/app/lib/backendApi';
@@ -692,7 +692,7 @@ export default function SyllabusPage() {
   }, [courseId, router]);
 
   useEffect(() => {
-    if (courseId) fetchSyllabus();
+    if (courseId) startTransition(() => { fetchSyllabus(); });
   }, [courseId, fetchSyllabus]);
 
   const handleAddSection = async () => {

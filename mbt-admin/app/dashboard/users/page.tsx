@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { Search, HelpCircle, Loader2, ShieldAlert, Users, UserPlus, Calendar, TrendingUp } from 'lucide-react';
+import { Search, HelpCircle, ShieldAlert, Users, UserPlus, Calendar, TrendingUp } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
 interface Profile {
@@ -160,7 +160,7 @@ export default function UsersPage() {
   const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   useEffect(() => {
-    setCurrentPage(1);
+    startTransition(() => { setCurrentPage(1); });
   }, [searchTerm]);
 
   const formatDate = (dateStr: string | null) => {

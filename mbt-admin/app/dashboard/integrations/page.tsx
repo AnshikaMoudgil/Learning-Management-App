@@ -1,7 +1,7 @@
 'use strict';
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { Video, Link as LinkIcon, Unlink, Loader2 } from 'lucide-react';
@@ -45,7 +45,7 @@ export default function IntegrationsPage() {
   };
 
   useEffect(() => {
-    fetchZoomStatus();
+    startTransition(() => { fetchZoomStatus(); });
   }, []);
 
   const handleConnectZoom = async () => {

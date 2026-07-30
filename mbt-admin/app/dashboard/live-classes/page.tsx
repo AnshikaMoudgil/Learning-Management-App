@@ -1,7 +1,7 @@
 'use strict';
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, startTransition } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import { apiPost, apiDelete } from '@/app/lib/api';
 import toast from 'react-hot-toast';
@@ -15,6 +15,7 @@ interface Session {
   id: string;
   course_id: string;
   instructor_id: string;
+  created_by: string;
   title: string;
   description: string | null;
   start_time: string;
@@ -41,7 +42,7 @@ export default function LiveClassesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
-  const [userRole, setUserRole] = useState('');
+  const [, setUserRole] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,21 +82,21 @@ export default function LiveClassesPage() {
         return;
       }
 
-      const raw = sessionsData as any[];
+      const raw = sessionsData as { id: string; course_id: string; instructor_id: string; created_by: string; title: string; description: string | null; start_time: string; duration: number; status: string; created_at: string }[];
 
       const courseIds = [...new Set(raw.map((s) => s.course_id).filter(Boolean))];
-      const creatorIds = [...new Set(raw.map((s) => s.instructor_id).filter(Boolean))];
+      const creatorIds = [...new Set(raw.map((s) => s.created_by).filter(Boolean))];
 
       const [coursesResult, creatorsResult] = await Promise.all([
         supabase.from('courses').select('id, title, instructor_id').in('id', courseIds),
         supabase.from('profiles').select('id, full_name').in('id', creatorIds),
       ]);
 
-      const courseMap = new Map((coursesResult.data || []).map((c: any) => [c.id, c]));
-      const creatorMap = new Map((creatorsResult.data || []).map((p: any) => [p.id, p.full_name]));
+      const courseMap = new Map((coursesResult.data || []).map((c: { id: string; title: string; instructor_id: string | null }) => [c.id, c]));
+      const creatorMap = new Map((creatorsResult.data || []).map((p: { id: string; full_name: string }) => [p.id, p.full_name]));
 
       const courseInstructorIds = [
-        ...new Set((coursesResult.data || []).map((c: any) => c.instructor_id).filter(Boolean)),
+        ...new Set((coursesResult.data || []).map((c: { instructor_id: string | null }) => c.instructor_id).filter(Boolean)),
       ];
       let courseInstructorMap = new Map<string, string>();
       if (courseInstructorIds.length > 0) {
@@ -103,15 +104,16 @@ export default function LiveClassesPage() {
           .from('profiles')
           .select('id, full_name')
           .in('id', courseInstructorIds);
-        courseInstructorMap = new Map((instructors || []).map((p: any) => [p.id, p.full_name]));
+        courseInstructorMap = new Map((instructors || []).map((p: { id: string; full_name: string }) => [p.id, p.full_name]));
       }
 
-      const enriched: Session[] = raw.map((s: any) => {
+      const enriched: Session[] = raw.map((s) => {
         const course = courseMap.get(s.course_id);
         return {
           id: s.id,
           course_id: s.course_id,
           instructor_id: s.instructor_id,
+          created_by: s.created_by,
           title: s.title,
           description: s.description,
           start_time: s.start_time,
@@ -119,7 +121,7 @@ export default function LiveClassesPage() {
           status: s.status,
           created_at: s.created_at,
           courses: course ? [{ title: course.title, instructor_id: course.instructor_id }] : [],
-          profiles: creatorMap.has(s.instructor_id) ? [{ full_name: creatorMap.get(s.instructor_id) }] : [],
+          profiles: creatorMap.has(s.created_by) ? [{ full_name: creatorMap.get(s.created_by)! }] : [],
           course_instructor_name: course?.instructor_id ? courseInstructorMap.get(course.instructor_id) : undefined,
         };
       });
@@ -133,7 +135,7 @@ export default function LiveClassesPage() {
   };
 
   useEffect(() => {
-    fetchSessions();
+    startTransition(() => { fetchSessions(); });
   }, []);
 
   useEffect(() => {

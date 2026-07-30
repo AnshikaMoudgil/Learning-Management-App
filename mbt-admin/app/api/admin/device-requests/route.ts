@@ -55,8 +55,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: listError.message }, { status: 500 });
     }
 
-    const userIds = [...new Set((requests || []).map((r: any) => r.user_id).filter(Boolean))];
-    const reviewerIds = [...new Set((requests || []).map((r: any) => r.reviewed_by).filter(Boolean))];
+    const userIds = [...new Set((requests || []).map((r: { user_id: string }) => r.user_id).filter(Boolean))];
+    const reviewerIds = [...new Set((requests || []).map((r: { reviewed_by: string }) => r.reviewed_by).filter(Boolean))];
     const profileIds = [...new Set([...userIds, ...reviewerIds])];
 
     let profilesMap: Record<string, { full_name: string | null; email: string | null }> = {};
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
       }, {} as Record<string, { full_name: string | null; email: string | null }>);
     }
 
-    const mergedRequests = (requests || []).map((req: any) => ({
+    const mergedRequests = (requests || []).map((req: { user_id: string; reviewed_by: string | null } & Record<string, unknown>) => ({
       ...req,
       user: profilesMap[req.user_id] ?? null,
       reviewer: req.reviewed_by ? (profilesMap[req.reviewed_by] ?? null) : null,

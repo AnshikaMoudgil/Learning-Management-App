@@ -34,10 +34,11 @@ export default function EditCoursePage() {
   const params = useParams();
   const courseId = params?.id as string;
 
+  const [, setIsAuthorized] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(true);
+
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');

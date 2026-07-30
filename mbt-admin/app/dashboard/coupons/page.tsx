@@ -1,7 +1,7 @@
 'use strict';
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, startTransition } from 'react';
 import { useAuth } from '@/app/lib/AuthContext';
 import toast from 'react-hot-toast';
 import {
@@ -77,13 +77,13 @@ export default function CouponsPage() {
 
   useEffect(() => {
     if (accessToken && hasAccess) {
-      fetchCoupons();
+      startTransition(() => { fetchCoupons(); });
     } else if (accessToken && !hasAccess) {
-      setIsLoading(false);
+      startTransition(() => { setIsLoading(false); });
     }
   }, [fetchCoupons, hasAccess, accessToken]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+  useEffect(() => { startTransition(() => { setCurrentPage(1); }); }, [searchTerm]);
 
   useEffect(() => {
     if (!dropdownOpen) return;

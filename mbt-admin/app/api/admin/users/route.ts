@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const [
       { data: { user }, error: authError },
       { data: allProfiles, error: listError },
-      { data: authUsers, error: authListError },
+      { data: authUsers },
     ] = await Promise.all([
       adminClient.auth.getUser(token),
       adminClient.from('profiles').select('id, full_name, email, phone, role, status, created_at, allowed_sections, allowed_actions').order('created_at', { ascending: false }),
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Access Denied.' }, { status: 403 });
     }
 
-    const authUserMap = new Map((authUsers?.users || []).map((u: any) => [u.id, u]));
+    const authUserMap = new Map((authUsers?.users || []).map((u: { id: string; raw_app_meta_data?: { providers?: string[] }; last_sign_in_at?: string | null }) => [u.id, u]));
 
     const enrichedProfiles = (allProfiles || []).map((p) => {
       const authUser = authUserMap.get(p.id);

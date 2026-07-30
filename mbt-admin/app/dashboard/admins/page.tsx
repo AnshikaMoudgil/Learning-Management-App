@@ -1,7 +1,7 @@
 'use strict';
 'use client';
 
-import { useEffect, useState, useDeferredValue } from 'react';
+import { useEffect, useState, useDeferredValue, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -30,7 +30,7 @@ export default function ManageAdminsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [, setIsAuthorized] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Invite form states
@@ -324,7 +324,7 @@ export default function ManageAdminsPage() {
     }
   };
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+  useEffect(() => { startTransition(() => { setCurrentPage(1); }); }, [searchTerm]);
 
   const isSuperAdmin = currentUserRole === 'superadmin';
 

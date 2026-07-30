@@ -2,9 +2,15 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
 import { validateCsrf } from '@/lib/csrf';
 
+interface CallerProfile {
+  role: string;
+  allowed_sections: string[] | null;
+  allowed_actions: string[] | null;
+}
+
 type AuthResult = 
   | { error: string; status: number } 
-  | { user: { id: string }; adminClient: any; callerProfile: any };
+  | { user: { id: string }; adminClient: ReturnType<typeof getSupabaseAdmin>; callerProfile: CallerProfile };
 
 async function authorize(request: Request): Promise<AuthResult> {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';

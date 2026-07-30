@@ -8,23 +8,6 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { Loader2, Upload, Save, Plus, X } from 'lucide-react';
 
-interface InstructorProfile {
-  full_name: string;
-  avatar_url: string | null;
-  specialization: string;
-  bio: string;
-  phone: string;
-  qualifications: string[];
-  experience_years: number | null;
-  education: string;
-  social_links: {
-    linkedin?: string;
-    twitter?: string;
-    youtube?: string;
-    website?: string;
-  };
-}
-
 export default function InstructorProfilePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);

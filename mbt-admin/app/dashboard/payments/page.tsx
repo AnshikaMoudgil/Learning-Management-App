@@ -1,12 +1,12 @@
 'use strict';
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, startTransition } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import { useAuth } from '@/app/lib/AuthContext';
 import toast from 'react-hot-toast';
 import {
-  CreditCard, Search, HelpCircle, Loader2, CheckCircle, XCircle,
+  CreditCard, Search, HelpCircle, CheckCircle, XCircle,
   Clock, RefreshCw, User, Tag, Shield,
   AlertTriangle,
 } from 'lucide-react';
@@ -57,7 +57,7 @@ interface WebhookLog {
   created_at: string;
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<any> }> = {
+const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   completed: { label: 'Completed', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', icon: CheckCircle },
   pending: { label: 'Pending', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', icon: Clock },
   failed: { label: 'Failed', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20', icon: XCircle },
@@ -118,16 +118,16 @@ export default function PaymentsPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'payments') fetchPayments();
+    if (activeTab === 'payments') startTransition(() => { fetchPayments(); });
   }, [fetchPayments, activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'webhooks') fetchWebhookLogs();
+    if (activeTab === 'webhooks') startTransition(() => { fetchWebhookLogs(); });
   }, [fetchWebhookLogs, activeTab]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
+  useEffect(() => { startTransition(() => { setCurrentPage(1); }); }, [searchTerm, statusFilter]);
 
-  const formatAmount = (amount: number) => `?${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatAmount = (amount: number) => `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const getStatusBadge = (status: string) => {
     const cfg = statusConfig[status] || { label: status, color: 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20', icon: HelpCircle };
@@ -254,7 +254,7 @@ export default function PaymentsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Payment ID</p>
-                      <p className="text-gray-700 font-mono text-xs break-all">{p.razorpay_payment_id || '�'}</p>
+                      <p className="text-gray-700 font-mono text-xs break-all">{p.razorpay_payment_id || '\u2014'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Base Amount</p>
@@ -269,7 +269,7 @@ export default function PaymentsPage() {
                   {p.discount_amount > 0 && p.coupon && (
                     <div className="flex items-center gap-2 text-xs">
                       <Tag className="h-3.5 w-3.5 text-blue-600" />
-                      <span className="text-gray-500">Coupon <span className="font-mono font-bold text-blue-600">{p.coupon.code}</span> applied � discount: {formatAmount(p.discount_amount)}</span>
+                      <span className="text-gray-500">Coupon <span className="font-mono font-bold text-blue-600">{p.coupon.code}</span> applied — discount: {formatAmount(p.discount_amount)}</span>
                     </div>
                   )}
 

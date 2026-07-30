@@ -21,8 +21,8 @@ export default function PaymentsChart({
           <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
           <Tooltip
             contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }}
-            labelFormatter={(v: any) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            formatter={(value: any) => [value, 'Payments']}
+            labelFormatter={(v: unknown) => new Date(v as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            formatter={(value: unknown) => [value as number, 'Payments']}
           />
           <Bar dataKey="count" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={24} />
         </BarChart>

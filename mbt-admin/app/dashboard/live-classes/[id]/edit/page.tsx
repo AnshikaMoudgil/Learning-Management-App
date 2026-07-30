@@ -1,7 +1,7 @@
 'use strict';
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import { apiPatch } from '@/app/lib/api';
@@ -30,8 +30,10 @@ export default function EditSessionPage() {
 
   useEffect(() => {
     if (!courseId) {
-      setSections([]);
-      setSectionId('');
+      startTransition(() => {
+        setSections([]);
+        setSectionId('');
+      });
       return;
     }
     (async () => {
@@ -107,11 +109,21 @@ export default function EditSessionPage() {
     fetchSession();
   }, [sessionId, router]);
 
+  const now = new Date();
+  const minDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!courseId || !title || !startTime || !duration) {
       toast.error('Please fill all required fields.');
+      return;
+    }
+
+    if (new Date(startTime) <= new Date()) {
+      toast.error('Session start time must be in the future.');
       return;
     }
 
@@ -124,7 +136,7 @@ export default function EditSessionPage() {
         description: description || undefined,
         start_time: new Date(startTime).toISOString(),
         duration: parseInt(duration, 10),
-        status: status as any,
+        status: status as 'draft' | 'scheduled' | 'live' | 'finished' | 'cancelled',
         section_id: sectionId || undefined,
       });
 
@@ -229,6 +241,7 @@ export default function EditSessionPage() {
                   type="datetime-local"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
+                  min={minDateTime}
                   className="w-full rounded-lg border border-gray-200 bg-white py-3 px-4 text-sm text-gray-900 outline-none focus:border-blue-500 transition"
                 />
               </div>

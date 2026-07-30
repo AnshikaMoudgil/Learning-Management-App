@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition } from 'react';
 import { useAuth } from '@/app/lib/AuthContext';
 import DashboardSkeleton from '@/components/DashboardSkeleton';
 import {
@@ -127,7 +127,7 @@ export default function OverviewPage() {
   useEffect(() => {
     if (!isAuthorized) return;
     if (!hasAccess) {
-      setIsLoading(false);
+      startTransition(() => { setIsLoading(false); });
       return;
     }
     async function fetchStats() {
@@ -143,7 +143,7 @@ export default function OverviewPage() {
         console.error('[Dashboard]', msg);
         toast.error(msg);
       } finally {
-        setIsLoading(false);
+      startTransition(() => { setIsLoading(false); });
       }
     }
     fetchStats();
@@ -172,9 +172,6 @@ export default function OverviewPage() {
 
   const d = stats.monthlyDeltas;
 
-  const a = stats.alerts;
-  const totalAlerts = a.pendingDeviceRequests + a.failedPayments + a.expiredCoupons;
-
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
 
@@ -184,12 +181,7 @@ export default function OverviewPage() {
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Dashboard</h1>
           <p className="text-gray-500 text-sm mt-1">Platform overview and performance metrics.</p>
         </div>
-        {totalAlerts > 0 && (
-          <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-200 px-4 py-2.5">
-            <AlertTriangle className="h-4 w-4 text-rose-500" />
-            <span className="text-sm font-semibold text-rose-600">{totalAlerts} items need attention</span>
-          </div>
-        )}
+
       </div>
 
       {/* Stat Cards */}
@@ -313,7 +305,7 @@ export default function OverviewPage() {
             <p className="text-sm text-gray-400">No recent activity.</p>
           ) : (
             <div className="space-y-1">
-              {stats.recentActivity.map((item, i) => (
+              {stats.recentActivity.slice(0, 10).map((item, i) => (
                 <div key={`${item.type}-${item.id}-${i}`} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50 transition h-10">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50">
                     <div className="h-4 w-4 text-blue-500">

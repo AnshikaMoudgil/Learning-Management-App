@@ -18,7 +18,7 @@ function generateToken(): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function setCsrfCookie(response: { headers: Headers; cookies?: { set: (name: string, value: string, options: any) => void } }): void {
+export function setCsrfCookie(response: { headers: Headers; cookies?: { set: (name: string, value: string, options: Record<string, string | boolean | number | undefined>) => void } }): void {
   const token = generateToken();
   if (response.cookies) {
     response.cookies.set(CSRF_COOKIE_NAME, token, {

@@ -116,7 +116,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Access Denied: Only superadmins can configure permissions.' }, { status: 403 });
     }
 
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: Record<string, unknown> = {};
     if (role) updatePayload.role = role;
     if (status) updatePayload.status = status;
     if (allowed_sections !== undefined) updatePayload.allowed_sections = allowed_sections;
