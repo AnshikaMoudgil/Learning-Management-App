@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
+import { validateCsrf } from '@/lib/csrf';
 
 // Helper to authenticate the caller and get their role
 async function checkCallerRole(request: Request) {
@@ -33,6 +34,11 @@ export async function POST(request: Request) {
     const { error: authError, role: callerRole } = await checkCallerRole(request);
     if (authError) {
       return NextResponse.json({ error: authError }, { status: 401 });
+    }
+
+    const csrf = await validateCsrf(request);
+    if (!csrf.valid) {
+      return NextResponse.json({ error: csrf.error }, { status: 401 });
     }
 
     if (callerRole !== 'superadmin') {
@@ -82,6 +88,11 @@ export async function PATCH(request: Request) {
     const { error: authError, role: callerRole } = await checkCallerRole(request);
     if (authError) {
       return NextResponse.json({ error: authError }, { status: 401 });
+    }
+
+    const csrf = await validateCsrf(request);
+    if (!csrf.valid) {
+      return NextResponse.json({ error: csrf.error }, { status: 401 });
     }
 
     const { targetUserId, role, status, allowed_sections, allowed_actions } = await request.json();

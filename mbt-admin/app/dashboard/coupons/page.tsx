@@ -12,6 +12,7 @@ import Select from '@/components/Select';
 import Pagination from '@/components/Pagination';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { PAGE_SIZE } from '@/app/lib/constants';
+import { csrfHeaders } from '@/lib/csrf';
 
 interface Coupon {
   id: string;
@@ -168,7 +169,7 @@ export default function CouponsPage() {
 
       const res = await fetch('/api/admin/coupons', {
         method: editingId ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, ...csrfHeaders() },
         body: JSON.stringify(payload),
       });
 
@@ -192,7 +193,7 @@ export default function CouponsPage() {
     try {
       const res = await fetch('/api/admin/coupons', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, ...csrfHeaders() },
         body: JSON.stringify({ id: coupon.id, is_active: !coupon.is_active }),
       });
 
@@ -215,7 +216,7 @@ export default function CouponsPage() {
     try {
       const res = await fetch('/api/admin/coupons', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, ...csrfHeaders() },
         body: JSON.stringify({ id: couponToDelete.id }),
       });
 

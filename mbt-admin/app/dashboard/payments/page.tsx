@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -127,7 +127,7 @@ export default function PaymentsPage() {
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
-  const formatAmount = (amount: number) => `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatAmount = (amount: number) => `?${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const getStatusBadge = (status: string) => {
     const cfg = statusConfig[status] || { label: status, color: 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20', icon: HelpCircle };
@@ -254,7 +254,7 @@ export default function PaymentsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Payment ID</p>
-                      <p className="text-gray-700 font-mono text-xs break-all">{p.razorpay_payment_id || '—'}</p>
+                      <p className="text-gray-700 font-mono text-xs break-all">{p.razorpay_payment_id || '�'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Base Amount</p>
@@ -269,7 +269,7 @@ export default function PaymentsPage() {
                   {p.discount_amount > 0 && p.coupon && (
                     <div className="flex items-center gap-2 text-xs">
                       <Tag className="h-3.5 w-3.5 text-blue-600" />
-                      <span className="text-gray-500">Coupon <span className="font-mono font-bold text-blue-600">{p.coupon.code}</span> applied — discount: {formatAmount(p.discount_amount)}</span>
+                      <span className="text-gray-500">Coupon <span className="font-mono font-bold text-blue-600">{p.coupon.code}</span> applied � discount: {formatAmount(p.discount_amount)}</span>
                     </div>
                   )}
 

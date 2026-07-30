@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import { AuthProvider, useAuth } from '@/app/lib/AuthContext';
 import Link from 'next/link';
+import Image from 'next/image';
 import toast from 'react-hot-toast';
 import {
   LayoutDashboard,
@@ -35,6 +36,15 @@ export default function DashboardLayout({
       <DashboardShell>{children}</DashboardShell>
     </AuthProvider>
   );
+}
+
+function isValidUrl(url: string) {
+  try {
+    const u = new URL(url);
+    return ['https:', 'http:'].includes(u.protocol);
+  } catch {
+    return false;
+  }
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -139,8 +149,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         {profile && (
           <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-1`}>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-gray-500 font-bold border border-gray-300 overflow-hidden shrink-0">
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt={profile.full_name} className="h-full w-full object-cover" />
+              {profile.avatar_url && isValidUrl(profile.avatar_url) ? (
+                <Image src={profile.avatar_url} alt={profile.full_name} width={36} height={36} className="h-full w-full object-cover" />
               ) : (
                 profile.full_name.charAt(0).toUpperCase()
               )}

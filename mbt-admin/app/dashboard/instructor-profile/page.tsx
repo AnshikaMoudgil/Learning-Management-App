@@ -1,10 +1,11 @@
-﻿'use strict';
+'use strict';
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 import { Loader2, Upload, Save, Plus, X } from 'lucide-react';
 
 interface InstructorProfile {
@@ -432,7 +433,7 @@ export default function InstructorProfilePage() {
               <div className="flex flex-col items-center gap-4">
                 <div className="h-32 w-32 rounded-full bg-gray-100 border-2 border-gray-300 overflow-hidden flex items-center justify-center">
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                    <Image src={avatarUrl} alt="Avatar" width={128} height={128} className="h-full w-full object-cover" />
                   ) : (
                     <span className="text-4xl font-bold text-gray-400">
                       {fullName ? fullName.charAt(0).toUpperCase() : '?'}

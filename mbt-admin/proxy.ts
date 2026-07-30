@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { setCsrfCookie } from './lib/csrf';
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -31,6 +32,26 @@ export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const isOnDashboard = url.pathname.startsWith('/dashboard');
   const isOnLogin = url.pathname === '/login';
+
+  // Check role for dashboard access
+  if (isOnDashboard && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const allowedRoles = ['admin', 'superadmin', 'instructor'];
+    const hasRoleAccess = profile && allowedRoles.includes(profile.role);
+
+    if (!hasRoleAccess) {
+      await supabase.auth.signOut();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+
+    setCsrfCookie(response);
+  }
 
   // Not logged in and trying to access dashboard → redirect to login
   if (isOnDashboard && !user) {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
+import { validateCsrf } from '@/lib/csrf';
 
 type AuthResult = 
   | { error: string; status: number } 
@@ -9,7 +10,7 @@ async function authorize(request: Request): Promise<AuthResult> {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
   if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
-    return { error: 'Service role key not configured.', status: 500 };
+    return { error: 'Internal server error.', status: 500 };
   }
 
   const authHeader = request.headers.get('Authorization');
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
     }
 
     const response = NextResponse.json({ coupons: coupons || [] });
-    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
@@ -73,6 +74,11 @@ export async function POST(request: Request) {
     const auth = await authorize(request);
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const csrf = await validateCsrf(request);
+    if (!csrf.valid) {
+      return NextResponse.json({ error: csrf.error }, { status: 401 });
     }
 
     const canWrite = auth.callerProfile.role === 'superadmin' || auth.callerProfile.role === 'admin' || (auth.callerProfile.allowed_actions || []).includes('Manage Coupons: Write');
@@ -134,6 +140,11 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
+    const csrf = await validateCsrf(request);
+    if (!csrf.valid) {
+      return NextResponse.json({ error: csrf.error }, { status: 401 });
+    }
+
     const canWrite = auth.callerProfile.role === 'superadmin' || auth.callerProfile.role === 'admin' || (auth.callerProfile.allowed_actions || []).includes('Manage Coupons: Write');
     if (!canWrite) {
       return NextResponse.json({ error: 'Access Denied: Read-only access.' }, { status: 403 });
@@ -188,6 +199,11 @@ export async function DELETE(request: Request) {
     const auth = await authorize(request);
     if ('error' in auth) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const csrf = await validateCsrf(request);
+    if (!csrf.valid) {
+      return NextResponse.json({ error: csrf.error }, { status: 401 });
     }
 
     const canWrite = auth.callerProfile.role === 'superadmin' || auth.callerProfile.role === 'admin' || (auth.callerProfile.allowed_actions || []).includes('Manage Coupons: Write');

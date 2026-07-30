@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
+import { validateCsrf } from '@/lib/csrf';
 
 export async function GET(request: Request) {
   try {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
-      return NextResponse.json({ error: 'Service role key not configured.' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
     }
 
     const authHeader = request.headers.get('Authorization');
@@ -79,7 +80,7 @@ export async function GET(request: Request) {
     }));
 
     const response = NextResponse.json({ requests: mergedRequests, total: totalCount, page, limit });
-    response.headers.set('Cache-Control', 's-maxage=30, stale-while-revalidate=120');
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
@@ -91,7 +92,7 @@ export async function PATCH(request: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
-      return NextResponse.json({ error: 'Service role key not configured.' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
     }
 
     const authHeader = request.headers.get('Authorization');
@@ -105,6 +106,11 @@ export async function PATCH(request: Request) {
     const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid session.' }, { status: 401 });
+    }
+
+    const csrf = await validateCsrf(request);
+    if (!csrf.valid) {
+      return NextResponse.json({ error: csrf.error }, { status: 401 });
     }
 
     const { data: callerProfile } = await adminClient

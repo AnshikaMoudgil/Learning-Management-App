@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -286,13 +286,13 @@ export default function LiveClassesPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {session.courses?.[0]?.title || '—'}
+                    {session.courses?.[0]?.title || '�'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {session.course_instructor_name || '—'}
+                    {session.course_instructor_name || '�'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {session.profiles?.[0]?.full_name || '—'}
+                    {session.profiles?.[0]?.full_name || '�'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
                     {new Date(session.start_time).toLocaleString()}
@@ -306,7 +306,7 @@ export default function LiveClassesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-xs text-gray-400">
-                    {session.created_at ? new Date(session.created_at).toLocaleString() : '—'}
+                    {session.created_at ? new Date(session.created_at).toLocaleString() : '�'}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="relative flex items-center justify-end">

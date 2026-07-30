@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
+import { validateCsrf } from '@/lib/csrf';
 
 // Helper to authenticate caller
 async function checkSuperAdmin(request: Request) {
@@ -28,6 +29,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const isSuperAdmin = await checkSuperAdmin(request);
     if (!isSuperAdmin) {
       return NextResponse.json({ error: 'Access Denied: Only superadmins can delete users.' }, { status: 403 });
+    }
+
+    const csrf = await validateCsrf(request);
+    if (!csrf.valid) {
+      return NextResponse.json({ error: csrf.error }, { status: 401 });
     }
 
     const { id: targetUserId } = await params;

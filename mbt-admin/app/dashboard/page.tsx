@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/lib/AuthContext';
+import DashboardSkeleton from '@/components/DashboardSkeleton';
 import {
-  BookOpen, UserCheck, GraduationCap, Loader2, Video, Tag,
+  BookOpen, UserCheck, GraduationCap, Video, Tag,
   CreditCard, Smartphone, TrendingUp, Minus,
   AlertTriangle, Clock, XCircle, CheckCircle2,
   ChevronRight, ArrowUpRight,
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import dynamic from 'next/dynamic';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+
+const PaymentsChart = dynamic(() => import('@/app/dashboard/PaymentsChart'), { ssr: false });
 
 interface Stats {
   totalCourses: number;
@@ -109,15 +112,15 @@ function StatCard({
   );
 }
 
+function formatTime(t: string) {
+  const d = new Date(t);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 export default function OverviewPage() {
   const { role, isAuthorized, accessToken, profile } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const formatTime = useCallback((t: string) => {
-    const d = new Date(t);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  }, []);
 
   const hasAccess = role === 'superadmin' || role === 'admin' || (profile?.allowed_sections || []).includes('Overview');
 
@@ -147,14 +150,7 @@ export default function OverviewPage() {
   }, [isAuthorized, role, accessToken, hasAccess]);
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-          <span className="text-sm font-medium text-gray-500">Loading metrics...</span>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!hasAccess) {
@@ -229,26 +225,7 @@ export default function OverviewPage() {
             <h2 className="text-base font-bold text-gray-900">Daily Payments (30 days)</h2>
             <span className="text-xs text-gray-400">Count</span>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.dailyPayments} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: '#94a3b8' }}
-                  tickFormatter={(v: string) => v.slice(5)}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }}
-                  labelFormatter={(v: any) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  formatter={(value: any) => [value, 'Payments']}
-                />
-                <Bar dataKey="count" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={24} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <PaymentsChart data={stats.dailyPayments} />
         </div>
 
         {/* Needs Attention */}

@@ -1,7 +1,7 @@
 'use strict';
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useDeferredValue } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import Select from '@/components/Select';
 import Pagination from '@/components/Pagination';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { PAGE_SIZE } from '@/app/lib/constants';
+import { csrfHeaders } from '@/lib/csrf';
 
 interface Profile {
   id: string;
@@ -27,6 +28,7 @@ export default function ManageAdminsPage() {
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
   const [users, setUsers] = useState<Profile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -142,6 +144,7 @@ export default function ManageAdminsPage() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          ...csrfHeaders(),
         },
         body: JSON.stringify({
           email: inviteEmail,
@@ -187,6 +190,7 @@ export default function ManageAdminsPage() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          ...csrfHeaders(),
         },
         body: JSON.stringify({
           targetUserId,
@@ -221,6 +225,7 @@ export default function ManageAdminsPage() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          ...csrfHeaders(),
         },
         body: JSON.stringify({
           targetUserId,
@@ -255,6 +260,7 @@ export default function ManageAdminsPage() {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
+          ...csrfHeaders(),
         },
       });
 
@@ -292,6 +298,7 @@ export default function ManageAdminsPage() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          ...csrfHeaders(),
         },
         body: JSON.stringify({
           targetUserId: selectedUser.id,
@@ -323,9 +330,9 @@ export default function ManageAdminsPage() {
 
   const filteredUsers = users.filter((u) => {
     const matchSearch =
-      (u.full_name && u.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+      (u.full_name && u.full_name.toLowerCase().includes(deferredSearchTerm.toLowerCase())) ||
+      (u.email && u.email.toLowerCase().includes(deferredSearchTerm.toLowerCase()));
+
     return matchSearch && u.role !== 'learner';
   });
 

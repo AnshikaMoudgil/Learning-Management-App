@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { Loader2, CheckCircle, XCircle, Clock, Smartphone, User } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PAGE_SIZE } from '@/app/lib/constants';
+import { csrfHeaders } from '@/lib/csrf';
 
 interface DeviceRequest {
   id: string;
@@ -81,6 +82,7 @@ export default function DeviceRequestsPage() {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
+          ...csrfHeaders(),
         },
         body: JSON.stringify({ requestId, status }),
       });
