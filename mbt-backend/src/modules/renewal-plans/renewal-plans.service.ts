@@ -3,10 +3,13 @@ import { RenewalPlansRepository } from './renewal-plans.repository';
 
 @Injectable()
 export class RenewalPlansService {
-  constructor(private readonly renewalPlansRepository: RenewalPlansRepository) {}
+  constructor(
+    private readonly renewalPlansRepository: RenewalPlansRepository,
+  ) {}
 
   async getPlansForCourse(courseId: string) {
-    const plans = await this.renewalPlansRepository.findActivePlansByCourseId(courseId);
+    const plans =
+      await this.renewalPlansRepository.findActivePlansByCourseId(courseId);
     return plans.map((plan) => ({
       id: plan.id,
       courseId: plan.course_id,

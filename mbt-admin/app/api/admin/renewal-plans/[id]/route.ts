@@ -46,9 +46,10 @@ async function authorize(request: Request): Promise<AuthResult> {
 // PATCH /api/admin/renewal-plans/[id]
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const auth = await authorize(request);
     if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
@@ -76,7 +77,7 @@ export async function PATCH(
     const { data, error } = await auth.adminClient
       .from('course_renewal_plans')
       .update(sanitized)
-      .eq('id', params.id)
+      .eq('id', id)
       .select('*')
       .single();
 
@@ -90,9 +91,10 @@ export async function PATCH(
 // DELETE /api/admin/renewal-plans/[id]
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const auth = await authorize(request);
     if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
@@ -102,7 +104,7 @@ export async function DELETE(
     const { error } = await auth.adminClient
       .from('course_renewal_plans')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });

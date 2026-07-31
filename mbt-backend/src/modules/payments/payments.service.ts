@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -183,6 +184,18 @@ export class PaymentsService {
       throw new BadRequestException('Renewal plan does not belong to this course');
     }
 
+    // Renewal is only available to users who already have an enrollment for this
+    // course (active or expired) — prevents buying any course at the renewal price.
+    const existingEnrollment = await this.paymentsRepository.findAnyEnrollment(
+      userId,
+      courseId,
+    );
+    if (!existingEnrollment) {
+      throw new ForbiddenException(
+        'Renewal is only available for enrolled courses',
+      );
+    }
+
     // Fetch course to determine hardware/software gateway
     const course = await this.paymentsRepository.findCourseById(courseId);
     const gateway = this.razorpayService.getGatewayForCategory(course.category);
@@ -220,9 +233,7 @@ export class PaymentsService {
         amount_subunits: 0,
         currency: this.currency,
         razorpay_order_id: `free_${Date.now()}_${userId.slice(0, 8)}`,
-        status: 'completed',
-        razorpay_payment_id: `free_${Date.now()}`,
-        razorpay_signature: 'free',
+        status: 'pending',
         expires_at: new Date(Date.now() + 3600_000).toISOString(),
       });
       if (result.error) {
@@ -325,9 +336,7 @@ export class PaymentsService {
       amount_subunits: 0,
       currency: this.currency,
       razorpay_order_id: `free_${Date.now()}_${userId.slice(0, 8)}`,
-      status: 'completed',
-      razorpay_payment_id: `free_${Date.now()}`,
-      razorpay_signature: 'free',
+      status: 'pending',
       expires_at: new Date(Date.now() + 3600_000).toISOString(),
     });
 

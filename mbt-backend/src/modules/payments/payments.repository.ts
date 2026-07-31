@@ -102,6 +102,25 @@ export class PaymentsRepository {
     return data as { id: string } | null;
   }
 
+  async findAnyEnrollment(userId: string, courseId: string) {
+    const { data, error } = await this.db
+      .from('enrollments')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .order('enrolled_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw new InternalServerErrorException(
+        'Failed to check enrollment status',
+      );
+    }
+
+    return data as { id: string } | null;
+  }
+
   async findPaymentByOrderId(orderId: string): Promise<PaymentRow> {
     const { data, error } = await this.db
       .from('payments')

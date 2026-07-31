@@ -25,7 +25,9 @@ export class RenewalPlansRepository {
   async findActivePlansByCourseId(courseId: string): Promise<RenewalPlanRow[]> {
     const { data, error } = await this.db
       .from('course_renewal_plans')
-      .select('id, course_id, label, duration_value, duration_unit, price, sort_order, is_active, created_at, updated_at')
+      .select(
+        'id, course_id, label, duration_value, duration_unit, price, sort_order, is_active, created_at, updated_at',
+      )
       .eq('course_id', courseId)
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
@@ -40,7 +42,9 @@ export class RenewalPlansRepository {
   async findPlanById(planId: string): Promise<RenewalPlanRow | null> {
     const { data, error } = await this.db
       .from('course_renewal_plans')
-      .select('id, course_id, label, duration_value, duration_unit, price, sort_order, is_active, created_at, updated_at')
+      .select(
+        'id, course_id, label, duration_value, duration_unit, price, sort_order, is_active, created_at, updated_at',
+      )
       .eq('id', planId)
       .eq('is_active', true)
       .maybeSingle();

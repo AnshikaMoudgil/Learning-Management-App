@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Plus, Trash2, Edit2, Check, X, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, Loader2 } from 'lucide-react';
 import { supabase } from '@/app/lib/supabaseClient';
 import { csrfHeaders } from '@/lib/csrf';
 
@@ -35,39 +35,58 @@ export default function RenewalPlansPage() {
   const [sortOrder, setSortOrder] = useState<number>(0);
   const [isActive, setIsActive] = useState<boolean>(true);
 
-  const fetchPlans = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
-      if (!token) throw new Error('No admin session');
+  const fetchPlans = useCallback(async () => {
+    const session = await supabase.auth.getSession();
+    const token = session.data.session?.access_token;
+    if (!token) throw new Error('No admin session');
 
-      const res = await fetch(`/api/admin/renewal-plans?courseId=${courseId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const res = await fetch(`/api/admin/renewal-plans?courseId=${courseId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to fetch plans');
-      }
-
-      const data = await res.json();
-      setPlans(data.plans || []);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
-    } finally {
-      setLoading(false);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to fetch plans');
     }
-  };
+
+    const data = await res.json();
+    return (data.plans || []) as RenewalPlan[];
+  }, [courseId]);
+
+  const loadPlans = useCallback(async () => {
+    try {
+      const plans = await fetchPlans();
+      setPlans(plans);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  }, [fetchPlans]);
 
   useEffect(() => {
-    if (courseId) {
-      fetchPlans();
-    }
-  }, [courseId]);
+    if (!courseId) return;
+    let active = true;
+    fetchPlans()
+      .then((plans) => {
+        if (active) {
+          setPlans(plans);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err instanceof Error ? err.message : 'An error occurred');
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseId, fetchPlans]);
 
   const resetForm = () => {
     setIsEditing(null);
@@ -125,10 +144,10 @@ export default function RenewalPlansPage() {
         throw new Error(errData.error || 'Failed to save renewal plan');
       }
 
-      await fetchPlans();
+      await loadPlans();
       resetForm();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setIsSubmitting(false);
     }
@@ -156,9 +175,9 @@ export default function RenewalPlansPage() {
         throw new Error(errData.error || 'Failed to delete plan');
       }
 
-      await fetchPlans();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete');
+      await loadPlans();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete');
     } finally {
       setLoading(false);
     }
@@ -183,9 +202,9 @@ export default function RenewalPlansPage() {
       });
 
       if (!res.ok) throw new Error('Failed to update status');
-      await fetchPlans();
-    } catch (err: any) {
-      setError(err.message || 'Failed to toggle status');
+      await loadPlans();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle status');
     }
   };
 
@@ -246,7 +265,7 @@ export default function RenewalPlansPage() {
               <label className="block text-xs font-semibold text-gray-700 mb-1">Duration Unit</label>
               <select
                 value={durationUnit}
-                onChange={(e) => setDurationUnit(e.target.value as any)}
+                onChange={(e) => setDurationUnit(e.target.value as 'days' | 'months' | 'years')}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               >
                 <option value="days">Days</option>
@@ -269,7 +288,7 @@ export default function RenewalPlansPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Display Label (e.g. "3 Months")</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{'Display Label (e.g. "3 Months")'}</label>
               <input
                 type="text"
                 placeholder={`Auto: ${durationValue} ${durationUnit}`}
