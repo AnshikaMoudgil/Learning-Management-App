@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, startTransition } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import { useAuth } from '@/app/lib/AuthContext';
 import toast from 'react-hot-toast';
@@ -75,7 +75,7 @@ export default function CoursesPage() {
   }, [currentPage, role, userId, filterLevel, filterCategory, filterMinPrice, filterMaxPrice]);
 
   useEffect(() => {
-    fetchCourses();
+    startTransition(() => { fetchCourses(); });
   }, [fetchCourses]);
 
   const handleDelete = async () => {
@@ -106,7 +106,7 @@ export default function CoursesPage() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   useEffect(() => {
-    setCurrentPage(1);
+    startTransition(() => { setCurrentPage(1); });
   }, [searchTerm]);
 
   return (

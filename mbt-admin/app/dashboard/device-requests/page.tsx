@@ -1,13 +1,13 @@
 'use strict';
 'use client';
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/app/lib/supabaseClient';
+import { useEffect, useState, startTransition } from 'react';
 import { useAuth } from '@/app/lib/AuthContext';
 import toast from 'react-hot-toast';
 import { Loader2, CheckCircle, XCircle, Clock, Smartphone, User } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { PAGE_SIZE } from '@/app/lib/constants';
+import { csrfHeaders } from '@/lib/csrf';
 
 interface DeviceRequest {
   id: string;
@@ -38,7 +38,6 @@ export default function DeviceRequestsPage() {
   const [filter, setFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const hasAccess = role === 'superadmin' || role === 'admin' || (profile?.allowed_sections || []).includes('Device Requests');
   const canReview = role === 'superadmin' || role === 'admin' || (profile?.allowed_actions || []).includes('Accept / Reject Device Requests');
 
   const fetchRequests = async () => {
@@ -81,6 +80,7 @@ export default function DeviceRequestsPage() {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
+          ...csrfHeaders(),
         },
         body: JSON.stringify({ requestId, status }),
       });
@@ -101,10 +101,11 @@ export default function DeviceRequestsPage() {
   };
 
   useEffect(() => {
-    fetchRequests();
+    startTransition(() => { fetchRequests(); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { setCurrentPage(1); }, [filter]);
+  useEffect(() => { startTransition(() => { setCurrentPage(1); }); }, [filter]);
 
   const filteredRequests = filter === 'all'
     ? requests

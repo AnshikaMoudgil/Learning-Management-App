@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseClient';
+import { validateCsrf } from '@/lib/csrf';
 
 export async function GET(request: Request) {
   try {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
-      return NextResponse.json({ error: 'Service role key not configured.' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
     }
 
     const authHeader = request.headers.get('Authorization');
@@ -54,8 +55,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: listError.message }, { status: 500 });
     }
 
-    const userIds = [...new Set((requests || []).map((r: any) => r.user_id).filter(Boolean))];
-    const reviewerIds = [...new Set((requests || []).map((r: any) => r.reviewed_by).filter(Boolean))];
+    const userIds = [...new Set((requests || []).map((r: { user_id: string }) => r.user_id).filter(Boolean))];
+    const reviewerIds = [...new Set((requests || []).map((r: { reviewed_by: string }) => r.reviewed_by).filter(Boolean))];
     const profileIds = [...new Set([...userIds, ...reviewerIds])];
 
     let profilesMap: Record<string, { full_name: string | null; email: string | null }> = {};
@@ -72,14 +73,14 @@ export async function GET(request: Request) {
       }, {} as Record<string, { full_name: string | null; email: string | null }>);
     }
 
-    const mergedRequests = (requests || []).map((req: any) => ({
+    const mergedRequests = (requests || []).map((req: { user_id: string; reviewed_by: string | null } & Record<string, unknown>) => ({
       ...req,
       user: profilesMap[req.user_id] ?? null,
       reviewer: req.reviewed_by ? (profilesMap[req.reviewed_by] ?? null) : null,
     }));
 
     const response = NextResponse.json({ requests: mergedRequests, total: totalCount, page, limit });
-    response.headers.set('Cache-Control', 's-maxage=30, stale-while-revalidate=120');
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });
@@ -91,7 +92,7 @@ export async function PATCH(request: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
-      return NextResponse.json({ error: 'Service role key not configured.' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
     }
 
     const authHeader = request.headers.get('Authorization');
@@ -105,6 +106,11 @@ export async function PATCH(request: Request) {
     const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid session.' }, { status: 401 });
+    }
+
+    const csrf = await validateCsrf(request);
+    if (!csrf.valid) {
+      return NextResponse.json({ error: csrf.error }, { status: 401 });
     }
 
     const { data: callerProfile } = await adminClient

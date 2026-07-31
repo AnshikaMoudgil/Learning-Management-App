@@ -6,7 +6,7 @@ export async function GET(request: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
-      return NextResponse.json({ error: 'Service role key not configured.' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
     }
 
     const authHeader = request.headers.get('Authorization');
@@ -61,8 +61,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const userIds = [...new Set((payments || []).map((p: any) => p.user_id).filter(Boolean))];
-    const couponIds = [...new Set((payments || []).map((p: any) => p.coupon_id).filter(Boolean))];
+    const userIds = [...new Set((payments || []).map((p: { user_id: string }) => p.user_id).filter(Boolean))];
+    const couponIds = [...new Set((payments || []).map((p: { coupon_id: string }) => p.coupon_id).filter(Boolean))];
 
     const [profilesResult, couponsResult] = await Promise.all([
       userIds.length > 0
@@ -73,24 +73,24 @@ export async function GET(request: Request) {
         : { data: [] },
     ]);
 
-    const profilesMap = (profilesResult.data || []).reduce((acc: any, p: any) => {
+    const profilesMap = (profilesResult.data || []).reduce((acc: Record<string, { full_name: string | null; email: string | null }>, p: { id: string; full_name: string | null; email: string | null }) => {
       acc[p.id] = { full_name: p.full_name, email: p.email };
       return acc;
-    }, {} as Record<string, { full_name: string | null; email: string | null }>);
+    }, {});
 
-    const couponsMap = (couponsResult.data || []).reduce((acc: any, c: any) => {
+    const couponsMap = (couponsResult.data || []).reduce((acc: Record<string, { code: string; discount_type: string; discount_value: number }>, c: { id: string; code: string; discount_type: string; discount_value: number }) => {
       acc[c.id] = { code: c.code, discount_type: c.discount_type, discount_value: c.discount_value };
       return acc;
-    }, {} as Record<string, { code: string; discount_type: string; discount_value: number }>);
+    }, {});
 
-    const mergedPayments = (payments || []).map((p: any) => ({
+    const mergedPayments = (payments || []).map((p: { user_id: string; coupon_id: string | null } & Record<string, unknown>) => ({
       ...p,
       user: profilesMap[p.user_id] ?? null,
       coupon: p.coupon_id ? (couponsMap[p.coupon_id] ?? null) : null,
     }));
 
     const response = NextResponse.json({ payments: mergedPayments, total: totalCount, page, limit });
-    response.headers.set('Cache-Control', 's-maxage=30, stale-while-revalidate=120');
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });

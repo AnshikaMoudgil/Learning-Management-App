@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
 
 interface ProfileDisplay {
   full_name: string;
@@ -125,12 +124,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   if (value.isLoading) {
     return (
-      <div style={{ background: 'var(--background)' }} className="flex h-screen w-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin" style={{ color: 'var(--primary)' }} />
-          <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-            Loading your admin console...
-          </p>
+      <div className="flex h-screen bg-gray-50">
+        <div className="hidden md:flex w-64 flex-col border-r border-gray-200 bg-white p-3 animate-pulse">
+          <div className="flex items-center gap-3 px-1">
+            <div className="h-10 w-10 rounded-xl bg-gray-200" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3 w-24 rounded bg-gray-200" />
+              <div className="h-2 w-16 rounded bg-gray-100" />
+            </div>
+          </div>
+          <div className="mt-6 space-y-1 flex-1">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3">
+                <div className="h-4.5 w-4.5 rounded bg-gray-200" />
+                <div className="h-3 w-28 rounded bg-gray-200" />
+              </div>
+            ))}
+          </div>
+          <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
+            <div className="flex items-center gap-3 px-1">
+              <div className="h-9 w-9 rounded-full bg-gray-200" />
+              <div className="flex-1 space-y-1">
+                <div className="h-3 w-20 rounded bg-gray-200" />
+                <div className="h-2 w-14 rounded bg-gray-100" />
+              </div>
+            </div>
+            <div className="h-10 rounded-lg bg-gray-100" />
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col">
+          <div className="md:hidden h-16 border-b border-gray-200 bg-white flex items-center px-6 animate-pulse">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-gray-200" />
+              <div className="h-3 w-20 rounded bg-gray-200" />
+            </div>
+          </div>
+          <div className="flex-1 p-6 md:p-8 animate-pulse">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div>
+                <div className="h-8 w-48 rounded-lg bg-gray-200" />
+                <div className="h-4 w-64 mt-2 rounded bg-gray-100" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="h-3 w-24 rounded bg-gray-200" />
+                        <div className="h-8 w-16 mt-3 rounded bg-gray-200" />
+                      </div>
+                      <div className="h-11 w-11 rounded-xl bg-gray-100 shrink-0 ml-3" />
+                    </div>
+                    <div className="h-3 w-32 mt-5 rounded bg-gray-100" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

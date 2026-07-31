@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, startTransition } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -185,7 +185,7 @@ export default function CourseResourcesPage() {
         .order('created_at', { ascending: false });
       if (resourcesError) throw resourcesError;
 
-      const mapped: CourseResource[] = (resourcesData || []).map((r: any) => ({
+      const mapped: CourseResource[] = (resourcesData || []).map((r: { id: string; course_id: string; section_id: string | null; title: string; file_url: string; file_size: string | null; file_type: string | null; created_at: string; course_sections: { title: string } | null }) => ({
         id: r.id,
         course_id: r.course_id,
         section_id: r.section_id,
@@ -194,7 +194,7 @@ export default function CourseResourcesPage() {
         file_size: r.file_size,
         file_type: r.file_type,
         created_at: r.created_at,
-        section_title: r.course_sections?.title || null,
+        section_title: r.course_sections?.title || undefined,
       }));
       setResources(mapped);
     } catch {
@@ -205,7 +205,7 @@ export default function CourseResourcesPage() {
   }, [courseId, router]);
 
   useEffect(() => {
-    if (courseId) fetchData();
+    if (courseId) startTransition(() => { fetchData(); });
   }, [courseId, fetchData]);
 
   const handleAdd = async () => {
@@ -238,7 +238,7 @@ export default function CourseResourcesPage() {
         file_size: data.file_size,
         file_type: data.file_type,
         created_at: data.created_at,
-        section_title: (data as any).course_sections?.title || null,
+        section_title: (data as { course_sections: { title: string } | null }).course_sections?.title || undefined,
       };
 
       setResources((prev) => [mapped, ...prev]);

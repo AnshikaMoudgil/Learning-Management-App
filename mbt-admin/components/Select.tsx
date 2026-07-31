@@ -39,21 +39,16 @@ export default function Select({
     const optionHeight = size === 'sm' ? 32 : 44;
     const dropdownHeight = Math.min(options.length * optionHeight + 8, 240);
 
-    if (spaceBelow >= dropdownHeight) {
-      setDropdownStyle({
-        position: 'fixed',
-        top: `${rect.bottom + 4}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-      });
-    } else {
-      setDropdownStyle({
-        position: 'fixed',
-        bottom: `${window.innerHeight - rect.top + 4}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-      });
-    }
+    setDropdownStyle({
+      position: 'fixed',
+      ...(spaceBelow >= dropdownHeight
+        ? { top: `${rect.bottom + 4}px` }
+        : { bottom: `${window.innerHeight - rect.top + 4}px` }),
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      maxHeight: `${dropdownHeight}px`,
+      overflowY: 'auto',
+    });
   }, [options.length, size]);
 
   useEffect(() => {

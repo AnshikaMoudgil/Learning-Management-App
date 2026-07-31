@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!serviceRoleKey || serviceRoleKey === 'placeholder-service-key') {
-      return NextResponse.json({ error: 'Service role key not configured.' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error.' }, { status: 500 });
     }
 
     const authHeader = request.headers.get('Authorization');
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const [
       { data: { user }, error: authError },
       { data: allProfiles, error: listError },
-      { data: authUsers, error: authListError },
+      { data: authUsers },
     ] = await Promise.all([
       adminClient.auth.getUser(token),
       adminClient.from('profiles').select('id, full_name, email, phone, role, status, created_at, allowed_sections, allowed_actions').order('created_at', { ascending: false }),
@@ -38,12 +38,16 @@ export async function GET(request: Request) {
     }
 
     const callerProfile = (allProfiles || []).find((p) => p.id === user.id);
-    const allowedRoles = ['admin', 'superadmin', 'instructor'];
-    if (!callerProfile || !allowedRoles.includes(callerProfile.role)) {
+    const hasAccess = callerProfile && (
+      callerProfile.role === 'superadmin' ||
+      callerProfile.role === 'admin' ||
+      (callerProfile.allowed_sections || []).includes('Staff Directory')
+    );
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Access Denied.' }, { status: 403 });
     }
 
-    const authUserMap = new Map((authUsers?.users || []).map((u: any) => [u.id, u]));
+    const authUserMap = new Map((authUsers?.users || []).map((u: { id: string; raw_app_meta_data?: { providers?: string[] }; last_sign_in_at?: string | null }) => [u.id, u]));
 
     const enrichedProfiles = (allProfiles || []).map((p) => {
       const authUser = authUserMap.get(p.id);
@@ -57,7 +61,7 @@ export async function GET(request: Request) {
     });
 
     const response = NextResponse.json({ profiles: enrichedProfiles });
-    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Server error' }, { status: 500 });

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,10 +9,11 @@ import { KeyRound, Loader2, Lock } from 'lucide-react';
 
 export default function ChangePasswordPage() {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
