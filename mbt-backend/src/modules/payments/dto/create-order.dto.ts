@@ -18,4 +18,8 @@ export class CreateOrderDto {
   @IsOptional()
   @IsBoolean()
   allowRenewal?: boolean;
+
+  @IsOptional()
+  @IsUUID('4')
+  renewalPlanId?: string;
 }

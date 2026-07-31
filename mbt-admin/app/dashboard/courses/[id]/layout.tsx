@@ -7,6 +7,7 @@ import { ArrowLeft, LayoutList, FileText, Edit3 } from 'lucide-react';
 const TABS = [
   { href: 'syllabus', label: 'Syllabus', icon: LayoutList },
   { href: 'resources', label: 'Resources', icon: FileText },
+  { href: 'renewal-plans', label: 'Renewal Plans', icon: FileText },
   { href: 'edit', label: 'Edit Course', icon: Edit3 },
 ];
 

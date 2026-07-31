@@ -36,12 +36,14 @@ class PaymentService {
     required List<String> courseIds,
     String? couponCode,
     bool allowRenewal = false,
+    String? renewalPlanId,
   }) async {
     final result = await _api.post(
       '/api/v1/payments/create-order',
       body: {
         'courseIds': courseIds,
         'allowRenewal': allowRenewal,
+        if (renewalPlanId != null) 'renewalPlanId': renewalPlanId,
         if (couponCode != null && couponCode.trim().isNotEmpty)
           'couponCode': couponCode.trim(),
       },
@@ -69,11 +71,13 @@ class PaymentService {
     required String checkoutTitle,
     String? couponCode,
     bool allowRenewal = false,
+    String? renewalPlanId,
   }) async {
     final order = await createOrder(
       courseIds: courseIds,
       couponCode: couponCode,
       allowRenewal: allowRenewal,
+      renewalPlanId: renewalPlanId,
     );
 
     if (kIsWeb) {

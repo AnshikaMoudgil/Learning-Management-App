@@ -28,6 +28,7 @@ import { MyCoursesModule } from './modules/my-courses/my-courses.module';
 import { MediaAssetsModule } from './modules/media-assets/media-assets.module';
 import { VideoModule } from './modules/video/video.module';
 import { RedisModule } from './common/redis/redis.module';
+import { RenewalPlansModule } from './modules/renewal-plans/renewal-plans.module';
 
 @Module({
   imports: [
@@ -96,6 +97,7 @@ import { RedisModule } from './common/redis/redis.module';
     MediaAssetsModule,
     VideoModule,
     RedisModule,
+    RenewalPlansModule,
   ],
   controllers: [AppController],
   providers: [AppService],

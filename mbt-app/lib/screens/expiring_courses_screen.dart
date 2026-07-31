@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/enrollments_service.dart';
 import 'package:go_router/go_router.dart';
+import '../router/app_router.dart';
 
 class ExpiringCoursesScreen extends StatefulWidget {
   const ExpiringCoursesScreen({super.key});
@@ -150,7 +151,7 @@ class _ExpiringCoursesScreenState extends State<ExpiringCoursesScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         elevation: 0,
                       ),
-                      onPressed: () {},
+                onPressed: () => context.go(RouteNames.store),
                     ),
                   ),
                 ],
@@ -420,7 +421,7 @@ class _ExpiringCoursesScreenState extends State<ExpiringCoursesScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
                   minimumSize: const Size(0, 36),
                 ),
-                onPressed: () {},
+                onPressed: () => context.push('${RouteNames.renewCourse}?courseId=${course.courseId}&enrollmentId=${course.enrollmentId}'),
                 child: Text(
                   isExpired ? 'Renew Access' : 'Renew Now',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
