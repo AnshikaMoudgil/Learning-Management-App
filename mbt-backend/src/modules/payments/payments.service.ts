@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -15,6 +16,7 @@ import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RazorpayService } from './razorpay.service';
 import { PaymentsRepository } from './payments.repository';
+import { RenewalPlansService } from '../renewal-plans/renewal-plans.service';
 import type { CourseRow, PaymentRow } from '../../common/types/payments.types';
 
 @Injectable()
@@ -29,6 +31,7 @@ export class PaymentsService {
     private readonly notificationsService: NotificationsService,
     private readonly razorpayService: RazorpayService,
     private readonly configService: ConfigService,
+    private readonly renewalPlansService: RenewalPlansService,
     @InjectQueue('invoices-queue') private readonly invoicesQueue: Queue,
   ) {}
 
@@ -41,9 +44,15 @@ export class PaymentsService {
     courseIds: string[],
     couponCode?: string,
     allowRenewal = false,
+    renewalPlanId?: string,
   ) {
     if (!courseIds.length) {
       throw new BadRequestException('At least one course is required');
+    }
+
+    // --- Renewal order path ---
+    if (renewalPlanId) {
+      return this.createRenewalOrder(userId, courseIds, renewalPlanId, couponCode);
     }
 
     const courses = await this.paymentsRepository.findCoursesByIds(courseIds);
@@ -157,6 +166,152 @@ export class PaymentsService {
     };
   }
 
+  // ─── Renewal order helpers ──────────────────────────────────────────────────
+
+  private async createRenewalOrder(
+    userId: string,
+    courseIds: string[],
+    renewalPlanId: string,
+    couponCode?: string,
+  ) {
+    if (courseIds.length !== 1) {
+      throw new BadRequestException('Renewal is only supported for one course at a time');
+    }
+    const courseId = courseIds[0];
+
+    const plan = await this.renewalPlansService.getPlanById(renewalPlanId);
+    if (plan.course_id !== courseId) {
+      throw new BadRequestException('Renewal plan does not belong to this course');
+    }
+
+    // Renewal is only available to users who already have an enrollment for this
+    // course (active or expired) — prevents buying any course at the renewal price.
+    const existingEnrollment = await this.paymentsRepository.findAnyEnrollment(
+      userId,
+      courseId,
+    );
+    if (!existingEnrollment) {
+      throw new ForbiddenException(
+        'Renewal is only available for enrolled courses',
+      );
+    }
+
+    // Fetch course to determine hardware/software gateway
+    const course = await this.paymentsRepository.findCourseById(courseId);
+    const gateway = this.razorpayService.getGatewayForCategory(course.category);
+
+    // Build a minimal CourseRow-like object for coupon validation
+    const renewalCourseProxy = {
+      id: course.id,
+      price: Number(plan.price),
+      discount_price: null,
+      is_published: true,
+    };
+
+    const coupon = await this.couponsService.validateCouponForCheckoutMulti(
+      couponCode,
+      [renewalCourseProxy],
+      userId,
+    );
+    const amountSubunits = this.toSubunits(coupon.finalPrice);
+    const storeName =
+      course.category?.toLowerCase().includes('hardware')
+        ? 'MBT LMS - Hardware'
+        : 'MBT LMS - Software';
+
+    if (amountSubunits <= 0) {
+      // Free renewal after coupon
+      this.logger.log(`Free renewal for user ${userId}, plan ${renewalPlanId}`);
+      const result = await this.paymentsRepository.insertPayment({
+        user_id: userId,
+        course_id: courseId,
+        coupon_id: coupon.couponId ?? null,
+        renewal_plan_id: renewalPlanId,
+        base_amount: coupon.baseAmount,
+        discount_amount: coupon.discountAmount,
+        amount_paid: 0,
+        amount_subunits: 0,
+        currency: this.currency,
+        razorpay_order_id: `free_${Date.now()}_${userId.slice(0, 8)}`,
+        status: 'pending',
+        expires_at: new Date(Date.now() + 3600_000).toISOString(),
+      });
+      if (result.error) {
+        throw new InternalServerErrorException('Failed to create free renewal');
+      }
+      const payment = result.data;
+      await this.paymentsRepository.insertPaymentItems([{
+        payment_id: payment.id,
+        course_id: courseId,
+        coupon_id: coupon.couponId ?? null,
+        base_amount: coupon.baseAmount,
+        discount_amount: coupon.discountAmount,
+        amount_paid: 0,
+      }]);
+      const enrollmentResult = await this.enrollmentsService.enrollFromPayment(
+        payment.razorpay_order_id,
+        `free_${Date.now()}`,
+        'free',
+      );
+      const resultData = enrollmentResult as { paymentId?: string } | null;
+      const resultPaymentId = resultData?.paymentId || payment.id;
+      await this.queueInvoiceGeneration(resultPaymentId);
+      return enrollmentResult;
+    }
+
+    const receipt = `renewal_${courseId.slice(0, 8)}_${Date.now()}`;
+    const razorpayOrder = await this.razorpayService.createOrder({
+      gateway,
+      amountSubunits,
+      currency: this.currency,
+      receipt,
+      notes: { userId, renewalPlanId, couponCode: coupon.code ?? '' },
+    });
+    const expiresAt = new Date(Date.now() + this.pendingMinutes * 60_000);
+
+    const result = await this.paymentsRepository.insertPayment({
+      user_id: userId,
+      course_id: courseId,
+      coupon_id: coupon.couponId ?? null,
+      renewal_plan_id: renewalPlanId,
+      base_amount: coupon.baseAmount,
+      discount_amount: coupon.discountAmount,
+      amount_paid: coupon.finalPrice,
+      amount_subunits: amountSubunits,
+      currency: this.currency,
+      razorpay_order_id: razorpayOrder.id,
+      status: 'pending',
+      expires_at: expiresAt.toISOString(),
+    });
+
+    if (result.error) {
+      throw new InternalServerErrorException('Failed to create renewal payment order');
+    }
+
+    const paymentId = result.data.id;
+    await this.paymentsRepository.insertPaymentItems([{
+      payment_id: paymentId,
+      course_id: courseId,
+      coupon_id: coupon.couponId ?? null,
+      base_amount: coupon.baseAmount,
+      discount_amount: coupon.discountAmount,
+      amount_paid: coupon.finalPrice,
+    }]);
+
+    return {
+      orderId: razorpayOrder.id,
+      amount: amountSubunits,
+      currency: this.currency,
+      keyId: gateway.keyId,
+      courseIds,
+      expiresAt: expiresAt.toISOString(),
+      reused: false,
+      storeName,
+    };
+  }
+
+  // ─── Free enrollment (multi course) ──────────────────────────────────────────
+
   private async handleFreeEnrollmentMulti(
     userId: string,
     courses: CourseRow[],
@@ -181,9 +336,7 @@ export class PaymentsService {
       amount_subunits: 0,
       currency: this.currency,
       razorpay_order_id: `free_${Date.now()}_${userId.slice(0, 8)}`,
-      status: 'completed',
-      razorpay_payment_id: `free_${Date.now()}`,
-      razorpay_signature: 'free',
+      status: 'pending',
       expires_at: new Date(Date.now() + 3600_000).toISOString(),
     });
 

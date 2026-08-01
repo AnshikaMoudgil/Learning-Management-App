@@ -254,6 +254,14 @@ class _MoreScreenState extends State<MoreScreen> {
               ),
               _buildMenuItem(
                 context,
+                Icons.local_offer_outlined,
+                'Coupons',
+                onTap: () {
+                  context.push('/coupons');
+                },
+              ),
+              _buildMenuItem(
+                context,
                 Icons.notifications_outlined,
                 'Notification Settings',
                 onTap: () {

@@ -16,6 +16,7 @@ import '../screens/course_store_screen.dart';
 import '../screens/course_details_screen.dart';
 import '../screens/course_progress_screen.dart';
 import '../screens/shopping_cart_screen.dart';
+import '../screens/coupons_screen.dart';
 import '../screens/live_classes_screen.dart';
 import '../screens/live_class_details_screen.dart';
 import '../screens/live_class_player_screen.dart';
@@ -108,6 +109,7 @@ class RouteNames {
   static const requestDeviceChange = '/request-device-change';
   static const store = '/store';
   static const cart = '/cart';
+  static const coupons = '/coupons';
   static const invoices = '/invoices';
   static const invoiceDetail = '/invoices';
 }
@@ -261,6 +263,10 @@ final appRouter = GoRouter(
       builder: (context, state) => const ShoppingCartScreen(),
     ),
     GoRoute(
+      path: RouteNames.coupons,
+      builder: (context, state) => const CouponsScreen(),
+    ),
+    GoRoute(
       path: RouteNames.liveClassDetails,
       builder: (context, state) => const LiveClassDetailsScreen(),
     ),
@@ -374,7 +380,14 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.renewCourse,
-      builder: (context, state) => const RenewCourseScreen(),
+      builder: (context, state) {
+        final courseId = state.uri.queryParameters['courseId'] ?? '';
+        final enrollmentId = state.uri.queryParameters['enrollmentId'] ?? '';
+        return RenewCourseScreen(
+          courseId: courseId,
+          enrollmentId: enrollmentId,
+        );
+      },
     ),
     GoRoute(
       path: RouteNames.courseValidity,

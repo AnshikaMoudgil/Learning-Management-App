@@ -33,6 +33,7 @@ export class PaymentsController {
       body.courseIds,
       body.couponCode,
       body.allowRenewal ?? false,
+      body.renewalPlanId,
     );
   }
 

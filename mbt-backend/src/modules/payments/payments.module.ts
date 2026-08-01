@@ -8,6 +8,7 @@ import { PaymentsService } from './payments.service';
 import { PaymentsRepository } from './payments.repository';
 import { RazorpayService } from './razorpay.service';
 import { InvoicesModule } from '../invoices/invoices.module';
+import { RenewalPlansModule } from '../renewal-plans/renewal-plans.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { InvoicesModule } from '../invoices/invoices.module';
     EnrollmentsModule,
     InvoicesModule,
     NotificationsModule,
+    RenewalPlansModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService, PaymentsRepository, RazorpayService],
